@@ -1,0 +1,237 @@
+import AssetIcon from './AssetIcon';
+import ValueSkeleton from './ValueSkeleton';
+
+type Dex = {
+  name: string;
+  slug: string | null;
+  logo: string | null;
+  total24hUsd: number | null;
+  total7dUsd: number | null;
+  change1dPct: number | null;
+};
+type Protocol = {
+  name: string;
+  slug: string | null;
+  logo: string | null;
+  category: string | null;
+  solanaTvlUsd: number | null;
+  change1dPct: number | null;
+  change7dPct: number | null;
+};
+type Dashboard = {
+  dexes: {
+    total24hUsd: number | null;
+    total7dUsd: number | null;
+    items: Dex[];
+  };
+  protocols: { total: number | null; items: Protocol[] };
+};
+
+const currency = (value: number | null | undefined) =>
+  value === null || value === undefined || !Number.isFinite(value)
+    ? '—'
+    : new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        notation: 'compact',
+        maximumFractionDigits: 2,
+      }).format(value);
+const count = (value: number | null | undefined) =>
+  value === null || value === undefined || !Number.isFinite(value)
+    ? '—'
+    : value.toLocaleString('en-US');
+const preloadImage = {
+  fetchpriority: 'high',
+};
+
+function Change({ value }: { value: number | null }) {
+  if (value === null || !Number.isFinite(value))
+    return <span className="iris-muted">—</span>;
+  return (
+    <span className={value >= 0 ? 'iris-positive' : 'iris-negative'}>
+      {value >= 0 ? '+' : ''}
+      {value.toFixed(2)}%
+    </span>
+  );
+}
+
+function DefiLlamaLink({
+  slug,
+  children,
+}: {
+  slug: string | null;
+  children: React.ReactNode;
+}) {
+  return slug ? (
+    <a
+      href={`https://defillama.com/protocol/${encodeURIComponent(slug)}`}
+      target="_blank"
+      rel="noreferrer"
+    >
+      {children}
+    </a>
+  ) : (
+    <span>{children}</span>
+  );
+}
+
+export default function DefiLlamaCard({
+  dashboard,
+  loading,
+  error,
+}: {
+  dashboard: Dashboard | null;
+  loading: boolean;
+  error: unknown;
+}) {
+  const pending = loading && !dashboard;
+  return (
+    <section
+      className="iris-defillama-card"
+      aria-label="DefiLlama Solana dashboard"
+    >
+      <div className="iris-defillama-topline">
+        <img
+          className="iris-defillama-logo"
+          src="/assets/defillama.webp"
+          height="37.1"
+          width="108.5"
+          alt="DefiLlama"
+          {...preloadImage}
+          loading="eager"
+          decoding="sync"
+        />
+        <a href="https://defillama.com" target="_blank" rel="noreferrer">
+          Defi
+        </a>
+      </div>
+      {Boolean(error) && !dashboard && (
+        <p className="iris-defillama-state">DeFi metrics are unavailable.</p>
+      )}
+      {!loading && !error && !dashboard && (
+        <p className="iris-defillama-state">No DeFi metrics are available.</p>
+      )}
+      {(dashboard || pending) && (
+        <div
+          className="iris-catalog-lists iris-defillama-lists"
+          aria-busy={pending || undefined}
+        >
+          <section
+            className="iris-section iris-catalog-list iris-catalog-list--volume"
+            aria-labelledby="iris-defillama-dexes"
+          >
+            <div className="iris-catalog-list-heading">
+              <span aria-hidden="true" />
+              <div>
+                <h2 id="iris-defillama-dexes">Top DEXes</h2>
+                <small>
+                  {pending ? (
+                    <ValueSkeleton width="130px" />
+                  ) : (
+                    <>
+                      24H {currency(dashboard?.dexes.total24hUsd)} · 7D{' '}
+                      {currency(dashboard?.dexes.total7dUsd)}
+                    </>
+                  )}
+                </small>
+              </div>
+            </div>
+            {pending ? (
+              <PlaceholderRows />
+            ) : dashboard?.dexes.items.length ? (
+              <div className="iris-catalog-list-rows">
+                {dashboard.dexes.items.map((dex, index) => (
+                  <DefiLlamaLink
+                    key={`${dex.slug || dex.name}-${index}`}
+                    slug={dex.slug}
+                  >
+                    <AssetIcon
+                      src={dex.logo || undefined}
+                      symbol={String(index + 1)}
+                    />
+                    <span className="iris-catalog-list-identity">
+                      <strong>{dex.name}</strong>
+                      <small>
+                        1D <Change value={dex.change1dPct} />
+                      </small>
+                    </span>
+                    <span className="iris-catalog-list-price iris-defillama-volumes">
+                      <small>24H {currency(dex.total24hUsd)}</small>
+                      <small>7D {currency(dex.total7dUsd)}</small>
+                    </span>
+                  </DefiLlamaLink>
+                ))}
+              </div>
+            ) : (
+              <p className="iris-empty">No DEX data is available.</p>
+            )}
+          </section>
+          <section
+            className="iris-section iris-catalog-list iris-catalog-list--trending"
+            aria-labelledby="iris-defillama-protocols"
+          >
+            <div className="iris-catalog-list-heading">
+              <span aria-hidden="true" />
+              <div>
+                <h2 id="iris-defillama-protocols">Top protocols</h2>
+                <small>
+                  {pending ? (
+                    <ValueSkeleton width="112px" />
+                  ) : (
+                    <>{count(dashboard?.protocols.total)} tracked on Solana</>
+                  )}
+                </small>
+              </div>
+            </div>
+            {pending ? (
+              <PlaceholderRows />
+            ) : dashboard?.protocols.items.length ? (
+              <div className="iris-catalog-list-rows">
+                {dashboard.protocols.items.map((protocol, index) => (
+                  <DefiLlamaLink
+                    key={`${protocol.slug || protocol.name}-${index}`}
+                    slug={protocol.slug}
+                  >
+                    <AssetIcon
+                      src={protocol.logo || undefined}
+                      symbol={String(index + 1)}
+                    />
+                    <span className="iris-catalog-list-identity">
+                      <strong>{protocol.name}</strong>
+                      <small>
+                        1D <Change value={protocol.change1dPct} /> · 7D{' '}
+                        <Change value={protocol.change7dPct} />
+                      </small>
+                    </span>
+                    <span className="iris-catalog-list-price iris-defillama-tvl">
+                      Solana TVL {currency(protocol.solanaTvlUsd)}
+                    </span>
+                  </DefiLlamaLink>
+                ))}
+              </div>
+            ) : (
+              <p className="iris-empty">No protocol data is available.</p>
+            )}
+          </section>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function PlaceholderRows() {
+  return (
+    <div className="iris-catalog-list-rows">
+      {Array.from({ length: 5 }, (_, index) => (
+        <div className="iris-defillama-placeholder" key={index}>
+          <ValueSkeleton className="iris-value-skeleton--icon" />
+          <span>
+            <ValueSkeleton width="72px" />
+            <ValueSkeleton width="104px" />
+          </span>
+          <ValueSkeleton width="74px" />
+        </div>
+      ))}
+    </div>
+  );
+}

@@ -1,0 +1,11 @@
+node_modules/
+dist/
+coverage/
+test-results/
+playwright-report/
+.vercel/
+.vscode/
+public/
+src/logo.svg
+package-lock.json
+.env*

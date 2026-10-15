@@ -1,0 +1,136 @@
+name: Iris Frontend — CI & Deploy
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      target:
+        type: choice
+        options: [dev, production]
+        default: dev
+      sha:
+        description: Exact merged commit to redeploy in dev or promote after dev acceptance
+        required: true
+
+permissions:
+  contents: read
+
+env:
+  SOURCE_SHA: ${{ inputs.sha || github.sha }}
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate manual release
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          TARGET: ${{ inputs.target || 'dev' }}
+        run: |
+          test "$GITHUB_REF" = refs/heads/main
+          case "$TARGET" in
+            dev|production) ;;
+            *) echo "::error::Choose dev or production"; exit 1 ;;
+          esac
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 1
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          fetch-depth: 0
+      - name: Require a merged release commit
+        if: github.event_name == 'workflow_dispatch'
+        run: git merge-base --is-ancestor HEAD origin/main
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm run check:tooling
+      - run: npm run audit:dependencies
+      - run: npm run check:versions
+      - run: npm test
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+
+  vertical:
+    runs-on: ubuntu-latest
+    env:
+      WORKER_SHA: ${{ vars.IRIS_WORKER_SHA }}
+    steps:
+      - name: Require an explicit compatible Worker revision
+        shell: bash
+        run: |
+          [[ "$WORKER_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::Set IRIS_WORKER_SHA to an exact compatible Worker commit"; exit 1; }
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: benhammoush/iris-backend
+          ref: ${{ env.WORKER_SHA }}
+          path: worker
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm ci
+        working-directory: worker
+      - run: npm run check:contracts
+        env:
+          IRIS_WORKER_ROOT: worker
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:vertical
+        env:
+          IRIS_WORKER_ROOT: worker
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: failure()
+        with:
+          name: vertical-playwright-report
+          path: |
+            playwright-report/
+            test-results/
+
+  deploy:
+    needs: [test-and-build, vertical]
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.target || 'dev' }}
+    concurrency:
+      group: iris-frontend-${{ inputs.target || 'dev' }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+      - name: Validate configuration and deploy selected source
+        env:
+          DEPLOY_ENABLED: ${{ vars.DEPLOY_ENABLED }}
+          VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VITE_API_BASE: ${{ vars.VITE_API_BASE }}
+          VITE_OPENAPI_URL: ${{ vars.VITE_OPENAPI_URL }}
+        run: |
+          test "$DEPLOY_ENABLED" = true || { echo "::error::Complete ENVIRONMENTS.md before enabling deployment"; exit 1; }
+          test -n "$VERCEL_TOKEN" && test -n "$VERCEL_ORG_ID"
+          [[ "$VERCEL_PROJECT_ID" == prj_* ]] || exit 1
+          [[ "$VITE_API_BASE" =~ ^https://[A-Za-z0-9.-]+$ ]] || exit 1
+          [[ "$VITE_OPENAPI_URL" == https://* ]] || exit 1
+          if [ "$GITHUB_EVENT_NAME" = push ]; then
+            git fetch origin main
+            test "$(git rev-parse origin/main)" = "$SOURCE_SHA" || { echo "::error::A newer main commit supersedes this dev deployment"; exit 1; }
+          fi
+          url=$(npx --yes vercel@63.1.0 deploy --project "$VERCEL_PROJECT_ID" --prod --yes --token "$VERCEL_TOKEN" \
+            --build-env "VITE_API_BASE=$VITE_API_BASE" \
+            --build-env "VITE_OPENAPI_URL=$VITE_OPENAPI_URL" \
+            --build-env "VITE_ENABLE_FIXTURES=false")
+          printf 'Frontend commit: `%s`\n\nDeployment: %s\n' "$SOURCE_SHA" "$url" >> "$GITHUB_STEP_SUMMARY"

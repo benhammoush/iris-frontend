@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f5f7fb" />
+    <meta
+      name="description"
+      content="Iris is a Solana market and public-wallet dashboard."
+    />
+    <link rel="apple-touch-icon" href="/logo192.png" />
+    <link rel="manifest" href="/manifest.json" />
+    <title>Iris | Solana Explorer</title>
+    <script>
+      document.documentElement.dataset.theme =
+        localStorage.getItem('color-theme') === 'dark' ? 'dark' : 'light';
+    </script>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run Iris.</noscript>
+    <div id="root"></div>
+    <script type="module" src="/src/index.tsx"></script>
+  </body>
+</html>

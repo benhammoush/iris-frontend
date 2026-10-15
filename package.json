@@ -1,0 +1,78 @@
+{
+  "name": "iris-frontend",
+  "version": "1.23.3",
+  "private": true,
+  "engines": {
+    "node": "24.x"
+  },
+  "dependencies": {
+    "@scalar/api-reference-react": "0.9.79",
+    "@tanstack/react-virtual": "^3.13.13",
+    "lightweight-charts": "^5.0.9",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.9.4"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "check:tooling": "node scripts/check-tooling.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "audit:dependencies": "npm audit && npm audit --omit=dev",
+    "start": "vite --host localhost --port 5173 --strictPort",
+    "build": "tsc --noEmit && vite build",
+    "check": "tsc --noEmit",
+    "check:versions": "node scripts/check-version.mjs",
+    "generate:contracts": "node scripts/generate-contracts.mjs",
+    "check:contracts": "node scripts/generate-contracts.mjs --check",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "build:e2e": "vite build --mode e2e",
+    "preview:e2e": "vite preview --host 127.0.0.1 --port 4173 --strictPort",
+    "test:e2e": "npm run build:e2e && playwright test",
+    "build:vertical": "vite build --mode vertical",
+    "preview:vertical": "vite preview --host 127.0.0.1 --port 4173 --strictPort",
+    "test:vertical": "npm run build:vertical && playwright test --config=playwright.vertical.config.ts"
+  },
+  "browserslist": {
+    "production": [
+      "Chrome >= 111",
+      "Firefox >= 128",
+      "Safari >= 16.4"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.64.0",
+    "@tailwindcss/vite": "4.3.3",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.4.1",
+    "eslint": "^10.12.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.13.0",
+    "jsdom": "^26.1.0",
+    "openapi-typescript": "7.13.0",
+    "prettier": "^3.2.5",
+    "prettier-plugin-tailwindcss": "^0.8.1",
+    "tailwindcss": "4.3.3",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.71.2",
+    "vite": "^6.3.6",
+    "vitest": "4.1.11"
+  },
+  "overrides": {
+    "@scalar/agent-chat": {
+      "ai": "6.0.214",
+      "@ai-sdk/vue": "3.0.214"
+    }
+  }
+}

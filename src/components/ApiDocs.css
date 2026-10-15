@@ -1,0 +1,2 @@
+/* Keep renderer defaults below Iris's unlayered dashboard styles. */
+@import '@scalar/api-reference-react/style.css' layer(scalar);
