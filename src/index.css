@@ -2759,6 +2759,57 @@ html[data-theme='light'] .iris-jupiter-badge {
   background: rgba(22, 147, 74, 0.08);
   color: #136d38;
 }
+html[data-theme='light'] .iris-asset-jupiter-card .iris-asset-identity h1,
+html[data-theme='light'] .iris-asset-jupiter-card .iris-hero-price > strong,
+html[data-theme='light'] .iris-asset-jupiter-card .iris-jupiter-metric strong {
+  color: #17212f;
+}
+html[data-theme='light'] .iris-asset-jupiter-card .iris-asset-identity h1 span,
+html[data-theme='light']
+  .iris-asset-jupiter-card
+  .iris-asset-identity
+  p:not(.iris-eyebrow),
+html[data-theme='light'] .iris-asset-jupiter-card .iris-hero-price > span,
+html[data-theme='light'] .iris-asset-jupiter-card .iris-jupiter-metric > span,
+html[data-theme='light'] .iris-asset-jupiter-card .iris-jupiter-metric small {
+  color: #405269;
+}
+html[data-theme='light'] .iris-asset-jupiter-card .iris-asset-identity a {
+  color: #136d38;
+}
+html[data-theme='light'] .iris-birdeye-card {
+  border-color: rgba(162, 28, 175, 0.3);
+  background: #fdfaff;
+  box-shadow:
+    0 12px 30px rgba(15, 23, 42, 0.08),
+    inset 0 1px rgba(255, 255, 255, 0.9);
+  color: #17212f;
+}
+html[data-theme='light'] .iris-birdeye-card-header {
+  border-bottom-color: rgba(23, 33, 47, 0.1);
+  background: linear-gradient(
+    160deg,
+    rgba(232, 121, 249, 0.12),
+    rgba(253, 250, 255, 0.55)
+  );
+}
+html[data-theme='light'] .iris-birdeye-card-header span {
+  border-color: rgba(162, 28, 175, 0.3);
+  color: #86198f;
+}
+html[data-theme='light'] .iris-birdeye-card .iris-chart-toolbar {
+  border-bottom-color: rgba(23, 33, 47, 0.1);
+  background: #fdfaff;
+}
+html[data-theme='light'] .iris-birdeye-pair strong,
+html[data-theme='light'] .iris-birdeye-card .iris-timeframe button:hover,
+html[data-theme='light'] .iris-birdeye-card .iris-timeframe button.active {
+  color: #17212f;
+}
+html[data-theme='light'] .iris-birdeye-pair span,
+html[data-theme='light'] .iris-birdeye-card .iris-empty {
+  color: #405269;
+}
 html[data-theme='light'] .iris-defillama-card {
   border-color: rgba(99, 102, 241, 0.32);
   background: #fafaff;
