@@ -180,6 +180,9 @@ test('renders asset-style per-transfer activity rows and loads cursor pages', as
   });
   await userEvent.click(screen.getByRole('button', { name: 'Load more' }));
   expect(await screen.findByTitle('solana-tx-26')).toBeInTheDocument();
+  expect(
+    screen.queryByRole('button', { name: 'Load more' }),
+  ).not.toBeInTheDocument();
 });
 
 test('shows an explicit transaction error and retries the initial activity request', async () => {
@@ -193,6 +196,34 @@ test('shows an explicit transaction error and retries the initial activity reque
   ).toBeInTheDocument();
   await userEvent.click(screen.getByRole('button', { name: 'Retry activity' }));
   expect((await screen.findAllByTitle('solana-tx-1')).length).toBe(2);
+});
+
+test('advances through empty cursor pages and stops at an explicit end', async () => {
+  renderWallet();
+  await screen.findAllByTitle('solana-tx-1');
+  vi.mocked(workerApi.walletTransactions).mockResolvedValueOnce({
+    meta: { requestId: 'wallet-test' },
+    data: { events: [], nextCursor: 'third-page' },
+  });
+  await userEvent.click(screen.getByRole('button', { name: 'Load more' }));
+  expect(workerApi.walletTransactions).toHaveBeenLastCalledWith(
+    'WalletCaseSensitive123',
+    { cursor: 'next-page' },
+  );
+
+  vi.mocked(workerApi.walletTransactions).mockResolvedValueOnce({
+    meta: { requestId: 'wallet-test' },
+    data: { events: [], nextCursor: null },
+  });
+  await userEvent.click(screen.getByRole('button', { name: 'Load more' }));
+  expect(workerApi.walletTransactions).toHaveBeenLastCalledWith(
+    'WalletCaseSensitive123',
+    { cursor: 'third-page' },
+  );
+  expect(
+    screen.queryByRole('button', { name: 'Load more' }),
+  ).not.toBeInTheDocument();
+  expect(screen.getAllByTitle('solana-tx-1')[0]).toBeInTheDocument();
 });
 
 test('keeps loaded activity visible when loading a later page fails', async () => {

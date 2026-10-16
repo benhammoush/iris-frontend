@@ -46,6 +46,58 @@ test('renders a wallet, retains unpriced holdings, and appends cursor pages', as
       ),
     )
     .toBe(true);
+  await expect(page.getByRole('button', { name: 'Load more' })).toHaveCount(0);
+});
+
+test('retains activity after a cursor failure and retries the same page', async ({
+  page,
+  api,
+}) => {
+  let failed = false;
+  api.setHandler((url) => {
+    if (
+      url.pathname === `/v3/wallets/${walletAddress}/transactions` &&
+      url.searchParams.get('cursor') === 'next-page' &&
+      !failed
+    ) {
+      failed = true;
+      return {
+        error: {
+          code: 'UPSTREAM_UNAVAILABLE',
+          message: 'Later page unavailable',
+        },
+      };
+    }
+    return undefined;
+  });
+
+  await page.goto(`/wallet/${walletAddress}`);
+  const firstTransfer = page.getByText(
+    '42500000000 atomic units (decimals: 9)',
+  );
+  await expect(firstTransfer).toBeVisible();
+  await page.getByRole('button', { name: 'Load more' }).click();
+  await expect(
+    page.getByText('Could not load more transactions.'),
+  ).toBeVisible();
+  await expect(firstTransfer).toBeVisible();
+
+  await page.getByRole('button', { name: 'Retry', exact: true }).click();
+  await expect(
+    page.getByText('1000000000 atomic units (decimals: 9)'),
+  ).toBeVisible();
+  await expect(firstTransfer).toBeVisible();
+  await expect(page.getByText('Could not load more transactions.')).toHaveCount(
+    0,
+  );
+  await expect(page.getByRole('button', { name: 'Load more' })).toHaveCount(0);
+  expect(
+    api.requests.filter(
+      (url) =>
+        url.pathname === `/v3/wallets/${walletAddress}/transactions` &&
+        url.searchParams.get('cursor') === 'next-page',
+    ),
+  ).toHaveLength(2);
 });
 
 test('retries an unavailable initial wallet activity request', async ({

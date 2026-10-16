@@ -491,7 +491,20 @@ export default function Asset() {
             aria-busy={(candlesResult.loading && !candles.length) || undefined}
           >
             <div className="iris-birdeye-card-header">
-              <img src="/birdeye.svg" alt="Birdeye" width="130" height="28" />
+              <img
+                className="iris-birdeye-logo--dark"
+                src="/birdeye-on-dark.png"
+                alt="Birdeye"
+                width="130"
+                height="28"
+              />
+              <img
+                className="iris-birdeye-logo--light"
+                src="/birdeye-on-light.png"
+                alt="Birdeye"
+                width="130"
+                height="28"
+              />
               <span>Market data</span>
             </div>
             <div className="iris-chart-toolbar">

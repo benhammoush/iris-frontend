@@ -13,6 +13,10 @@ const workflow = readFileSync(
   new URL('../.github/workflows/ci.yml', import.meta.url),
   'utf8',
 ).replace(/\r/g, '');
+const browserConfiguration = readFileSync(
+  new URL('../playwright.config.ts', import.meta.url),
+  'utf8',
+);
 const bash =
   process.platform === 'win32'
     ? (process.env.IRIS_TEST_BASH ??
@@ -91,6 +95,14 @@ function validateDeploymentAttempt(
 }
 
 describe('delivery workflow', () => {
+  it('runs fixture journeys across the three supported browser engines', () => {
+    for (const engine of ['chromium', 'firefox', 'webkit']) {
+      expect(browserConfiguration).toContain(`name: '${engine}'`);
+    }
+    expect(workflow).toContain(
+      'npx playwright install --with-deps chromium firefox webkit',
+    );
+  });
   it('requires a new production dispatch even when only the deployment job is rerun', () => {
     for (const attempt of ['2', '', '0', '01', 'invalid']) {
       expect(

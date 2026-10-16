@@ -923,6 +923,9 @@ input {
   object-fit: contain;
   object-position: left;
 }
+.iris-birdeye-card-header .iris-birdeye-logo--light {
+  display: none;
+}
 .iris-birdeye-card-header span {
   margin-left: auto;
   padding: 4px 7px;
@@ -2796,6 +2799,12 @@ html[data-theme='light'] .iris-birdeye-card-header {
 html[data-theme='light'] .iris-birdeye-card-header span {
   border-color: rgba(162, 28, 175, 0.3);
   color: #86198f;
+}
+html[data-theme='light'] .iris-birdeye-card-header .iris-birdeye-logo--dark {
+  display: none;
+}
+html[data-theme='light'] .iris-birdeye-card-header .iris-birdeye-logo--light {
+  display: block;
 }
 html[data-theme='light'] .iris-birdeye-card .iris-chart-toolbar {
   border-bottom-color: rgba(23, 33, 47, 0.1);

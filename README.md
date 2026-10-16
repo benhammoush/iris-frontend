@@ -34,6 +34,10 @@ Scalar React 0.9.79 pins affected AI SDK versions in its optional agent dependen
 
 Scalar is loaded only on `/api-docs`, but its renderer bundle is larger than the former Swagger renderer. Track documentation load performance separately from the dashboard; do not hide the build chunk warning.
 
+## Provider brand assets
+
+The Birdeye chart header uses unmodified, locally served official wordmarks: [white letters](https://birdeye.so/be/light-logo-v2.png) on dark surfaces and [dark letters](https://birdeye.so/be/dark-logo.png) on light surfaces. See Birdeye's [brand assets and usage guidance](https://learn.birdeye.so/docs/brand-assets). Theme switching selects the matching asset without recoloring it.
+
 ## Testing
 
 All application modules and unit tests under `src/` now use TypeScript. Strict checking includes the Vite/Playwright configurations and browser tests, with `allowJs: false`. Lint rejects explicit `any`, non-null assertions and TypeScript suppression comments; the tooling guard rejects reintroduced application JavaScript. Charts use the library's chart/series API types. Existing finite timestamp conversions use the chart library's required branded time assertion, not an assertion of unvalidated API JSON.
@@ -44,7 +48,7 @@ API JSON enters as `unknown`; normalizers narrow containers and consumed fields,
 
 Use Node 24 (`.nvmrc`, package engines and CI). Run `npm run lint`, `npm run format:check`, `npm run check:tooling`, `npm run audit:dependencies`, `npm run check:versions` and `npm run check` in addition to the tests below. `npm run format` applies mechanical formatting; review that diff separately from behavior changes. `check:tooling` verifies that the configured guards actually reject invalid code and formatting. See [SECURITY.md](./SECURITY.md) for dependency and operator-only secret-scanning checks.
 
-`npm test` runs frontend unit and component tests. `npm run test:e2e` runs deterministic browser journeys with Worker requests intercepted by test fixtures.
+`npm test` runs frontend unit and component tests. `npm run test:e2e` runs deterministic browser journeys across Chromium, Firefox and WebKit with Worker requests intercepted by test fixtures. Install those engines with `npx playwright install chromium firefox webkit` first. These current-engine checks do not certify the exact minimum browser versions or real Safari releases.
 
 `src/delivery.test.ts` runs the workflow's manual-input guard with valid and invalid public fixtures and checks the surrounding release controls structurally. It uses Bash on CI/Linux and Git Bash on Windows; set `IRIS_TEST_BASH` to the executable path for a nonstandard Windows installation. It does not contact GitHub/providers, check out candidate commits or certify native approval and dev acceptance.
 
