@@ -39,6 +39,14 @@ Run `npm ci` in both repositories. Start the Worker with `npm run dev` (local KV
 
 Configure these in each GitHub environment, not as shared production repository secrets:
 
+Use password-manager labels `<project>-<environment>-<provider>-<purpose>`, for example
+`iris-production-vercel-deploy` and `iris-production-cloudflare-deploy`. GitHub secret
+names below remain functional names, not those labels. Each target's deployment
+credential is scoped to its own resources. Production needs no dev-verification
+token or extra GitHub PAT: the owner reviews dev acceptance/recovery and exact
+candidate/configuration identities before native approval. Obsolete-token inventory
+and removal are separately authorized; this runbook does not revoke credentials.
+
 | Repository | Variables                                                                 | Secrets                                      |
 | ---------- | ------------------------------------------------------------------------- | -------------------------------------------- |
 | Frontend   | `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`, `VITE_API_BASE`, `VITE_OPENAPI_URL` | `VERCEL_TOKEN`                               |
@@ -57,6 +65,7 @@ Leave environment variable `DEPLOY_ENABLED` unset or `false` until that target's
 - Select a compatible merged frontend/Worker pair for release validation in dev. Manual **dev** redeployment can select an exact SHA from `main`; run the Worker first when both change. All deployments reuse the existing CI checks, not a second test framework. Only automatic dev pushes reject superseded main commits; explicit manual candidate selection may use an older merged SHA.
 - Before acceptance, record both source SHAs/versions, provider deployment identities, previous compatible recovery pair and relevant configuration/pins in release notes. Check the browser flow, `/health`, `/ready`, fresh `/v3/status`, browser-to-API access, CORS and the affected user flow in dev. Fixture data or basic probes do not certify live-provider behavior. Workflow summaries/logs help identify deployments; inspect provider identities rather than assuming a green run proves acceptance.
 - Recheck candidate provider identities and relevant configuration after acceptance and immediately before promotion. If another deployment or configuration change interrupted validation, repeat affected acceptance on the selected candidate. Shared dev is mutable; the source input alone is not acceptance evidence, and no custom coordinator or freeze service is introduced.
+- After a production failure, inspect both providers before retrying. Production reruns are rejected: start a new exact-SHA dispatch from main and obtain fresh native approval.
 - Manually run **Iris Frontend — CI & Deploy** and **Iris Worker API — CI & Deploy** in their respective repositories from `main`, choose **production**, and provide those same dev-accepted source SHAs. Existing checks rerun against each selected source. As sole maintainer, explicitly approve the pair and rollback plan through each repository's native production gate. Production refreshes automatically on release; dev refresh remains explicit. Promotion history is an operator check, not a custom automated gate. Subsequent production smoke checks are read-only.
 
 ## Rollback
