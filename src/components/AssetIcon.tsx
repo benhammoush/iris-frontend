@@ -18,8 +18,8 @@ export default function AssetIcon({
   symbol?: string | null;
   alt?: string;
 }) {
-  const [failed, setFailed] = useState(false);
-  if (!src || failed)
+  const [failedSource, setFailedSource] = useState<string | null>(null);
+  if (!src || failedSource === src)
     return (
       <span
         className="iris-asset-icon-fallback"
@@ -28,5 +28,12 @@ export default function AssetIcon({
         {initials(symbol)}
       </span>
     );
-  return <img src={src} alt={alt} onError={() => setFailed(true)} />;
+  return (
+    <img
+      src={src}
+      alt={alt}
+      loading="lazy"
+      onError={() => setFailedSource(src)}
+    />
+  );
 }

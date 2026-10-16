@@ -20,3 +20,21 @@ test('renders asset intelligence and requests the selected candle timeframe', as
     .poll(() => api.requests.map((url) => url.searchParams.get('timeframe')))
     .toContain('30m');
 });
+
+test('shows a readable fallback when a provider logo cannot load', async ({
+  page,
+  api,
+}) => {
+  api.setHandler((url) =>
+    url.pathname === `/v3/assets/mint/${sol.mint}`
+      ? { data: { asset: { ...sol, iconUrl: '/missing-provider-icon.png' } } }
+      : undefined,
+  );
+  await page.route('**/missing-provider-icon.png', (route) =>
+    route.fulfill({ status: 404, body: 'Missing provider image' }),
+  );
+  await page.goto(`/asset/${sol.mint}`);
+  await expect(page.getByLabel('SOL icon')).toHaveText('SO');
+  await expect(page.getByRole('heading', { name: /Solana SOL/ })).toBeVisible();
+  await expect(page.getByText('$150.25', { exact: true })).toBeVisible();
+});

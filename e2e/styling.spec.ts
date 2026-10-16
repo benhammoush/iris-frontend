@@ -27,6 +27,19 @@ for (const width of [1440, 390]) {
     const selectedTimeframe = chart.locator('.iris-timeframe button.active');
 
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+    const birdeyeLogo = chart.getByRole('img', {
+      name: 'Birdeye',
+      exact: true,
+    });
+    await expect(birdeyeLogo).toHaveCount(1);
+    await expect(birdeyeLogo).toHaveAttribute('src', '/birdeye-on-light.png');
+    await expect
+      .poll(() =>
+        birdeyeLogo.evaluate((image) =>
+          image instanceof HTMLImageElement ? image.naturalWidth : 0,
+        ),
+      )
+      .toBeGreaterThan(0);
     for (const element of await primary.all()) {
       await expect(element).toHaveCSS('color', 'rgb(23, 33, 47)');
     }
@@ -48,6 +61,15 @@ for (const width of [1440, 390]) {
 
     await page.getByRole('button', { name: 'Toggle color theme' }).click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await expect(birdeyeLogo).toHaveCount(1);
+    await expect(birdeyeLogo).toHaveAttribute('src', '/birdeye-on-dark.png');
+    await expect
+      .poll(() =>
+        birdeyeLogo.evaluate((image) =>
+          image instanceof HTMLImageElement ? image.naturalWidth : 0,
+        ),
+      )
+      .toBeGreaterThan(0);
     for (const element of await primary.all()) {
       await expect(element).toHaveCSS('color', 'rgb(255, 255, 255)');
     }

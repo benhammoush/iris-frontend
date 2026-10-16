@@ -251,12 +251,14 @@ export default function Wallet() {
     [address],
   );
   const [extraPages, setExtraPages] = useState<Activity[]>([]);
-  const [cursor, setCursor] = useState<string | null>(null);
+  // Undefined uses the first page's cursor; null means pagination has ended.
+  const [cursor, setCursor] = useState<string | null | undefined>(undefined);
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadMoreError, setLoadMoreError] = useState<unknown>(null);
   const wallet = walletFrom(summary.data);
   const firstTransactions = transactionsFrom(firstPage.data);
-  const nextCursor = nextCursorFrom(firstPage.data) ?? cursor;
+  const nextCursor =
+    cursor === undefined ? nextCursorFrom(firstPage.data) : cursor;
   const transactions = [...firstTransactions, ...extraPages].filter(
     (activity, index, items) =>
       items.findIndex(
@@ -271,7 +273,7 @@ export default function Wallet() {
       summary.error.status === 400);
   useEffect(() => {
     setExtraPages([]);
-    setCursor(null);
+    setCursor(undefined);
     setLoadingMore(false);
     setLoadMoreError(null);
   }, [address]);
