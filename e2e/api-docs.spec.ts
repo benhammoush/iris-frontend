@@ -34,17 +34,20 @@ const document = {
 
 test('loads the pinned document, sends a direct request, deep-links and returns to Iris', async ({
   page,
+  baseURL,
 }) => {
+  if (!baseURL) {
+    throw new Error('API Docs tests require a configured preview URL');
+  }
+  const previewOrigin = new URL(baseURL).origin;
   const externalRequests: string[] = [];
   const pageErrors: string[] = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
   page.on('request', (request) => {
     if (
-      ![
-        'http://127.0.0.1:4173',
-        'https://openapi.test',
-        'https://iris.test',
-      ].includes(new URL(request.url()).origin)
+      ![previewOrigin, 'https://openapi.test', 'https://iris.test'].includes(
+        new URL(request.url()).origin,
+      )
     ) {
       externalRequests.push(request.url());
     }

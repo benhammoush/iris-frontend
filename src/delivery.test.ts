@@ -95,6 +95,19 @@ function validateDeploymentAttempt(
 }
 
 describe('delivery workflow', () => {
+  it('retains failed UI diagnostics without relaxing browser checks', () => {
+    const uiJob = workflow.split('\n  vertical:')[0];
+    expect(uiJob).toMatch(
+      /if: failure\(\)\s+with:\s+name: ui-playwright-report/,
+    );
+    expect(uiJob).toContain('path: test-results/');
+    expect(uiJob).toContain('retention-days: 7');
+    expect(browserConfiguration).toContain('retries: 0');
+    expect(browserConfiguration).toContain('actionTimeout: 5_000');
+    expect(browserConfiguration).toContain(
+      'workers: process.env.CI ? 1 : undefined',
+    );
+  });
   it('runs fixture journeys across the three supported browser engines', () => {
     for (const engine of ['chromium', 'firefox', 'webkit']) {
       expect(browserConfiguration).toContain(`name: '${engine}'`);
