@@ -4,6 +4,8 @@ export default defineConfig({
   testDir: './e2e',
   testIgnore: ['vertical/**'],
   fullyParallel: true,
+  // Isolate browser rendering on shared CI runners without relaxing checks.
+  workers: process.env.CI ? 1 : undefined,
   forbidOnly: Boolean(process.env.CI),
   retries: 0,
   reporter: process.env.CI ? 'github' : 'list',
