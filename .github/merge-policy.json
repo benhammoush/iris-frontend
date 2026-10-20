@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "mode": "dry-run",
+  "repository": "benhammoush/iris-frontend",
+  "base": "main",
+  "greenPrefix": "docs/user-guide/",
+  "maxFiles": 3,
+  "maxChangedLines": 80,
+  "workflow": ".github/workflows/ci.yml",
+  "jobs": ["test-and-build", "vertical"],
+  "reviewBot": "coderabbitai[bot]",
+  "reviewContext": "CodeRabbit"
+}
