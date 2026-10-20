@@ -24,6 +24,9 @@ export function requireProtection(protection, policy) {
       (check) => check.context === policy.reviewContext && check.app_id > 0,
     ) ||
     reviews?.dismiss_stale_reviews !== true ||
+    !Number.isSafeInteger(reviews?.required_approving_review_count) ||
+    reviews.required_approving_review_count < 1 ||
+    reviews.require_last_push_approval !== true ||
     Object.values(reviews.bypass_pull_request_allowances ?? {}).some(
       (actors) => actors.length,
     )
@@ -52,6 +55,10 @@ export async function mergeGreen({
   const report = await observePullRequest(client, number, policy, policySha);
   if (report.lane !== 'green' || !report.wouldPassProposedRules)
     return { state: 'held', report };
+  requireProtection(
+    await client.get(`${root}/branches/main/protection`),
+    policy,
+  );
   const tip = await client.get(`${root}/git/ref/heads/main`);
   if (tip.object?.sha !== policySha || report.base !== policySha)
     throw new Error('Trusted policy/base has moved; rerun from current main');

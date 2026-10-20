@@ -46,6 +46,9 @@ function snapshot() {
     finalBase: base,
     finalState: 'open',
     finalDraft: false,
+    finalBaseRef: 'main',
+    finalHeadRepository: policy.repository,
+    finalBaseRepository: policy.repository,
     native: {
       headRefOid: head,
       baseRefOid: base,
@@ -61,12 +64,13 @@ function snapshot() {
     },
     run: {
       id: 12,
+      run_attempt: 1,
       head_sha: head,
       event: 'pull_request',
       path: policy.workflow,
       status: 'completed',
       conclusion: 'success',
-      pull_requests: [{ number: 7 }],
+      pull_requests: [{ number: 7, head: { sha: head }, base: { sha: base } }],
     },
     jobs: policy.jobs.map((name) => ({
       name,
@@ -78,7 +82,7 @@ function snapshot() {
         id: 1,
         user: { login: policy.reviewBot, type: 'Bot' },
         commit_id: head,
-        state: 'COMMENTED',
+        state: 'APPROVED',
         body: reviewBody,
       },
     ],
@@ -226,6 +230,12 @@ test('CI evidence must be successful, unambiguous and from the matching PR workf
       value.run.head_sha = base;
     },
     (value) => {
+      value.run.pull_requests[0].base.sha = head;
+    },
+    (value) => {
+      value.run.run_attempt = undefined;
+    },
+    (value) => {
       value.run.event = 'push';
     },
     (value) => {
@@ -263,6 +273,9 @@ test('status alone, stale reviews and approval overrides never substitute for a 
   for (const change of [
     (value) => {
       value.reviews = [];
+    },
+    (value) => {
+      value.reviews[0].state = 'COMMENTED';
     },
     (value) => {
       value.reviews[0].commit_id = base;
@@ -306,10 +319,36 @@ test('status alone, stale reviews and approval overrides never substitute for a 
   }
 });
 
+test('a separate approving review needs a genuine completed publication on the same HEAD', () => {
+  const value = snapshot();
+  value.reviews[0].state = 'COMMENTED';
+  value.reviews.push({
+    ...value.reviews[0],
+    id: 2,
+    state: 'APPROVED',
+    body: '',
+  });
+  assert.equal(evaluateSnapshot(value, policy).wouldPassProposedRules, true);
+  value.reviews[1].commit_id = base;
+  held(value);
+  value.reviews[1].commit_id = head;
+  value.reviews[1].state = 'CHANGES_REQUESTED';
+  held(value);
+});
+
 test('HEAD/base/policy changes, drafts, forks and unknown native/conversation state hold', () => {
   for (const change of [
     (value) => {
       value.finalHead = base;
+    },
+    (value) => {
+      value.finalBaseRef = 'production';
+    },
+    (value) => {
+      value.finalHeadRepository = 'other/repo';
+    },
+    (value) => {
+      value.finalBaseRepository = 'other/repo';
     },
     (value) => {
       value.finalBase = head;
@@ -355,6 +394,7 @@ test('HEAD/base/policy changes, drafts, forks and unknown native/conversation st
 function fixtureClient(options = {}) {
   const value = snapshot();
   let reads = 0;
+  let statusReads = 0;
   return {
     threads: async () => value.native,
     get: async (path) => {
@@ -380,8 +420,20 @@ function fixtureClient(options = {}) {
           }));
         return value.reviews;
       }
-      if (path.endsWith('/status'))
-        return { sha: head, statuses: [value.reviewStatus] };
+      if (path.endsWith('/status')) {
+        statusReads++;
+        return {
+          sha: head,
+          statuses: [
+            {
+              ...value.reviewStatus,
+              ...(options.reviewRace && statusReads > 1
+                ? { state: 'pending' }
+                : {}),
+            },
+          ],
+        };
+      }
       if (path.includes('/git/commits/'))
         return {
           tree: { sha: path.endsWith(head) ? 'head-tree' : 'base-tree' },
@@ -418,7 +470,11 @@ test('collector evaluates complete evidence, paginates reviews and catches a mid
       true,
     );
   }
-  for (const options of [{ race: true }, { truncated: true }]) {
+  for (const options of [
+    { race: true },
+    { truncated: true },
+    { reviewRace: true },
+  ]) {
     assert.equal(
       (await observePullRequest(fixtureClient(options), 7, policy, base))
         .wouldPassProposedRules,

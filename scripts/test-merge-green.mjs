@@ -67,6 +67,47 @@ test('native protections cannot be bypassed or substituted by green reports', ()
   );
 });
 
+test('zero, missing or malformed approvals and disabled last-push approval always hold', () => {
+  for (const count of [0, -1, undefined, null, '1', 1.5]) {
+    assert.throws(() =>
+      requireProtection(
+        {
+          ...protection,
+          required_pull_request_reviews: {
+            ...protection.required_pull_request_reviews,
+            required_approving_review_count: count,
+          },
+        },
+        policy,
+      ),
+    );
+  }
+  for (const lastPush of [false, undefined, null, 'true']) {
+    assert.throws(() =>
+      requireProtection(
+        {
+          ...protection,
+          required_pull_request_reviews: {
+            ...protection.required_pull_request_reviews,
+            require_last_push_approval: lastPush,
+          },
+        },
+        policy,
+      ),
+    );
+  }
+  requireProtection(
+    {
+      ...protection,
+      required_pull_request_reviews: {
+        ...protection.required_pull_request_reviews,
+        required_approving_review_count: 2,
+      },
+    },
+    policy,
+  );
+});
+
 test('invalid candidates and unavailable protection never reach a writer', async () => {
   let writes = 0;
   const writer = async () => {
@@ -104,6 +145,7 @@ function greenClient(options = {}) {
     base: { sha: base, ref: 'main', repo: { full_name: rules.repository } },
   };
   let reads = 0;
+  let protectionReads = 0;
   const client = {
     threads: async () => ({
       headRefOid: head,
@@ -113,7 +155,18 @@ function greenClient(options = {}) {
       unresolvedThreads: 0,
     }),
     get: async (path) => {
-      if (path.endsWith('/protection')) return protection;
+      if (path.endsWith('/protection')) {
+        protectionReads++;
+        return options.protectionChanged && protectionReads > 1
+          ? {
+              ...protection,
+              required_pull_request_reviews: {
+                ...protection.required_pull_request_reviews,
+                require_last_push_approval: false,
+              },
+            }
+          : protection;
+      }
       if (path.endsWith('/git/ref/heads/main'))
         return { object: { sha: options.baseMoved ? head : base } };
       if (path.endsWith('/pulls/7'))
@@ -135,12 +188,15 @@ function greenClient(options = {}) {
           workflow_runs: [
             {
               id: 12,
+              run_attempt: 1,
               head_sha: head,
               event: 'pull_request',
               path: rules.workflow,
               status: 'completed',
               conclusion: 'success',
-              pull_requests: [{ number: 7 }],
+              pull_requests: [
+                { number: 7, head: { sha: head }, base: { sha: base } },
+              ],
             },
           ],
         };
@@ -158,7 +214,7 @@ function greenClient(options = {}) {
             id: 1,
             user: { login: rules.reviewBot, type: 'Bot' },
             commit_id: head,
-            state: 'COMMENTED',
+            state: 'APPROVED',
             body: '<!-- coderabbit-review-publication v1 fixture -->',
           },
         ];
@@ -242,4 +298,18 @@ test('uncertain merge is not automatically retried', async () => {
     /timeout/,
   );
   assert.equal(writes, 1);
+});
+
+test('protection relaxed during evidence collection cannot reach a merge request', async () => {
+  let writes = 0;
+  await assert.rejects(
+    mergeGreen({
+      ...greenClient({ protectionChanged: true }),
+      writer: async () => {
+        writes++;
+      },
+    }),
+    /insufficient/,
+  );
+  assert.equal(writes, 0);
 });

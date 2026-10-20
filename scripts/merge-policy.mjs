@@ -151,6 +151,9 @@ export function evaluateSnapshot(snapshot, policy) {
     snapshot.finalBase !== pr?.base?.sha ||
     snapshot.finalState !== 'open' ||
     snapshot.finalDraft !== false ||
+    snapshot.finalBaseRef !== policy.base ||
+    snapshot.finalHeadRepository !== policy.repository ||
+    snapshot.finalBaseRepository !== policy.repository ||
     snapshot.files?.length !== pr?.changed_files
   ) {
     reasons.push('Candidate changed or changed-file evidence is incomplete');
@@ -181,12 +184,19 @@ export function evaluateSnapshot(snapshot, policy) {
     const run = snapshot.run;
     if (
       !run ||
+      !Number.isSafeInteger(run.run_attempt) ||
+      run.run_attempt < 1 ||
       run.head_sha !== sha ||
       run.event !== 'pull_request' ||
       run.path !== policy.workflow ||
       run.status !== 'completed' ||
       run.conclusion !== 'success' ||
-      !run.pull_requests?.some((item) => item.number === pr.number)
+      !run.pull_requests?.some(
+        (item) =>
+          item.number === pr.number &&
+          item.head?.sha === sha &&
+          item.base?.sha === pr.base.sha,
+      )
     ) {
       reasons.push('Latest matching PR CI run has not succeeded');
     }
@@ -211,7 +221,11 @@ export function evaluateSnapshot(snapshot, policy) {
           review.commit_id === sha,
       )
       .sort((a, b) => b.id - a.id);
-    const review = botReviews[0];
+    // The completed publication and the automatic approval can be separate
+    // GitHub reviews. Neither one alone is sufficient.
+    const review = botReviews.find((item) =>
+      item.body?.includes('<!-- coderabbit-review-publication v1 '),
+    );
     // A bare approve/resolve override is not a completed published review.
     // This vendor publication marker is intentionally fail-closed if it changes.
     if (
@@ -224,6 +238,11 @@ export function evaluateSnapshot(snapshot, policy) {
         'No recognized completed CodeRabbit review of the current HEAD',
       );
     }
+    const decision = botReviews.find((item) =>
+      ['APPROVED', 'CHANGES_REQUESTED'].includes(item.state),
+    );
+    if (decision?.state !== 'APPROVED')
+      reasons.push('CodeRabbit has not approved the current HEAD');
     const status = snapshot.reviewStatus;
     if (
       snapshot.statusSha !== sha ||
