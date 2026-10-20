@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect, useRef } from 'react';
 import { Route, Routes, useLocation } from 'react-router-dom';
 import Home from './components/Home';
 import Wallet from './components/Wallet';
@@ -11,7 +11,14 @@ import { apiConfigurationError } from './api/client';
 import { ThemeProvider } from './design-system';
 const ApiDocs = lazy(() => import('./components/ApiDocs'));
 function App() {
-  const location = useLocation(); // utilisez useLocation pour obtenir l'URL actuelle
+  const location = useLocation();
+  const previousPath = useRef(location.pathname);
+  useEffect(() => {
+    if (previousPath.current === location.pathname) return;
+    previousPath.current = location.pathname;
+    // Dashboard navigation must not leave focus on a removed search control.
+    document.getElementById('iris-main')?.focus({ preventScroll: true });
+  }, [location.pathname]);
 
   if (location.pathname === '/api-docs') {
     return (

@@ -11,6 +11,7 @@ import DefiLlamaCard from './DefiLlamaCard';
 import ValueSkeleton from './ValueSkeleton';
 import { useHeliusDashboard } from '../contexts/HeliusDashboardContext';
 import { isRecord } from '../data/record';
+import ResourceFeedback from './ResourceFeedback';
 
 type Asset = ReturnType<typeof assetsFrom>[number];
 const SOL_MINT = 'So11111111111111111111111111111111111111112';
@@ -28,6 +29,8 @@ export default function Home() {
     loading: catalogLoading,
     meta: catalogMeta,
     error: catalogError,
+    refreshing: catalogRefreshing,
+    refetch: retryCatalog,
   } = useCatalog();
   const selectedResult = useWorkerResource(
     (options) => workerApi.asset(selectedMint, options),
@@ -49,7 +52,7 @@ export default function Home() {
         meta={selectedResult.meta || catalogsResult.meta || catalogMeta}
         error={selectedResult.error || catalogsResult.error || catalogError}
       />
-      <main className="iris-page">
+      <main id="iris-main" tabIndex={-1} className="iris-page">
         <section className="iris-page-heading">
           <div>
             <p className="iris-eyebrow">Market monitor</p>
@@ -60,6 +63,25 @@ export default function Home() {
             </p>
           </div>
         </section>
+        <ResourceFeedback
+          label="Market discovery"
+          error={selectedResult.error || catalogsResult.error || catalogError}
+          busy={
+            selectedResult.loading ||
+            selectedResult.refreshing ||
+            catalogsResult.loading ||
+            catalogsResult.refreshing ||
+            catalogLoading ||
+            catalogRefreshing
+          }
+          hasData={assets.length > 0 || catalogsResult.data !== null}
+          retryLabel="Retry market data"
+          onRetry={() => {
+            selectedResult.refetch();
+            catalogsResult.refetch();
+            retryCatalog?.();
+          }}
+        />
         <HeliusNetworkCard
           network={heliusDashboard.network}
           loading={heliusDashboard.loading}
@@ -67,11 +89,15 @@ export default function Home() {
           transactions={heliusDashboard.transactions}
           transactionsLoading={heliusDashboard.loading}
           transactionsError={heliusDashboard.error}
+          refreshing={heliusDashboard.refreshing}
+          onRetry={heliusDashboard.refetch}
         />
         <DefiLlamaCard
           dashboard={defillama}
           loading={defillamaDashboardResult.loading}
           error={defillamaDashboardResult.error}
+          refreshing={defillamaDashboardResult.refreshing}
+          onRetry={defillamaDashboardResult.refetch}
         />
         <section
           className="iris-section iris-jupiter-dex"
@@ -90,6 +116,7 @@ export default function Home() {
               tone="volume"
               assets={assetsFrom(catalogs.topTraded || catalogAssets)}
               loading={catalogsResult.loading || catalogLoading}
+              error={!assets.length && (catalogsResult.error || catalogError)}
               onSelect={(asset) =>
                 navigate(`/asset/${encodeURIComponent(asset.mint)}`)
               }
@@ -99,6 +126,7 @@ export default function Home() {
               tone="trending"
               assets={assetsFrom(catalogs.trending)}
               loading={catalogsResult.loading}
+              error={catalogsResult.error}
               onSelect={(asset) =>
                 navigate(`/asset/${encodeURIComponent(asset.mint)}`)
               }
@@ -108,6 +136,7 @@ export default function Home() {
               tone="pools"
               assets={assetsFrom(catalogs.recent)}
               loading={catalogsResult.loading}
+              error={catalogsResult.error}
               onSelect={(asset) =>
                 navigate(`/asset/${encodeURIComponent(asset.mint)}`)
               }
@@ -230,12 +259,14 @@ function CatalogList({
   tone,
   assets,
   loading,
+  error,
   onSelect,
 }: {
   title: string;
   tone: 'volume' | 'trending' | 'pools';
   assets: Asset[];
   loading: boolean;
+  error?: unknown;
   onSelect: (asset: Asset) => void;
 }) {
   return (
@@ -288,7 +319,11 @@ function CatalogList({
           ))}
         </div>
       ) : (
-        <p className="iris-empty">No assets are available.</p>
+        <p className="iris-empty">
+          {error
+            ? 'Asset discovery is unavailable.'
+            : 'No assets are available.'}
+        </p>
       )}
     </section>
   );

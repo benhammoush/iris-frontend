@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import ValueSkeleton from './ValueSkeleton';
 import { isRecord } from '../data/record';
+import ResourceFeedback from './ResourceFeedback';
 
 type Network = Record<string, unknown>;
 type Transaction = {
@@ -58,6 +59,8 @@ export default function HeliusNetworkCard({
   transactions,
   transactionsLoading,
   transactionsError,
+  refreshing = false,
+  onRetry,
 }: {
   network: Network | null;
   loading: boolean;
@@ -65,6 +68,8 @@ export default function HeliusNetworkCard({
   transactions: Transaction[];
   transactionsLoading: boolean;
   transactionsError: unknown;
+  refreshing?: boolean;
+  onRetry?: () => void;
 }) {
   const previousSignatures = useRef<Set<string> | null>(null);
   const signatures = useMemo(
@@ -100,6 +105,14 @@ export default function HeliusNetworkCard({
         <img className="iris-helius-logo" src="/helius-dark.svg" alt="Helius" />
         <span>Network</span>
       </div>
+      <ResourceFeedback
+        label="Network data"
+        error={error || transactionsError}
+        busy={loading || transactionsLoading || refreshing}
+        hasData={Boolean(network) || transactions.length > 0}
+        onRetry={onRetry}
+        retryLabel="Retry network data"
+      />
       <div className="iris-helius-grid">
         <section
           className="iris-helius-column"

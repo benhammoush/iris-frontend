@@ -10,6 +10,8 @@ interface HeliusDashboardState {
   loading: boolean;
   error: unknown;
   meta: Record<string, unknown> | null;
+  refreshing?: boolean;
+  refetch?: () => void;
 }
 
 const HeliusDashboardContext = createContext<HeliusDashboardState>({
@@ -32,6 +34,8 @@ export function HeliusDashboardProvider({ children }: { children: ReactNode }) {
         loading: dashboard.loading,
         error: dashboard.error,
         meta: dashboard.meta,
+        refreshing: dashboard.refreshing,
+        refetch: dashboard.refetch,
       }}
     >
       {children}

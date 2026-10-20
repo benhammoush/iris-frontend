@@ -11,6 +11,7 @@ import AssetIcon from './AssetIcon';
 import { VirtualTable, type VirtualTableColumn } from '../design-system';
 import { solanaExplorerUrl } from '../data/solana';
 import ValueSkeleton from './ValueSkeleton';
+import ResourceFeedback from './ResourceFeedback';
 
 type Holding = {
   symbol?: string | null;
@@ -309,200 +310,202 @@ export default function Wallet() {
         meta={summary.meta || firstPage.meta}
         error={summary.error || firstPage.error}
       />
-      {invalidAddress ? (
-        <Unavailable
-          address={address}
-          text="This is not a valid Solana wallet address."
+      <main id="iris-main" tabIndex={-1} className="iris-page">
+        <ResourceFeedback
+          label="Wallet data"
+          error={invalidAddress ? null : summary.error}
+          busy={summary.loading || summary.refreshing}
+          hasData={Boolean(wallet)}
+          errorMessage="Wallet data is currently unavailable from the Worker."
+          onRetry={summary.refetch}
+          retryLabel="Retry wallet"
         />
-      ) : summary.error && !wallet ? (
-        <Unavailable
-          address={address}
-          text="Wallet data is currently unavailable from the Worker."
-        />
-      ) : !summary.loading && !wallet ? (
-        <Unavailable address={address} text="No wallet data was returned." />
-      ) : (
-        <main className="iris-page">
-          <section
-            className="iris-wallet-hero"
-            aria-busy={(summary.loading && !wallet) || undefined}
-          >
-            <div className="iris-wallet-hero-heading">
-              <p className="iris-eyebrow">Public wallet</p>
-              <h1>
+        {invalidAddress ? (
+          <Unavailable
+            address={address}
+            text="This is not a valid Solana wallet address."
+          />
+        ) : summary.error && !wallet ? null : !summary.loading && !wallet ? (
+          <Unavailable address={address} text="No wallet data was returned." />
+        ) : (
+          <>
+            <section
+              className="iris-wallet-hero"
+              aria-busy={(summary.loading && !wallet) || undefined}
+            >
+              <div className="iris-wallet-hero-heading">
+                <p className="iris-eyebrow">Public wallet</p>
+                <h1>
+                  {summary.loading && !wallet ? (
+                    <ValueSkeleton width="300px" />
+                  ) : (
+                    wallet?.label || address
+                  )}
+                </h1>
                 {summary.loading && !wallet ? (
-                  <ValueSkeleton width="300px" />
+                  <p>
+                    <ValueSkeleton width="390px" />
+                  </p>
                 ) : (
-                  wallet?.label || address
+                  wallet?.description && <p>{wallet.description}</p>
                 )}
-              </h1>
-              {summary.loading && !wallet ? (
-                <p>
-                  <ValueSkeleton width="390px" />
-                </p>
-              ) : (
-                wallet?.description && <p>{wallet.description}</p>
-              )}
-              {summary.loading && !wallet ? (
-                <p className="iris-wallet-address">
-                  <ValueSkeleton width="280px" />
-                </p>
-              ) : explorerUrl ? (
-                <a
-                  className="iris-wallet-address"
-                  href={explorerUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {wallet?.address}
-                </a>
-              ) : (
-                <p className="iris-wallet-address">{address}</p>
-              )}
-            </div>
-            <div className="iris-wallet-primary-value">
-              <span>Priced subtotal</span>
-              <strong>
                 {summary.loading && !wallet ? (
-                  <ValueSkeleton width="150px" />
+                  <p className="iris-wallet-address">
+                    <ValueSkeleton width="280px" />
+                  </p>
+                ) : explorerUrl ? (
+                  <a
+                    className="iris-wallet-address"
+                    href={explorerUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {wallet?.address}
+                  </a>
                 ) : (
-                  currency(wallet?.totalValue)
+                  <p className="iris-wallet-address">{address}</p>
                 )}
-              </strong>
-              <small>
-                {summary.loading && !wallet ? (
-                  <ValueSkeleton width="180px" />
-                ) : valuation.complete ? (
-                  'All returned holdings are priced'
-                ) : (
-                  'Subtotal excludes unpriced holdings'
-                )}
-              </small>
-            </div>
-            <div className="iris-wallet-hero-metrics">
-              <div>
-                <span>Assets</span>
+              </div>
+              <div className="iris-wallet-primary-value">
+                <span>Priced subtotal</span>
                 <strong>
                   {summary.loading && !wallet ? (
-                    <ValueSkeleton width="42px" />
+                    <ValueSkeleton width="150px" />
                   ) : (
-                    assetCount?.toLocaleString() || '—'
+                    currency(wallet?.totalValue)
                   )}
                 </strong>
-                <small>Assets returned by the Worker</small>
-              </div>
-              <div>
-                <span>Transactions</span>
-                <strong>
-                  {firstPage.loading && !transactionCount ? (
-                    <ValueSkeleton width="42px" />
+                <small>
+                  {summary.loading && !wallet ? (
+                    <ValueSkeleton width="180px" />
+                  ) : valuation.complete ? (
+                    'All returned holdings are priced'
                   ) : (
-                    transactionCount.toLocaleString()
+                    'Subtotal excludes unpriced holdings'
                   )}
-                </strong>
-                <small>Transactions returned by Helius</small>
+                </small>
               </div>
-            </div>
-          </section>
-          <div className="iris-wallet-disclosures">
-            <p className="iris-disclosure">
-              Public on-chain data only. Valuations can be partial when balances
-              are not priced.
-            </p>
-            {wallet?.truncated && (
-              <p className="iris-disclosure iris-disclosure--warning">
-                The Worker truncated this wallet's returned balances; the
-                displayed holdings are incomplete.
+              <div className="iris-wallet-hero-metrics">
+                <div>
+                  <span>Assets</span>
+                  <strong>
+                    {summary.loading && !wallet ? (
+                      <ValueSkeleton width="42px" />
+                    ) : (
+                      assetCount?.toLocaleString() || '—'
+                    )}
+                  </strong>
+                  <small>Assets returned by the Worker</small>
+                </div>
+                <div>
+                  <span>Transactions</span>
+                  <strong>
+                    {firstPage.loading && !transactionCount ? (
+                      <ValueSkeleton width="42px" />
+                    ) : (
+                      transactionCount.toLocaleString()
+                    )}
+                  </strong>
+                  <small>Transactions returned by Helius</small>
+                </div>
+              </div>
+            </section>
+            <div className="iris-wallet-disclosures">
+              <p className="iris-disclosure">
+                Public on-chain data only. Valuations can be partial when
+                balances are not priced.
               </p>
-            )}
-          </div>
-          <section className="iris-section">
-            <div className="iris-panel-heading">
-              <div>
-                <p className="iris-eyebrow">Portfolio</p>
-                <h2>Holdings</h2>
-              </div>
+              {wallet?.truncated && (
+                <p className="iris-disclosure iris-disclosure--warning">
+                  The Worker truncated this wallet's returned balances; the
+                  displayed holdings are incomplete.
+                </p>
+              )}
             </div>
-            <VirtualTable
-              columns={holdingsColumns}
-              data={wallet?.assets || []}
-              loading={summary.loading && !wallet}
-              emptyLabel="No assets are available for this public wallet."
-              filterPlaceholder="Filter holdings"
-              onRowClick={(asset) =>
-                asset.mint &&
-                navigate(`/asset/${encodeURIComponent(asset.mint)}`)
-              }
-            />
-          </section>
-          <section className="iris-section iris-holder-panel iris-onchain-intelligence iris-helius-card">
-            <div className="iris-helius-topline">
-              <img
-                className="iris-helius-logo"
-                src="/helius-dark.svg"
-                alt="Helius"
+            <section className="iris-section">
+              <div className="iris-panel-heading">
+                <div>
+                  <p className="iris-eyebrow">Portfolio</p>
+                  <h2>Holdings</h2>
+                </div>
+              </div>
+              <VirtualTable
+                columns={holdingsColumns}
+                data={wallet?.assets || []}
+                loading={summary.loading && !wallet}
+                emptyLabel="No assets are available for this public wallet."
+                filterPlaceholder="Filter holdings"
+                onRowClick={(asset) =>
+                  asset.mint &&
+                  navigate(`/asset/${encodeURIComponent(asset.mint)}`)
+                }
               />
-              <span>Network</span>
-            </div>
-            <div
-              className="iris-intelligence-tabs"
-              role="tablist"
-              aria-label="On-chain intelligence"
-            >
-              <button role="tab" aria-selected="true" className="active">
-                Transactions
-              </button>
-            </div>
-            {firstPage.error && !transactions.length ? (
-              <div className="iris-wallet-error">
-                <p>Helius transaction history is unavailable.</p>
-                <button className="iris-retry" onClick={firstPage.refetch}>
-                  Retry activity
-                </button>
-              </div>
-            ) : (
-              <>
-                <VirtualTable
-                  columns={activityColumns}
-                  data={transactionRows}
-                  loading={firstPage.loading && !transactionRows.length}
-                  emptyLabel="No recent activity is available for this public wallet."
-                  filterPlaceholder="Filter wallet transfers"
+            </section>
+            <section className="iris-section iris-holder-panel iris-onchain-intelligence iris-helius-card">
+              <div className="iris-helius-topline">
+                <img
+                  className="iris-helius-logo"
+                  src="/helius-dark.svg"
+                  alt="Helius"
                 />
-                {loadMoreError && (
-                  <div className="iris-wallet-pagination-error">
-                    <span>Could not load more transactions.</span>
-                    <button className="iris-retry" onClick={loadMore}>
-                      Retry
-                    </button>
-                  </div>
-                )}
-                {nextCursor && (
-                  <div className="iris-load-more">
-                    <button
-                      className="iris-retry"
-                      onClick={loadMore}
-                      disabled={loadingMore}
-                    >
-                      {loadingMore ? 'Loading...' : 'Load more'}
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
-          </section>
-        </main>
-      )}
+                <span>Network</span>
+              </div>
+              <div className="iris-intelligence-tabs">
+                <h2 className="active">Transactions</h2>
+              </div>
+              <ResourceFeedback
+                label="Wallet activity"
+                error={firstPage.error}
+                busy={firstPage.loading || firstPage.refreshing}
+                hasData={transactions.length > 0}
+                errorMessage="Helius transaction history is unavailable."
+                onRetry={firstPage.refetch}
+                retryLabel="Retry activity"
+              />
+              {firstPage.error && !transactions.length ? null : (
+                <>
+                  <VirtualTable
+                    columns={activityColumns}
+                    data={transactionRows}
+                    loading={firstPage.loading && !transactionRows.length}
+                    emptyLabel="No recent activity is available for this public wallet."
+                    filterPlaceholder="Filter wallet transfers"
+                  />
+                  <ResourceFeedback
+                    label="More transactions"
+                    error={loadMoreError}
+                    busy={loadingMore}
+                    hasData={transactions.length > 0}
+                    errorMessage="Could not load more transactions."
+                    onRetry={() => void loadMore()}
+                  />
+                  {nextCursor && (
+                    <div className="iris-load-more">
+                      <button
+                        className="iris-retry"
+                        onClick={loadMore}
+                        disabled={loadingMore}
+                      >
+                        {loadingMore ? 'Loading...' : 'Load more'}
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+            </section>
+          </>
+        )}
+      </main>
     </div>
   );
 }
 function Unavailable({ address, text }: { address: string; text: string }) {
   return (
-    <main className="iris-loading">
+    <div className="iris-loading" role="status">
       <div>
         <p>{text}</p>
         <p className="iris-wallet-address">{address}</p>
       </div>
-    </main>
+    </div>
   );
 }

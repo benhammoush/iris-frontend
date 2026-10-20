@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 import type { ComponentProps } from 'react';
@@ -101,6 +101,7 @@ test('updates combobox state and dismisses results with Escape or outside intera
   await user.click(input);
   await user.click(screen.getByRole('button', { name: 'Outside' }));
   expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Outside' })).toHaveFocus();
 });
 
 test('keeps public-address actions available and suppresses duplicate token-mint lookups', async () => {
@@ -118,6 +119,67 @@ test('keeps public-address actions available and suppresses duplicate token-mint
   expect(
     screen.queryByRole('option', { name: /View token mint/i }),
   ).not.toBeInTheDocument();
+});
+
+test('Tab dismisses results without adding options to the tab sequence', async () => {
+  const user = userEvent.setup();
+  renderSearch();
+  const input = screen.getByRole('combobox');
+  await user.type(input, 'jup');
+  await user.keyboard('{ArrowDown}');
+  for (const option of screen.getAllByRole('option')) {
+    expect(option).toHaveAttribute('tabindex', '-1');
+  }
+
+  await user.tab();
+  expect(input).toHaveAttribute('aria-expanded', 'false');
+  expect(input).not.toHaveAttribute('aria-activedescendant');
+  expect(input).not.toHaveAttribute('aria-controls');
+  expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+});
+
+test('keeps the panel open when an internal pointer click blurs without a focus target', async () => {
+  const user = userEvent.setup();
+  const setMobileOpen = vi.fn();
+  renderSearch({ mobileOpen: true, setMobileOpen });
+  const input = screen.getByRole('combobox');
+  await user.type(input, 'sol');
+  fireEvent.blur(input, { relatedTarget: null });
+
+  expect(setMobileOpen).not.toHaveBeenCalled();
+  expect(screen.getByRole('listbox')).toBeInTheDocument();
+});
+
+test('ignores an active option removed by a catalog update', async () => {
+  const user = userEvent.setup();
+  const navigate = vi.fn();
+  const props = {
+    assets: [jupiter, jupiterPerps],
+    loading: false,
+    navigate,
+    mobileOpen: false,
+    setMobileOpen: vi.fn(),
+  };
+  const { rerender } = render(<NavbarSearch {...props} />);
+  const input = screen.getByRole('combobox');
+  await user.type(input, 'jup');
+  await user.keyboard('{End}');
+  rerender(<NavbarSearch {...props} assets={[jupiter]} />);
+
+  expect(input).not.toHaveAttribute('aria-activedescendant');
+  await user.keyboard('{Enter}');
+  expect(navigate).not.toHaveBeenCalled();
+});
+
+test('does not select a hidden option when Home or End is pressed after Escape', async () => {
+  const user = userEvent.setup();
+  const { navigate } = renderSearch();
+  const input = screen.getByRole('combobox');
+  await user.type(input, 'jup');
+  await user.keyboard('{Escape}{End}{Enter}');
+
+  expect(navigate).not.toHaveBeenCalled();
+  expect(input).not.toHaveAttribute('aria-activedescendant');
 });
 
 test('reports loading, error, and empty search states without disabled result buttons', async () => {

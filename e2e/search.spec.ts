@@ -27,6 +27,25 @@ test('selects asset results with the keyboard and closes with Escape', async ({
   await expect(search).toHaveAttribute('aria-expanded', 'false');
 });
 
+test('Tab leaves desktop search without focusing a result or leaving it expanded', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const search = page.getByRole('combobox');
+  await search.fill('SOL');
+  await expect(page.getByRole('option', { name: /SOL Solana/ })).toBeVisible();
+  await search.press('ArrowDown');
+  await search.press('Tab');
+
+  await expect(
+    page.getByRole('button', { name: 'Toggle color theme' }),
+  ).toBeFocused();
+  await expect(search).toHaveAttribute('aria-expanded', 'false');
+  await expect(search).not.toHaveAttribute('aria-activedescendant');
+  await expect(search).not.toHaveAttribute('aria-controls');
+  await expect(page.getByRole('listbox')).toHaveCount(0);
+});
+
 test('offers the explicit public-wallet action for a valid address', async ({
   page,
 }) => {

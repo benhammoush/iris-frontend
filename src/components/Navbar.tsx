@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useCatalog } from '../contexts/CatalogContext';
 import { APP_DISPLAY_VERSION } from '../appVersion';
@@ -43,6 +43,7 @@ function Navbar() {
   const { assets, loading: assetsLoading, error: assetsError } = useCatalog();
   const { network, loading: networkLoading } = useHeliusDashboard();
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const mobileSearchTrigger = useRef<HTMLButtonElement>(null);
   const navigate = useNavigate();
   const { mode, setMode } = useTheme();
   const navbarMarket =
@@ -54,6 +55,10 @@ function Navbar() {
 
   return (
     <>
+      {/* Explicit tabindex includes this link in WebKit's default Tab order. */}
+      <a className="iris-skip-link" href="#iris-main" tabIndex={0}>
+        Skip to content
+      </a>
       <header className="iris-header">
         <Link className="iris-brand" to="/">
           <span className="iris-brand-mark">
@@ -76,6 +81,7 @@ function Navbar() {
           navigate={go}
           mobileOpen={mobileSearchOpen}
           setMobileOpen={setMobileSearchOpen}
+          onDismiss={() => mobileSearchTrigger.current?.focus()}
         />
         {assetsLoading && !navbarMarket ? (
           <MarketSkeleton
@@ -129,6 +135,7 @@ function Navbar() {
         )}
         <div className="iris-header-actions">
           <button
+            ref={mobileSearchTrigger}
             className="iris-mobile-search-toggle"
             type="button"
             onClick={() => setMobileSearchOpen(true)}

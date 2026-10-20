@@ -106,13 +106,17 @@ export default function VirtualTable<T>({
           placeholder={filterPlaceholder}
           aria-label={filterPlaceholder}
         />
-        <span>
+        <span role="status">
           {filter ? `${rows.length} / ${data.length}` : data.length} rows
         </span>
       </div>
       {loading ? (
         <div
           className="iris-table-scroll"
+          role="table"
+          aria-label={filterPlaceholder.replace(/^Filter /i, '')}
+          aria-busy="true"
+          aria-colcount={columns.length}
           style={{
             height: Math.min(
               Math.max(
@@ -125,7 +129,8 @@ export default function VirtualTable<T>({
         >
           <div className="iris-table-head" role="row">
             {columns.map((column) => (
-              <button
+              <div
+                role="columnheader"
                 key={column.id}
                 style={{
                   width: column.width,
@@ -133,14 +138,19 @@ export default function VirtualTable<T>({
                     ? { flex: `${column.grow} 1 ${column.width}px` }
                     : {}),
                 }}
-                className={`iris-table-cell iris-table-cell--${column.align || 'left'}`}
-                disabled
               >
-                {column.label}
-              </button>
+                <button
+                  className={`iris-table-cell iris-table-cell--${column.align || 'left'}`}
+                  style={{ width: '100%' }}
+                  disabled
+                >
+                  {column.label}
+                </button>
+              </div>
             ))}
           </div>
           <div
+            aria-hidden="true"
             style={{
               height: placeholderRows.length * rowHeight,
               position: 'relative',
@@ -183,7 +193,7 @@ export default function VirtualTable<T>({
           </div>
         </div>
       ) : !rows.length ? (
-        <p className="iris-empty">
+        <p className="iris-empty" role="status">
           {filter ? 'No rows match this search.' : emptyLabel}
         </p>
       ) : (
@@ -191,6 +201,10 @@ export default function VirtualTable<T>({
           <div
             ref={scrollRef}
             className="iris-table-scroll"
+            role="table"
+            aria-label={filterPlaceholder.replace(/^Filter /i, '')}
+            aria-rowcount={displayedRows.length + 1}
+            aria-colcount={columns.length}
             style={{
               height: Math.min(
                 Math.max(
@@ -201,9 +215,17 @@ export default function VirtualTable<T>({
               ),
             }}
           >
-            <div className="iris-table-head" role="row">
+            <div className="iris-table-head" role="row" aria-rowindex={1}>
               {columns.map((column) => (
-                <button
+                <div
+                  role="columnheader"
+                  aria-sort={
+                    sort?.id !== column.id
+                      ? 'none'
+                      : sort.direction === 'asc'
+                        ? 'ascending'
+                        : 'descending'
+                  }
                   key={column.id}
                   style={{
                     width: column.width,
@@ -211,19 +233,25 @@ export default function VirtualTable<T>({
                       ? { flex: `${column.grow} 1 ${column.width}px` }
                       : {}),
                   }}
-                  className={`iris-table-cell iris-table-cell--${column.align || 'left'}`}
-                  onClick={() => toggleSort(column.id)}
                 >
-                  {column.label}{' '}
-                  {sort?.id === column.id
-                    ? sort.direction === 'asc'
-                      ? '▲'
-                      : '▼'
-                    : '⇅'}
-                </button>
+                  <button
+                    type="button"
+                    className={`iris-table-cell iris-table-cell--${column.align || 'left'}`}
+                    style={{ width: '100%' }}
+                    onClick={() => toggleSort(column.id)}
+                  >
+                    {column.label}{' '}
+                    {sort?.id === column.id
+                      ? sort.direction === 'asc'
+                        ? '▲'
+                        : '▼'
+                      : '⇅'}
+                  </button>
+                </div>
               ))}
             </div>
             <div
+              role="rowgroup"
               style={{
                 height: virtualizer.getTotalSize(),
                 position: 'relative',
@@ -249,20 +277,12 @@ export default function VirtualTable<T>({
                       transform: `translateY(${virtualRow.start}px)`,
                     }}
                     onClick={() => onRowClick?.(row)}
-                    onKeyDown={(event) => {
-                      if (
-                        onRowClick &&
-                        (event.key === 'Enter' || event.key === ' ')
-                      ) {
-                        event.preventDefault();
-                        onRowClick(row);
-                      }
-                    }}
-                    role={onRowClick ? 'button' : 'row'}
-                    tabIndex={onRowClick ? 0 : undefined}
+                    role="row"
+                    aria-rowindex={virtualRow.index + 2}
                   >
-                    {columns.map((column) => (
+                    {columns.map((column, columnIndex) => (
                       <div
+                        role="cell"
                         key={column.id}
                         style={{
                           width: column.width,
@@ -272,7 +292,20 @@ export default function VirtualTable<T>({
                         }}
                         className={`iris-table-cell iris-table-cell--${column.align || 'left'}`}
                       >
-                        {column.cell(row)}
+                        {onRowClick && columnIndex === 0 ? (
+                          <button
+                            type="button"
+                            className="iris-table-row-action"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              onRowClick(row);
+                            }}
+                          >
+                            {column.cell(row)}
+                          </button>
+                        ) : (
+                          column.cell(row)
+                        )}
                       </div>
                     ))}
                   </div>

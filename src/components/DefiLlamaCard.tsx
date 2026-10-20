@@ -1,5 +1,6 @@
 import AssetIcon from './AssetIcon';
 import ValueSkeleton from './ValueSkeleton';
+import ResourceFeedback from './ResourceFeedback';
 
 type Dex = {
   name: string;
@@ -79,10 +80,14 @@ export default function DefiLlamaCard({
   dashboard,
   loading,
   error,
+  refreshing = false,
+  onRetry,
 }: {
   dashboard: Dashboard | null;
   loading: boolean;
   error: unknown;
+  refreshing?: boolean;
+  onRetry?: () => void;
 }) {
   const pending = loading && !dashboard;
   return (
@@ -105,9 +110,15 @@ export default function DefiLlamaCard({
           Defi
         </a>
       </div>
-      {Boolean(error) && !dashboard && (
-        <p className="iris-defillama-state">DeFi metrics are unavailable.</p>
-      )}
+      <ResourceFeedback
+        label="DeFi metrics"
+        error={error}
+        busy={loading || refreshing}
+        hasData={Boolean(dashboard)}
+        errorMessage="DeFi metrics are unavailable."
+        onRetry={onRetry}
+        retryLabel="Retry DeFi metrics"
+      />
       {!loading && !error && !dashboard && (
         <p className="iris-defillama-state">No DeFi metrics are available.</p>
       )}
