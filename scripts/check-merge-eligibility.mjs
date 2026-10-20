@@ -102,7 +102,7 @@ async function readBlobs(client, root, sha, files) {
 
 /** Sample all mutable gates together, including the exact CI run attempt. */
 async function mutableEvidence(client, root, pr, policy) {
-  const [runs, reviews, statuses, native] = await Promise.all([
+  const [runs, reviews, statuses, native, walkthroughs] = await Promise.all([
     list(
       client,
       `${root}/actions/workflows/ci.yml/runs?event=pull_request&head_sha=${pr.head.sha}`,
@@ -111,6 +111,7 @@ async function mutableEvidence(client, root, pr, policy) {
     list(client, `${root}/pulls/${pr.number}/reviews`),
     client.get(`${root}/commits/${pr.head.sha}/status`),
     client.threads(policy.repository, pr.number),
+    list(client, `${root}/issues/${pr.number}/comments`),
   ]);
   const run = runs
     .filter(
@@ -130,6 +131,7 @@ async function mutableEvidence(client, root, pr, policy) {
     run,
     jobs,
     reviews,
+    walkthroughs,
     native,
     statusSha: statuses.sha,
     reviewStatus: statuses.statuses?.find(

@@ -218,6 +218,7 @@ function greenClient(options = {}) {
             body: '<!-- coderabbit-review-publication v1 fixture -->',
           },
         ];
+      if (path.includes('/comments?')) return [];
       if (path.endsWith('/status'))
         return {
           sha: head,
