@@ -41,6 +41,34 @@ test('workflow scopes merge credentials to an environment and stops after a conf
   assert.match(workflow, /exit "\$status"/);
 });
 
+test('merge tokens are ephemeral, repository-scoped and cannot administer or approve', () => {
+  const workflow = readFileSync(
+    new URL('../.github/workflows/merge-green.yml', import.meta.url),
+    'utf8',
+  );
+  assert.match(workflow, /actions\/create-github-app-token@[0-9a-f]{40}/);
+  assert.match(
+    workflow,
+    /client-id: \$\{\{ vars\.IRIS_MERGE_APP_CLIENT_ID \}\}/,
+  );
+  assert.match(
+    workflow,
+    /private-key: \$\{\{ secrets\.IRIS_MERGE_APP_PRIVATE_KEY \}\}/,
+  );
+  assert.match(workflow, /repositories: iris-frontend/);
+  assert.match(workflow, /permission-contents: write/);
+  assert.match(workflow, /permission-pull-requests: read/);
+  assert.match(workflow, /permission-administration: read/);
+  assert.match(
+    workflow,
+    /IRIS_MERGE_TOKEN: \$\{\{ steps\.merge-token\.outputs\.token \}\}/,
+  );
+  assert.doesNotMatch(
+    workflow,
+    /secrets\.IRIS_MERGE_TOKEN|skip-token-revoke|permission-(?:administration|pull-requests|workflows|secrets): write/,
+  );
+});
+
 test('native protections cannot be bypassed or substituted by green reports', () => {
   requireProtection(protection, policy);
   for (const key of [

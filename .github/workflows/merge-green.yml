@@ -33,12 +33,25 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
+      - name: Create repository-scoped merge token
+        id: merge-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.IRIS_MERGE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.IRIS_MERGE_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: iris-frontend
+          permission-contents: write
+          permission-pull-requests: read
+          permission-actions: read
+          permission-statuses: read
+          permission-administration: read
       # No candidate checkout, dependencies, artifacts, PR prose or shell interpolation.
       - name: Evaluate fresh evidence and request a protected merge
         env:
           GH_TOKEN: ${{ github.token }}
           IRIS_GREEN_MERGE_ENABLED: ${{ vars.IRIS_GREEN_MERGE_ENABLED }}
-          IRIS_MERGE_TOKEN: ${{ secrets.IRIS_MERGE_TOKEN }}
+          IRIS_MERGE_TOKEN: ${{ steps.merge-token.outputs.token }}
           IRIS_REQUESTED_PR: ${{ inputs.pr }}
         run: |
           if [ -n "$IRIS_REQUESTED_PR" ]; then

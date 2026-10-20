@@ -135,8 +135,15 @@ export function hasReviewedWalkthrough(
 ) {
   return (comments ?? []).some((comment) => {
     if (
-      comment.user?.login !== bot ||
-      comment.user?.type !== 'Bot' ||
+      comment.author?.login !== bot.replace(/\[bot\]$/, '') ||
+      comment.author?.__typename !== 'Bot' ||
+      !Object.hasOwn(comment, 'editor') ||
+      !Object.hasOwn(comment, 'lastEditedAt') ||
+      !(
+        (comment.editor === null && comment.lastEditedAt === null) ||
+        (comment.editor?.login === bot.replace(/\[bot\]$/, '') &&
+          comment.editor?.__typename === 'Bot')
+      ) ||
       !comment.body?.startsWith(
         '<!-- This is an auto-generated comment: summarize by coderabbit.ai -->',
       )
