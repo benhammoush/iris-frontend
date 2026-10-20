@@ -89,6 +89,7 @@ function snapshot() {
     ],
     statusSha: head,
     reviewStatus: {
+      creator: { login: policy.reviewBot, type: 'Bot' },
       context: 'CodeRabbit',
       state: 'success',
       description: 'Review completed',
@@ -223,6 +224,19 @@ test('both full document revisions must be ordinary non-executable prose', () =>
   const value = snapshot();
   delete value.blobs[filename].base;
   held(value);
+});
+
+test('matching completion text from another creator cannot substitute for CodeRabbit', () => {
+  for (const creator of [
+    undefined,
+    { login: 'maintainer', type: 'User' },
+    { login: policy.reviewBot, type: 'User' },
+    { login: 'other[bot]', type: 'Bot' },
+  ]) {
+    const value = snapshot();
+    value.reviewStatus.creator = creator;
+    held(value);
+  }
 });
 
 test('workflow path revision suffix does not replace independent identity checks', () => {
@@ -504,19 +518,16 @@ function fixtureClient(options = {}) {
         return value.reviews;
       }
       if (path.includes('/comments?')) return [];
-      if (path.endsWith('/status')) {
+      if (path.includes('/statuses?')) {
         statusReads++;
-        return {
-          sha: head,
-          statuses: [
-            {
-              ...value.reviewStatus,
-              ...(options.reviewRace && statusReads > 1
-                ? { state: 'pending' }
-                : {}),
-            },
-          ],
-        };
+        return [
+          {
+            ...value.reviewStatus,
+            ...(options.reviewRace && statusReads > 1
+              ? { state: 'pending' }
+              : {}),
+          },
+        ];
       }
       if (path.includes('/git/commits/'))
         return {

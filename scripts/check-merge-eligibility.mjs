@@ -114,7 +114,7 @@ async function mutableEvidence(client, root, pr, policy) {
       'workflow_runs',
     ),
     list(client, `${root}/pulls/${pr.number}/reviews`),
-    client.get(`${root}/commits/${pr.head.sha}/status`),
+    list(client, `${root}/commits/${pr.head.sha}/statuses`),
     client.threads(policy.repository, pr.number),
   ]);
   const run = runs
@@ -137,8 +137,8 @@ async function mutableEvidence(client, root, pr, policy) {
     reviews,
     walkthroughs: native?.walkthroughs ?? [],
     native,
-    statusSha: statuses.sha,
-    reviewStatus: statuses.statuses?.find(
+    statusSha: pr.head.sha,
+    reviewStatus: statuses.find(
       (status) => status.context === policy.reviewContext,
     ),
   };

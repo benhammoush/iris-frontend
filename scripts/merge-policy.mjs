@@ -296,6 +296,8 @@ export function evaluateSnapshot(snapshot, policy) {
     if (
       snapshot.statusSha !== sha ||
       status?.context !== policy.reviewContext ||
+      status.creator?.login !== policy.reviewBot ||
+      status.creator?.type !== 'Bot' ||
       status.state !== 'success' ||
       status.description !== 'Review completed'
     ) {
