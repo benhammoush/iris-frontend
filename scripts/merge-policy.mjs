@@ -235,7 +235,7 @@ export function evaluateSnapshot(snapshot, policy) {
       run.run_attempt < 1 ||
       run.head_sha !== sha ||
       run.event !== 'pull_request' ||
-      run.path !== policy.workflow ||
+      run.path?.split('@')[0] !== policy.workflow ||
       run.status !== 'completed' ||
       run.conclusion !== 'success' ||
       !run.pull_requests?.some(

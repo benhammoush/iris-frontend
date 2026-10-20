@@ -225,6 +225,19 @@ test('both full document revisions must be ordinary non-executable prose', () =>
   held(value);
 });
 
+test('workflow path revision suffix does not replace independent identity checks', () => {
+  const value = snapshot();
+  value.run.path += '@refs/pull/17/merge';
+  assert.equal(evaluateSnapshot(value, policy).wouldPassProposedRules, true);
+  for (const path of [undefined, '.github/workflows/spoof.yml@main']) {
+    value.run.path = path;
+    held(value);
+  }
+  value.run.path = `${policy.workflow}@main`;
+  value.run.head_sha = base;
+  held(value);
+});
+
 test('CI evidence must be successful, unambiguous and from the matching PR workflow', () => {
   for (const change of [
     (value) => {
