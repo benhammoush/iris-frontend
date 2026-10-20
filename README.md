@@ -40,6 +40,8 @@ The Birdeye chart header uses unmodified, locally served official wordmarks: [wh
 
 ## Testing
 
+`npm run verify:fast` runs lint, TypeScript checking and unit/component tests for quick local feedback. `npm run verify` adds formatting/tooling guards, dependency audits, version checks, a production build, generated-contract drift detection, three-engine browser tests and local vertical tests. Both stop at the first failure and never publish or deploy. Install the browser engines as described below and provide the intended compatible backend checkout through `IRIS_WORKER_ROOT` (or the default sibling) before the full command. A local checkout is not proof of the exact Worker revision used in CI; CI retains its explicit SHA pin and existing required checks. Neither command replaces manual localhost acceptance before publication or hosted release acceptance.
+
 All application modules and unit tests under `src/` now use TypeScript. Strict checking includes the Vite/Playwright configurations and browser tests, with `allowJs: false`. Lint rejects explicit `any`, non-null assertions and TypeScript suppression comments; the tooling guard rejects reintroduced application JavaScript. Charts use the library's chart/series API types. Existing finite timestamp conversions use the chart library's required branded time assertion, not an assertion of unvalidated API JSON.
 
 API JSON enters as `unknown`; normalizers narrow containers and consumed fields, retaining opaque atomic/balance strings and null market/metadata values. Malformed records without a mint are excluded from asset lists. Contexts carry normalized types without legacy component casts. Generated contract types supply asset field models, metadata and route parameter unions; they never assert unvalidated endpoint JSON. The resource hook preserves loader data/metadata types and unknown errors; tests cover polling, stale-request cancellation and failed-refresh retention. Solana address input remains a lexical check, not a replacement for Worker public-key validation. Wallet cursor strings retain their case and punctuation.
@@ -53,6 +55,16 @@ Use Node 24 (`.nvmrc`, package engines and CI). Run `npm run lint`, `npm run for
 `src/delivery.test.ts` runs the workflow's manual-input guard with valid and invalid public fixtures and checks the surrounding release controls structurally. It uses Bash on CI/Linux and Git Bash on Windows; set `IRIS_TEST_BASH` to the executable path for a nonstandard Windows installation. It does not contact GitHub/providers, check out candidate commits or certify native approval and dev acceptance.
 
 `npm run test:vertical` runs the built frontend against a real local Wrangler Worker and fresh local KV records. It requires the backend checkout as a sibling named `iris-backend`, or `IRIS_WORKER_ROOT` can point to another checkout. The suite disables provider access in the Worker and fails if the browser calls a provider directly. CI requires the explicit compatible backend SHA in `IRIS_WORKER_SHA`; it never guesses a matching branch.
+
+## Backlog to PR and merge eligibility
+
+Use the existing product board: an ordered Ready task must have an outcome, acceptance criteria, bounded scope and explicit authorization through the intended endpoint. Accepted direction or a Ready label alone grants no execution/publication permission. AI owns implementation, in-scope check repairs, review feedback and authorized PR/CI follow-through; you decide priorities, consequential scope changes and required acceptance. Start with one active implementation per repository. Merged, deployed and accepted remain distinct.
+
+The separate **Merge eligibility (dry run)** workflow observes PR changes and CI/CodeRabbit completion. It executes only main's pinned revision with a read-only token, never PR code, installs, artifacts or a merge command. Reports record candidate/base/policy identities and exact holds; they are snapshots, not required checks or permission to merge. Manual dispatch from main refreshes review/thread changes that emit no supported event.
+
+The proposed green lane is limited to small edits of existing ordinary prose Markdown under `docs/user-guide/`; it deliberately has no eligible application/test/dependency changes. New/removed/renamed files, code/HTML/frontmatter/symlinks and incomplete evidence hold for human review. Control/security/API paths are red; other changes are amber. Limits and CI identities live in `.github/merge-policy.json`, not AI labels or effort scores. No guide files are seeded merely to create eligibility.
+
+Green candidates additionally need current-head CI, recognized completed CodeRabbit review plus status, resolved conversations and clean native merge state. Bare approval overrides are insufficient. The observed CodeRabbit publication marker/status format is vendor-specific: changes or missing evidence hold, not pass. `npm run test:merge-policy` exercises positive and hostile fixtures without GitHub access. Current manual acceptance/merge/release rules remain unchanged; live automatic merging needs separately approved policy, protection and deployment-impact verification.
 
 ## Vercel
 

@@ -2,6 +2,7 @@ name: Iris Frontend — CI & Deploy
 
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
     inputs:
@@ -52,6 +53,7 @@ jobs:
       - run: npm run lint
       - run: npm run format:check
       - run: npm run check:tooling
+      - run: npm run test:merge-policy
       - run: npm run audit:dependencies
       - run: npm run check:versions
       - run: npm test

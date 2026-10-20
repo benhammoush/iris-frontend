@@ -1,0 +1,4 @@
+# Keep inherited review settings; the author owns the PR description.
+inheritance: true
+reviews:
+  high_level_summary: false

@@ -95,6 +95,11 @@ function validateDeploymentAttempt(
 }
 
 describe('delivery workflow', () => {
+  it('checks pull requests and main pushes without duplicate feature-push runs', () => {
+    expect(workflow).toMatch(
+      /on:\n {2}push:\n {4}branches: \[main\]\n {2}pull_request:\n {2}workflow_dispatch:/,
+    );
+  });
   it('retains failed UI diagnostics without relaxing browser checks', () => {
     const uiJob = workflow.split('\n  vertical:')[0];
     expect(uiJob).toMatch(
