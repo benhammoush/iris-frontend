@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 /** Announces resource transitions and keeps keyboard focus stable during retries. */
 export default function ResourceFeedback({
@@ -20,13 +20,21 @@ export default function ResourceFeedback({
 }) {
   const feedback = useRef<HTMLDivElement>(null);
   const [retried, setRetried] = useState(false);
-  const message = busy
-    ? `${hasData ? 'Refreshing' : 'Loading'} ${label.toLowerCase()}...`
-    : error
-      ? `${errorMessage}${hasData ? ' Previously loaded data is still shown.' : ''}`
-      : retried
-        ? `${label} loaded.`
-        : '';
+  useEffect(() => {
+    if (busy || error || !retried) return;
+    // Leave recovery in the live region long enough to be announced.
+    const timeout = setTimeout(() => setRetried(false), 3000);
+    return () => clearTimeout(timeout);
+  }, [busy, error, retried]);
+
+  const message =
+    busy && (!hasData || retried || error)
+      ? `${hasData ? 'Refreshing' : 'Loading'} ${label.toLowerCase()}...`
+      : error
+        ? `${errorMessage}${hasData ? ' Previously loaded data is still shown.' : ''}`
+        : retried
+          ? `${label} loaded.`
+          : '';
 
   return (
     <div
