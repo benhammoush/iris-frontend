@@ -30,6 +30,17 @@ test('default off means no reads, credentials or merge calls', async () => {
   assert.deepEqual(await mergeGreen({}), { state: 'disabled' });
 });
 
+test('workflow scopes merge credentials to an environment and stops after a confirmed merge', () => {
+  const workflow = readFileSync(
+    new URL('../.github/workflows/merge-green.yml', import.meta.url),
+    'utf8',
+  );
+  assert.match(workflow, /environment: iris-green-merge/);
+  assert.match(workflow, /if ! out=/);
+  assert.match(workflow, /break ;; esac/);
+  assert.match(workflow, /exit "\$status"/);
+});
+
 test('native protections cannot be bypassed or substituted by green reports', () => {
   requireProtection(protection, policy);
   for (const key of [

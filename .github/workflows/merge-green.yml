@@ -22,6 +22,7 @@ concurrency:
 jobs:
   merge:
     if: vars.IRIS_GREEN_MERGE_ENABLED == 'true' && github.ref == 'refs/heads/main'
+    environment: iris-green-merge
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -44,7 +45,14 @@ jobs:
             IRIS_PR="$IRIS_REQUESTED_PR" node scripts/merge-green.mjs
           else
             gh pr list --repo "$GITHUB_REPOSITORY" --base main --state open --limit 100 --json number --jq '.[].number' > "$RUNNER_TEMP/iris-prs"
+            status=0
             while read -r number; do
-              IRIS_PR="$number" node scripts/merge-green.mjs
+              if ! out="$(IRIS_PR="$number" node scripts/merge-green.mjs)"; then
+                status=1
+                continue
+              fi
+              printf '%s\n' "$out"
+              case "$out" in *'"state":"merged"'*) break ;; esac
             done < "$RUNNER_TEMP/iris-prs"
+            exit "$status"
           fi
