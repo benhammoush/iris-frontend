@@ -8,6 +8,8 @@ interface CatalogState {
   loading: boolean;
   meta?: Record<string, unknown> | null;
   error?: unknown;
+  refreshing?: boolean;
+  refetch?: () => void;
 }
 
 const CatalogContext = createContext<CatalogState>({
@@ -24,6 +26,8 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
         loading: assets.loading,
         meta: assets.meta,
         error: assets.error,
+        refreshing: assets.refreshing,
+        refetch: assets.refetch,
       }}
     >
       {children}

@@ -12,6 +12,10 @@ test('renders loading skeletons for the navbar market summaries', () => {
       </ThemeProvider>
     </BrowserRouter>,
   );
+  expect(screen.getByRole('link', { name: 'Skip to content' })).toHaveAttribute(
+    'tabindex',
+    '0',
+  );
 
   expect(
     screen.getByLabelText('Loading Jupiter market summary'),
@@ -45,4 +49,22 @@ test('opens and closes the mobile search control', async () => {
   ).toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: 'Close search' }));
   expect(input.closest('.iris-search')).not.toHaveAttribute('data-mobile-open');
+  expect(screen.getByRole('button', { name: 'Open search' })).toHaveFocus();
+});
+
+test('returns focus to the mobile search trigger on Escape', async () => {
+  const user = userEvent.setup();
+  render(
+    <BrowserRouter>
+      <ThemeProvider>
+        <Navbar />
+      </ThemeProvider>
+    </BrowserRouter>,
+  );
+
+  const trigger = screen.getByRole('button', { name: 'Open search' });
+  await user.click(trigger);
+  await user.keyboard('{Escape}');
+  expect(trigger).toHaveFocus();
+  expect(trigger).toHaveAttribute('aria-expanded', 'false');
 });

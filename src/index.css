@@ -987,7 +987,8 @@ input {
   padding: 0 17px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
-.iris-helius-card .iris-intelligence-tabs button {
+.iris-helius-card .iris-intelligence-tabs button,
+.iris-helius-card .iris-intelligence-tabs h2 {
   margin-bottom: -1px;
   border: 0;
   border-bottom: 2px solid transparent;
@@ -1002,7 +1003,8 @@ input {
 .iris-helius-card .iris-intelligence-tabs button:hover {
   color: #fff;
 }
-.iris-helius-card .iris-intelligence-tabs button.active {
+.iris-helius-card .iris-intelligence-tabs button.active,
+.iris-helius-card .iris-intelligence-tabs h2.active {
   border-color: #ff9a45;
   background: transparent;
   color: #fff;
@@ -2571,7 +2573,8 @@ html[data-theme='light'] .iris-helius-market i {
   gap: 8px;
   margin: 12px 0;
 }
-.iris-intelligence-tabs button {
+.iris-intelligence-tabs button,
+.iris-intelligence-tabs h2 {
   border: 1px solid var(--iris-border);
   border-radius: 999px;
   background: transparent;
@@ -2585,7 +2588,8 @@ html[data-theme='light'] .iris-helius-market i {
   padding: 7px 10px;
   text-transform: uppercase;
 }
-.iris-intelligence-tabs button.active {
+.iris-intelligence-tabs button.active,
+.iris-intelligence-tabs h2.active {
   border-color: rgba(232, 65, 37, 0.55);
   background: rgba(232, 65, 37, 0.12);
   color: var(--iris-text);
@@ -3338,6 +3342,14 @@ html[data-theme='light'] .iris-wallet-activity .iris-table-toolbar input {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html,
+  .scroll-smooth {
+    scroll-behavior: auto;
+  }
+  .iris-shell button,
+  .iris-shell a {
+    transition: none;
+  }
   .iris-catalog-list-rows button {
     transition: none;
   }
@@ -3351,4 +3363,72 @@ html[data-theme='light'] .iris-wallet-activity .iris-table-toolbar input {
   .iris-value-skeleton {
     animation: none;
   }
+}
+
+.iris-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+.iris-skip-link {
+  position: fixed;
+  top: 8px;
+  left: 12px;
+  z-index: 1000;
+  padding: 8px 12px;
+  transform: translateY(-200%);
+  background: var(--iris-secondary);
+  color: var(--iris-text);
+}
+.iris-skip-link:focus {
+  transform: translateY(0);
+  outline: 2px solid var(--iris-text);
+}
+.iris-resource-feedback {
+  margin: 10px 14px;
+  color: var(--iris-muted);
+  font-size: 12px;
+}
+.iris-resource-feedback p {
+  margin: 0 0 6px;
+}
+.iris-resource-feedback .iris-retry {
+  border: 1px solid var(--iris-border);
+  border-radius: 4px;
+  padding: 5px 10px;
+  background: var(--iris-secondary);
+  color: var(--iris-text);
+  cursor: pointer;
+}
+.iris-resource-feedback .iris-retry:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+.iris-resource-feedback:focus,
+.iris-table-toolbar input:focus-visible,
+.iris-search input:focus-visible {
+  outline: 2px solid var(--iris-muted);
+  outline-offset: 2px;
+}
+.iris-table-row-action {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  cursor: pointer;
+}
+.iris-intelligence-tabs h2 {
+  margin: 0;
+  cursor: default;
 }

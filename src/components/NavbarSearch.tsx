@@ -83,6 +83,7 @@ export default function NavbarSearch({
   navigate,
   mobileOpen,
   setMobileOpen,
+  onDismiss,
 }: {
   assets: SearchAsset[];
   loading: boolean;
@@ -90,6 +91,7 @@ export default function NavbarSearch({
   navigate: (path: string) => void;
   mobileOpen: boolean;
   setMobileOpen: (open: boolean) => void;
+  onDismiss?: () => void;
 }) {
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
@@ -136,6 +138,7 @@ export default function NavbarSearch({
       : []),
   ];
   const visible = open && Boolean(query.trim());
+  const activeAction = visible ? actions[activeIndex] : undefined;
   const status =
     loading && !assets.length
       ? 'Loading assets...'
@@ -183,6 +186,8 @@ export default function NavbarSearch({
     setMobileOpen(false);
     setOpen(false);
     setActiveIndex(-1);
+    // Only explicit dismissal restores focus; outside clicks keep their target.
+    if (mobileOpen) onDismiss?.();
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLInputElement>) {
@@ -193,20 +198,18 @@ export default function NavbarSearch({
     } else if (event.key === 'ArrowUp') {
       event.preventDefault();
       setActiveIndex((index) => Math.max(index - 1, 0));
-    } else if (event.key === 'Home' && actions.length) {
+    } else if (event.key === 'Home' && visible && actions.length) {
       event.preventDefault();
       setActiveIndex(0);
-    } else if (event.key === 'End' && actions.length) {
+    } else if (event.key === 'End' && visible && actions.length) {
       event.preventDefault();
       setActiveIndex(actions.length - 1);
-    } else if (event.key === 'Enter' && activeIndex >= 0) {
+    } else if (event.key === 'Enter' && activeAction) {
       event.preventDefault();
-      select(actions[activeIndex]);
-    } else if (event.key === 'Escape') {
-      event.preventDefault();
+      select(activeAction);
+    } else if (event.key === 'Tab') {
       setOpen(false);
       setActiveIndex(-1);
-      setMobileOpen(false);
     }
   }
 
@@ -215,6 +218,24 @@ export default function NavbarSearch({
       ref={searchRef}
       className="iris-search"
       data-mobile-open={mobileOpen || undefined}
+      onBlur={(event) => {
+        // WebKit can blur to no target when clicking Close; let that click finish.
+        // The outside-pointer listener handles clicks away from the panel.
+        if (
+          event.relatedTarget &&
+          !event.currentTarget.contains(event.relatedTarget)
+        ) {
+          setOpen(false);
+          setActiveIndex(-1);
+          setMobileOpen(false);
+        }
+      }}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          closeMobileSearch();
+        }
+      }}
     >
       <div className="iris-search-input-wrap">
         <input
@@ -231,11 +252,9 @@ export default function NavbarSearch({
           role="combobox"
           aria-autocomplete="list"
           aria-expanded={visible}
-          aria-controls={listboxId}
+          aria-controls={visible ? listboxId : undefined}
           aria-activedescendant={
-            activeIndex >= 0
-              ? `${listboxId}-${actions[activeIndex]?.id}`
-              : undefined
+            activeAction ? `${listboxId}-${activeAction.id}` : undefined
           }
         />
         <button
@@ -263,6 +282,7 @@ export default function NavbarSearch({
                 id={`${listboxId}-${action.id}`}
                 type="button"
                 role="option"
+                tabIndex={-1}
                 aria-selected={index === activeIndex}
                 className={index === activeIndex ? 'active' : ''}
                 onMouseDown={(event) => event.preventDefault()}

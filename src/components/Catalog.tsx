@@ -5,9 +5,10 @@ import Navbar from './Navbar';
 import AssetIcon from './AssetIcon';
 import { looksLikeSolanaAddress } from '../data/solana';
 import ValueSkeleton from './ValueSkeleton';
+import ResourceFeedback from './ResourceFeedback';
 
 export default function Catalog({ kind }: { kind: 'assets' | 'wallets' }) {
-  const { assets, loading, error } = useCatalog();
+  const { assets, loading, refreshing, error, refetch } = useCatalog();
   const [address, setAddress] = useState('');
   const navigate = useNavigate();
   const showingAssets = kind === 'assets';
@@ -17,7 +18,7 @@ export default function Catalog({ kind }: { kind: 'assets' | 'wallets' }) {
   return (
     <div className="iris-shell">
       <Navbar />
-      <main className="iris-page">
+      <main id="iris-main" tabIndex={-1} className="iris-page">
         <section className="iris-page-heading">
           <div>
             <p className="iris-eyebrow">Solana explorer</p>
@@ -32,6 +33,17 @@ export default function Catalog({ kind }: { kind: 'assets' | 'wallets' }) {
             <span className="iris-block">{assets.length} tracked</span>
           )}
         </section>
+        {showingAssets && (
+          <ResourceFeedback
+            label="Catalog data"
+            error={error}
+            busy={loading || refreshing}
+            hasData={assets.length > 0}
+            errorMessage="Catalog data is currently unavailable."
+            onRetry={refetch}
+            retryLabel="Retry catalog"
+          />
+        )}
         {showingAssets ? (
           loading ? (
             <section
@@ -53,8 +65,8 @@ export default function Catalog({ kind }: { kind: 'assets' | 'wallets' }) {
                 </div>
               ))}
             </section>
-          ) : error ? (
-            <p className="iris-empty">Catalog data is currently unavailable.</p>
+          ) : error && !assets.length ? null : !assets.length ? (
+            <p className="iris-empty">No assets are available.</p>
           ) : (
             <section className="iris-catalog-grid">
               {assets.map((asset) => (

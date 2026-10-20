@@ -226,6 +226,48 @@ test('advances through empty cursor pages and stops at an explicit end', async (
   expect(screen.getAllByTitle('solana-tx-1')[0]).toBeInTheDocument();
 });
 
+test('recovers an unavailable wallet summary without losing retry focus', async () => {
+  vi.mocked(workerApi.wallet).mockRejectedValueOnce(new Error('Unavailable'));
+  renderWallet();
+  await userEvent.click(
+    await screen.findByRole('button', { name: 'Retry wallet' }),
+  );
+  expect(
+    await screen.findByRole('heading', { name: 'Curated Wallet' }),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByText('Wallet data loaded.').closest('[role="status"]'),
+  ).toHaveFocus();
+});
+
+test('retries a failed cursor page while retaining the previous transactions', async () => {
+  renderWallet();
+  await screen.findAllByTitle('solana-tx-1');
+  vi.mocked(workerApi.walletTransactions).mockRejectedValueOnce(
+    new Error('Unavailable'),
+  );
+  await userEvent.click(screen.getByRole('button', { name: 'Load more' }));
+  const retry = await screen.findByRole('button', {
+    name: 'Retry',
+  });
+  vi.mocked(workerApi.walletTransactions).mockResolvedValueOnce({
+    data: { events: [], nextCursor: null },
+    meta: { requestId: 'wallet-test' },
+  });
+  await userEvent.click(retry);
+  expect(
+    await screen.findByText('More transactions loaded.'),
+  ).toBeInTheDocument();
+  expect(screen.getAllByTitle('solana-tx-1')[0]).toBeInTheDocument();
+  expect(
+    screen.getByText('More transactions loaded.').closest('[role="status"]'),
+  ).toHaveFocus();
+  expect(workerApi.walletTransactions).toHaveBeenLastCalledWith(
+    'WalletCaseSensitive123',
+    { cursor: 'next-page' },
+  );
+});
+
 test('keeps loaded activity visible when loading a later page fails', async () => {
   renderWallet();
 
@@ -249,7 +291,9 @@ test('keeps the wallet layout and table columns visible while initial data loads
   const { container } = renderWallet();
 
   expect(screen.getByRole('heading', { name: 'Holdings' })).toBeInTheDocument();
-  expect(screen.getByRole('tab', { name: 'Transactions' })).toBeInTheDocument();
+  expect(
+    screen.getByRole('heading', { name: 'Transactions' }),
+  ).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Asset' })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Time' })).toBeInTheDocument();
   expect(

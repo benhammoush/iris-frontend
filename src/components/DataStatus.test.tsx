@@ -30,3 +30,21 @@ test('shows a concise unavailable message for Worker errors', () => {
   );
   expect(screen.getByText('Data unavailable: Unavailable')).toBeInTheDocument();
 });
+
+test.each(['Provider unavailable', new Error('Provider unavailable')])(
+  'handles string and Error rejections without losing their message',
+  (error) => {
+    render(<DataStatus error={error} />);
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Data unavailable: Provider unavailable',
+    );
+  },
+);
+
+test('does not display undefined for an unknown rejection shape', () => {
+  render(<DataStatus error={{ code: 'UPSTREAM_UNAVAILABLE' }} />);
+  expect(screen.getByRole('status')).toHaveTextContent(
+    'The request failed. Please try again.',
+  );
+  expect(screen.getByRole('status')).not.toHaveTextContent('undefined');
+});
