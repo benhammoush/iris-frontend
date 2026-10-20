@@ -111,6 +111,16 @@ test('a green complete candidate passes proposed rules but can never authorize m
   assert.throws(() => validatePolicy({ ...policy, jobs: [] }));
 });
 
+test('trusted policy revision is independent of PR base metadata', () => {
+  const value = snapshot();
+  value.policySha = 'c'.repeat(40);
+  const report = evaluateSnapshot(value, policy);
+  assert.equal(report.wouldPassProposedRules, true);
+  assert.equal(report.policy, value.policySha);
+  assert.equal(report.base, base);
+  assert.equal(report.canMerge, false);
+});
+
 test('sensitive/control paths and rename sources are red; application/tests/dependencies stay manual', () => {
   for (const path of [
     '.github/workflows/ci.yml',
@@ -305,7 +315,10 @@ test('HEAD/base/policy changes, drafts, forks and unknown native/conversation st
       value.finalBase = head;
     },
     (value) => {
-      value.policySha = head;
+      value.policySha = 'invalid';
+    },
+    (value) => {
+      delete value.policySha;
     },
     (value) => {
       value.finalState = 'closed';

@@ -146,7 +146,7 @@ export function evaluateSnapshot(snapshot, policy) {
   if (
     !/^[0-9a-f]{40}$/.test(sha ?? '') ||
     !/^[0-9a-f]{40}$/.test(pr?.base?.sha ?? '') ||
-    snapshot.policySha !== pr?.base?.sha ||
+    !/^[0-9a-f]{40}$/.test(snapshot.policySha ?? '') ||
     snapshot.finalHead !== sha ||
     snapshot.finalBase !== pr?.base?.sha ||
     snapshot.finalState !== 'open' ||
