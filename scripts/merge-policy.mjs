@@ -125,6 +125,53 @@ function safeProse(blob) {
   );
 }
 
+/** Recognize CodeRabbit's clean-review coverage when approval has an empty body.
+ * Unknown formats, quoted markers, other authors and stale heads fail closed.
+ */
+export function hasReviewedWalkthrough(
+  comments,
+  head,
+  bot = 'coderabbitai[bot]',
+) {
+  return (comments ?? []).some((comment) => {
+    if (
+      comment.author?.login !== bot.replace(/\[bot\]$/, '') ||
+      comment.author?.__typename !== 'Bot' ||
+      !Object.hasOwn(comment, 'editor') ||
+      !Object.hasOwn(comment, 'lastEditedAt') ||
+      !(
+        (comment.editor === null && comment.lastEditedAt === null) ||
+        (comment.editor?.login === bot.replace(/\[bot\]$/, '') &&
+          comment.editor?.__typename === 'Bot')
+      ) ||
+      !comment.body?.startsWith(
+        '<!-- This is an auto-generated comment: summarize by coderabbit.ai -->',
+      )
+    )
+      return false;
+    const starts = comment.body.split('\n<!-- final_review_risk_start -->\n');
+    if (starts.length !== 2) return false;
+    const ends = starts[1].split('\n<!-- final_review_risk_end -->');
+    if (ends.length !== 2) return false;
+    const markers = [
+      ...ends[0].matchAll(
+        /^<!-- final_review_risk_coverage:(\{[^\r\n]+\}) -->$/gm,
+      ),
+    ];
+    if (markers.length !== 1) return false;
+    try {
+      const coverage = JSON.parse(markers[0][1]);
+      return (
+        coverage.sourceCommitId === head &&
+        coverage.coveredCommitId === head &&
+        coverage.kind === 'reviewed'
+      );
+    } catch {
+      return false;
+    }
+  });
+}
+
 /** Evaluate one immutable snapshot. Positive output is never merge authorization. */
 export function evaluateSnapshot(snapshot, policy) {
   const classification = classifyFiles(snapshot.files, policy);
@@ -151,6 +198,9 @@ export function evaluateSnapshot(snapshot, policy) {
     snapshot.finalBase !== pr?.base?.sha ||
     snapshot.finalState !== 'open' ||
     snapshot.finalDraft !== false ||
+    snapshot.finalBaseRef !== policy.base ||
+    snapshot.finalHeadRepository !== policy.repository ||
+    snapshot.finalBaseRepository !== policy.repository ||
     snapshot.files?.length !== pr?.changed_files
   ) {
     reasons.push('Candidate changed or changed-file evidence is incomplete');
@@ -181,12 +231,19 @@ export function evaluateSnapshot(snapshot, policy) {
     const run = snapshot.run;
     if (
       !run ||
+      !Number.isSafeInteger(run.run_attempt) ||
+      run.run_attempt < 1 ||
       run.head_sha !== sha ||
       run.event !== 'pull_request' ||
-      run.path !== policy.workflow ||
+      run.path?.split('@')[0] !== policy.workflow ||
       run.status !== 'completed' ||
       run.conclusion !== 'success' ||
-      !run.pull_requests?.some((item) => item.number === pr.number)
+      !run.pull_requests?.some(
+        (item) =>
+          item.number === pr.number &&
+          item.head?.sha === sha &&
+          item.base?.sha === pr.base.sha,
+      )
     ) {
       reasons.push('Latest matching PR CI run has not succeeded');
     }
@@ -211,23 +268,36 @@ export function evaluateSnapshot(snapshot, policy) {
           review.commit_id === sha,
       )
       .sort((a, b) => b.id - a.id);
-    const review = botReviews[0];
+    // The completed publication and the automatic approval can be separate
+    // GitHub reviews. Neither one alone is sufficient.
+    const review = botReviews.find((item) =>
+      item.body?.includes('<!-- coderabbit-review-publication v1 '),
+    );
     // A bare approve/resolve override is not a completed published review.
     // This vendor publication marker is intentionally fail-closed if it changes.
+    const published =
+      review &&
+      ['COMMENTED', 'APPROVED'].includes(review.state) &&
+      !/review skipped|rate.limit|review failed/i.test(review.body);
     if (
-      !review ||
-      !['COMMENTED', 'APPROVED'].includes(review.state) ||
-      !review.body?.includes('<!-- coderabbit-review-publication v1 ') ||
-      /review skipped|rate.limit|review failed/i.test(review.body)
+      !published &&
+      !hasReviewedWalkthrough(snapshot.walkthroughs, sha, policy.reviewBot)
     ) {
       reasons.push(
         'No recognized completed CodeRabbit review of the current HEAD',
       );
     }
+    const decision = botReviews.find((item) =>
+      ['APPROVED', 'CHANGES_REQUESTED', 'DISMISSED'].includes(item.state),
+    );
+    if (decision?.state !== 'APPROVED')
+      reasons.push('CodeRabbit has not approved the current HEAD');
     const status = snapshot.reviewStatus;
     if (
       snapshot.statusSha !== sha ||
       status?.context !== policy.reviewContext ||
+      status.creator?.login !== policy.reviewBot ||
+      status.creator?.type !== 'Bot' ||
       status.state !== 'success' ||
       status.description !== 'Review completed'
     ) {

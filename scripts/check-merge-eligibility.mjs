@@ -39,6 +39,7 @@ export function githubReader(token, fetcher = fetch) {
       const value = await request('/graphql', {
         query: `query($owner:String!,$name:String!,$number:Int!){repository(owner:$owner,name:$name){
           pullRequest(number:$number){headRefOid baseRefOid mergeStateStatus
+            comments(first:100){nodes{body author{login __typename} editor{login __typename} lastEditedAt} pageInfo{hasNextPage}}
             reviewThreads(first:100){nodes{isResolved} pageInfo{hasNextPage}}}}}`,
         variables: { owner, name, number },
       });
@@ -51,6 +52,10 @@ export function githubReader(token, fetcher = fetch) {
         unresolvedThreads: pr?.reviewThreads?.nodes?.filter(
           (thread) => !thread.isResolved,
         ).length,
+        walkthroughs:
+          pr?.comments?.pageInfo?.hasNextPage === false
+            ? pr.comments.nodes
+            : [],
       };
     },
   };
@@ -100,7 +105,46 @@ async function readBlobs(client, root, sha, files) {
   return result;
 }
 
-/** Collect only evidence relevant to the lane; re-read candidate identities at the end. */
+/** Sample all mutable gates together, including the exact CI run attempt. */
+async function mutableEvidence(client, root, pr, policy) {
+  const [runs, reviews, statuses, native] = await Promise.all([
+    list(
+      client,
+      `${root}/actions/workflows/ci.yml/runs?event=pull_request&head_sha=${pr.head.sha}`,
+      'workflow_runs',
+    ),
+    list(client, `${root}/pulls/${pr.number}/reviews`),
+    list(client, `${root}/commits/${pr.head.sha}/statuses`),
+    client.threads(policy.repository, pr.number),
+  ]);
+  const run = runs
+    .filter(
+      (run) =>
+        run.head_sha === pr.head.sha &&
+        run.pull_requests?.some((item) => item.number === pr.number),
+    )
+    .sort((a, b) => b.id - a.id)[0];
+  const jobs = run
+    ? await list(
+        client,
+        `${root}/actions/runs/${run.id}/jobs?filter=latest`,
+        'jobs',
+      )
+    : [];
+  return {
+    run,
+    jobs,
+    reviews,
+    walkthroughs: native?.walkthroughs ?? [],
+    native,
+    statusSha: pr.head.sha,
+    reviewStatus: statuses.find(
+      (status) => status.context === policy.reviewContext,
+    ),
+  };
+}
+
+/** Collect relevant immutable blobs; require stable mutable evidence and candidate identities. */
 export async function observePullRequest(client, number, policy, policySha) {
   validatePolicy(policy);
   if (!Number.isSafeInteger(number) || number < 1)
@@ -111,39 +155,15 @@ export async function observePullRequest(client, number, policy, policySha) {
   const snapshot = { pr, files, policySha, errors: [] };
   if (classifyFiles(files, policy).lane === 'green') {
     try {
-      const [runs, reviews, statuses, native, baseBlobs, headBlobs] =
-        await Promise.all([
-          list(
-            client,
-            `${root}/actions/workflows/ci.yml/runs?event=pull_request&head_sha=${pr.head.sha}`,
-            'workflow_runs',
-          ),
-          list(client, `${root}/pulls/${number}/reviews`),
-          client.get(`${root}/commits/${pr.head.sha}/status`),
-          client.threads(policy.repository, number),
-          readBlobs(client, root, pr.base.sha, files),
-          readBlobs(client, root, pr.head.sha, files),
-        ]);
-      snapshot.run = runs
-        .filter(
-          (run) =>
-            run.head_sha === pr.head.sha &&
-            run.pull_requests?.some((item) => item.number === number),
-        )
-        .sort((a, b) => b.id - a.id)[0];
-      snapshot.jobs = snapshot.run
-        ? await list(
-            client,
-            `${root}/actions/runs/${snapshot.run.id}/jobs?filter=latest`,
-            'jobs',
-          )
-        : [];
-      snapshot.reviews = reviews;
-      snapshot.native = native;
-      snapshot.statusSha = statuses.sha;
-      snapshot.reviewStatus = statuses.statuses?.find(
-        (status) => status.context === policy.reviewContext,
-      );
+      const [first, baseBlobs, headBlobs] = await Promise.all([
+        mutableEvidence(client, root, pr, policy),
+        readBlobs(client, root, pr.base.sha, files),
+        readBlobs(client, root, pr.head.sha, files),
+      ]);
+      const second = await mutableEvidence(client, root, pr, policy);
+      Object.assign(snapshot, second);
+      if (JSON.stringify(first) !== JSON.stringify(second))
+        snapshot.errors.push('CI or review evidence changed during collection');
       snapshot.blobs = Object.fromEntries(
         files.map((file) => [
           file.filename,
@@ -162,6 +182,9 @@ export async function observePullRequest(client, number, policy, policySha) {
   snapshot.finalBase = current.base?.sha;
   snapshot.finalState = current.state;
   snapshot.finalDraft = current.draft;
+  snapshot.finalBaseRef = current.base?.ref;
+  snapshot.finalHeadRepository = current.head?.repo?.full_name;
+  snapshot.finalBaseRepository = current.base?.repo?.full_name;
   return evaluateSnapshot(snapshot, policy);
 }
 

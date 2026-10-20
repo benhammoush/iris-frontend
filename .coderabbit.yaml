@@ -2,3 +2,5 @@
 inheritance: true
 reviews:
   high_level_summary: false
+  request_changes_workflow: true
+  allow_author_approval: false

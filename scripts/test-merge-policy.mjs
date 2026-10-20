@@ -5,6 +5,7 @@ import {
   classifyFiles,
   evaluateSnapshot,
   validatePolicy,
+  hasReviewedWalkthrough,
 } from './merge-policy.mjs';
 import {
   eventNumbers,
@@ -46,6 +47,9 @@ function snapshot() {
     finalBase: base,
     finalState: 'open',
     finalDraft: false,
+    finalBaseRef: 'main',
+    finalHeadRepository: policy.repository,
+    finalBaseRepository: policy.repository,
     native: {
       headRefOid: head,
       baseRefOid: base,
@@ -61,12 +65,13 @@ function snapshot() {
     },
     run: {
       id: 12,
+      run_attempt: 1,
       head_sha: head,
       event: 'pull_request',
       path: policy.workflow,
       status: 'completed',
       conclusion: 'success',
-      pull_requests: [{ number: 7 }],
+      pull_requests: [{ number: 7, head: { sha: head }, base: { sha: base } }],
     },
     jobs: policy.jobs.map((name) => ({
       name,
@@ -78,12 +83,13 @@ function snapshot() {
         id: 1,
         user: { login: policy.reviewBot, type: 'Bot' },
         commit_id: head,
-        state: 'COMMENTED',
+        state: 'APPROVED',
         body: reviewBody,
       },
     ],
     statusSha: head,
     reviewStatus: {
+      creator: { login: policy.reviewBot, type: 'Bot' },
       context: 'CodeRabbit',
       state: 'success',
       description: 'Review completed',
@@ -220,10 +226,50 @@ test('both full document revisions must be ordinary non-executable prose', () =>
   held(value);
 });
 
+test('matching completion text from another creator cannot substitute for CodeRabbit', () => {
+  for (const creator of [
+    undefined,
+    { login: 'maintainer', type: 'User' },
+    { login: policy.reviewBot, type: 'User' },
+    { login: 'other[bot]', type: 'Bot' },
+  ]) {
+    const value = snapshot();
+    value.reviewStatus.creator = creator;
+    held(value);
+  }
+});
+
+test('a later dismissed bot review holds until a new current-head approval', () => {
+  const value = snapshot();
+  value.reviews.push({ ...value.reviews[0], id: 2, state: 'DISMISSED' });
+  held(value);
+  value.reviews.push({ ...value.reviews[0], id: 3 });
+  assert.equal(evaluateSnapshot(value, policy).wouldPassProposedRules, true);
+});
+
+test('workflow path revision suffix does not replace independent identity checks', () => {
+  const value = snapshot();
+  value.run.path += '@refs/pull/17/merge';
+  assert.equal(evaluateSnapshot(value, policy).wouldPassProposedRules, true);
+  for (const path of [undefined, '.github/workflows/spoof.yml@main']) {
+    value.run.path = path;
+    held(value);
+  }
+  value.run.path = `${policy.workflow}@main`;
+  value.run.head_sha = base;
+  held(value);
+});
+
 test('CI evidence must be successful, unambiguous and from the matching PR workflow', () => {
   for (const change of [
     (value) => {
       value.run.head_sha = base;
+    },
+    (value) => {
+      value.run.pull_requests[0].base.sha = head;
+    },
+    (value) => {
+      value.run.run_attempt = undefined;
     },
     (value) => {
       value.run.event = 'push';
@@ -263,6 +309,9 @@ test('status alone, stale reviews and approval overrides never substitute for a 
   for (const change of [
     (value) => {
       value.reviews = [];
+    },
+    (value) => {
+      value.reviews[0].state = 'COMMENTED';
     },
     (value) => {
       value.reviews[0].commit_id = base;
@@ -306,10 +355,105 @@ test('status alone, stale reviews and approval overrides never substitute for a 
   }
 });
 
+test('a separate approving review needs a genuine completed publication on the same HEAD', () => {
+  const value = snapshot();
+  value.reviews[0].state = 'COMMENTED';
+  value.reviews.push({
+    ...value.reviews[0],
+    id: 2,
+    state: 'APPROVED',
+    body: '',
+  });
+  assert.equal(evaluateSnapshot(value, policy).wouldPassProposedRules, true);
+  value.reviews[1].commit_id = base;
+  held(value);
+  value.reviews[1].commit_id = head;
+  value.reviews[1].state = 'CHANGES_REQUESTED';
+  held(value);
+});
+
+test('clean automatic approvals require trusted current-head walkthrough coverage, not approval alone', () => {
+  const comment = {
+    author: { login: 'coderabbitai', __typename: 'Bot' },
+    editor: null,
+    lastEditedAt: null,
+    body:
+      '<!-- This is an auto-generated comment: summarize by coderabbit.ai -->\n' +
+      '<!-- final_review_risk_start -->\n' +
+      `<!-- final_review_risk_coverage:${JSON.stringify({ sourceCommitId: head, coveredCommitId: head, kind: 'reviewed' })} -->\n` +
+      '<!-- final_review_risk_end -->',
+  };
+  assert.equal(hasReviewedWalkthrough([comment], head), true);
+  assert.equal(
+    hasReviewedWalkthrough(
+      [
+        {
+          ...comment,
+          editor: { login: 'coderabbitai', __typename: 'Bot' },
+          lastEditedAt: '2026-10-20T00:00:00Z',
+        },
+      ],
+      head,
+    ),
+    true,
+  );
+  for (const altered of [
+    { ...comment, author: { ...comment.author, __typename: 'User' } },
+    { ...comment, author: { login: 'another-bot', __typename: 'Bot' } },
+    {
+      ...comment,
+      editor: { login: 'maintainer', __typename: 'User' },
+      lastEditedAt: '2026-10-20T00:00:00Z',
+    },
+    { ...comment, editor: undefined },
+    { ...comment, editor: null, lastEditedAt: '2026-10-20T00:00:00Z' },
+    { ...comment, body: comment.body.replaceAll(head, base) },
+    {
+      ...comment,
+      body: comment.body.replace(
+        '"kind":"reviewed"',
+        '"kind":"carried-forward"',
+      ),
+    },
+    {
+      ...comment,
+      body: comment.body.replace(
+        '<!-- final_review_risk_coverage:',
+        '> <!-- final_review_risk_coverage:',
+      ),
+    },
+    {
+      ...comment,
+      body: comment.body.replace('"sourceCommitId"', 'invalid-json'),
+    },
+    { ...comment, body: comment.body + '\n<!-- final_review_risk_start -->\n' },
+  ])
+    assert.equal(hasReviewedWalkthrough([altered], head), false);
+  const value = snapshot();
+  value.reviews[0].body = '';
+  held(value);
+  value.walkthroughs = [comment];
+  assert.equal(evaluateSnapshot(value, policy).wouldPassProposedRules, true);
+  value.reviews[0].state = 'COMMENTED';
+  held(value);
+  value.reviews[0].state = 'APPROVED';
+  value.reviewStatus.state = 'pending';
+  held(value);
+});
+
 test('HEAD/base/policy changes, drafts, forks and unknown native/conversation state hold', () => {
   for (const change of [
     (value) => {
       value.finalHead = base;
+    },
+    (value) => {
+      value.finalBaseRef = 'production';
+    },
+    (value) => {
+      value.finalHeadRepository = 'other/repo';
+    },
+    (value) => {
+      value.finalBaseRepository = 'other/repo';
     },
     (value) => {
       value.finalBase = head;
@@ -355,6 +499,7 @@ test('HEAD/base/policy changes, drafts, forks and unknown native/conversation st
 function fixtureClient(options = {}) {
   const value = snapshot();
   let reads = 0;
+  let statusReads = 0;
   return {
     threads: async () => value.native,
     get: async (path) => {
@@ -380,8 +525,18 @@ function fixtureClient(options = {}) {
           }));
         return value.reviews;
       }
-      if (path.endsWith('/status'))
-        return { sha: head, statuses: [value.reviewStatus] };
+      if (path.includes('/comments?')) return [];
+      if (path.includes('/statuses?')) {
+        statusReads++;
+        return [
+          {
+            ...value.reviewStatus,
+            ...(options.reviewRace && statusReads > 1
+              ? { state: 'pending' }
+              : {}),
+          },
+        ];
+      }
       if (path.includes('/git/commits/'))
         return {
           tree: { sha: path.endsWith(head) ? 'head-tree' : 'base-tree' },
@@ -418,7 +573,11 @@ test('collector evaluates complete evidence, paginates reviews and catches a mid
       true,
     );
   }
-  for (const options of [{ race: true }, { truncated: true }]) {
+  for (const options of [
+    { race: true },
+    { truncated: true },
+    { reviewRace: true },
+  ]) {
     assert.equal(
       (await observePullRequest(fixtureClient(options), 7, policy, base))
         .wouldPassProposedRules,
@@ -491,6 +650,34 @@ test('event selection ignores PR prose and validates dispatch numbers', async ()
   await assert.rejects(
     eventNumbers({ inputs: { pr: '7; command' } }, client, policy),
   );
+});
+
+test('GraphQL walkthrough collection preserves editor provenance and rejects truncated evidence', async () => {
+  const comment = {
+    body: 'fixture',
+    author: { login: 'coderabbitai', __typename: 'Bot' },
+    editor: { login: 'maintainer', __typename: 'User' },
+    lastEditedAt: '2026-10-20T00:00:00Z',
+  };
+  for (const truncated of [false, true]) {
+    const client = githubReader('fixture', async () => ({
+      ok: true,
+      json: async () => ({
+        data: {
+          repository: {
+            pullRequest: {
+              comments: {
+                nodes: [comment],
+                pageInfo: { hasNextPage: truncated },
+              },
+            },
+          },
+        },
+      }),
+    }));
+    const native = await client.threads(policy.repository, 7);
+    assert.deepEqual(native.walkthroughs, truncated ? [] : [comment]);
+  }
 });
 
 test('workflow uses trusted main code and read-only permissions without installs, secrets or merge actions', () => {
