@@ -288,7 +288,7 @@ export function evaluateSnapshot(snapshot, policy) {
       );
     }
     const decision = botReviews.find((item) =>
-      ['APPROVED', 'CHANGES_REQUESTED'].includes(item.state),
+      ['APPROVED', 'CHANGES_REQUESTED', 'DISMISSED'].includes(item.state),
     );
     if (decision?.state !== 'APPROVED')
       reasons.push('CodeRabbit has not approved the current HEAD');
