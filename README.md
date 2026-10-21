@@ -22,3 +22,16 @@ A shared API client handles request timeouts and errors. The interface retains
 previous results while refreshing and displays unavailable values.
 The `/api-docs` route loads the interactive API reference separately from
 the dashboard.
+
+For local setup and release policy, see [ENVIRONMENTS.md](./ENVIRONMENTS.md).
+
+Run `npm run verify` for the frontend verification suite, including lint,
+formatting, type and contract checks, unit and browser tests, and the isolated
+vertical test.
+
+## API and release references
+
+- [Worker API contract](https://github.com/benhammoush/iris-backend/blob/main/openapi.yaml)
+- [Worker architecture](https://github.com/benhammoush/iris-backend/blob/main/ARCHITECTURE.md)
+- [Release evidence](./RELEASE-NOTES.md)
+- [Environment and recovery runbook](./ENVIRONMENTS.md)
