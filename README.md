@@ -27,8 +27,7 @@ For local setup and release policy, see [ENVIRONMENTS.md](./ENVIRONMENTS.md).
 
 Run `npm run verify` for the frontend verification suite, including lint,
 formatting, type and contract checks, unit and browser tests, and the isolated
-vertical test. For loading measurements and their limits, see
-[PERFORMANCE.md](./PERFORMANCE.md).
+vertical test.
 
 ## API and release references
 
