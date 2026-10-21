@@ -19,6 +19,6 @@ chain or pricing providers. Provider credentials remain in the Worker, which
 manages upstream requests, caching and snapshots.
 
 A shared API client handles request timeouts and errors. The interface retains
-previous results while refreshing and displays data freshness and unavailable
-values. The `/api-docs` route loads the interactive API reference separately from
+previous results while refreshing and displays unavailable values.
+The `/api-docs` route loads the interactive API reference separately from
 the dashboard.
