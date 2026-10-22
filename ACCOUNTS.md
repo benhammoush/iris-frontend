@@ -1,9 +1,9 @@
 # Iris accounts — WL-2
 
-Frontend 1.24.0 implements the account page at `/account` and an authenticated
+Frontend 1.24.0 introduced the account page at `/account` and an authenticated
 Worker transport. Accounts are **disabled by default**. Public browsing does not
-require sign-in. This is not watchlist-page, save-control, account-deletion or
-hosted-auth acceptance; those remain WL-3–5/WL-O1 work.
+require sign-in. Frontend 1.25.0 adds the [private watchlist UI](./WATCHLISTS.md).
+Account deletion and hosted-auth acceptance remain WL-4–5/WL-O1 work.
 
 The accepted requirements and private API belong to the
 [backend watchlist specification](https://github.com/benhammoush/iris-backend/blob/33148b9d25a31393b5e780b42950e8cfbf449a09/WATCHLISTS.md).
@@ -30,16 +30,17 @@ generated types and the remote vertical-CI Worker pin are unchanged by WL-2.
   across page navigation. Sign-out clears the private view immediately but waits
   for pending authentication before clearing SDK persistence. Finish or close any
   outstanding sign-in popup and let sign-out complete before leaving a shared device.
-- No login/linking/verification operation saves a reference or fetches watchlist
-  data. `authenticatedRequest` is ready for WL-3: it obtains a Firebase ID token
+- No login/linking/verification operation saves a reference. Private list reads
+  occur only while an eligible watchlist page/control is active.
+  `authenticatedRequest` obtains a Firebase ID token
   per call, restricts destinations to this environment's Worker watchlist routes,
   omits cookies, disallows redirects and caching, bounds the token/network wait,
   and discards results from an obsolete identity. It never retries mutations.
   Revoked credentials and Worker 401 responses clear the private session.
 - Private requests use HTTPS; only localhost/loopback HTTP is allowed by a dev
   build. Public requests remain on the existing anonymous transport. Endpoint
-  payloads remain unknown until WL-3 normalizers validate them; generated types
-  do not replace runtime validation.
+  payloads are validated by watchlist normalizers; generated types do not replace
+  runtime validation.
 
 ## Environment setup is separate
 

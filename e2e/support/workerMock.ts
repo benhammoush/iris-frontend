@@ -14,7 +14,12 @@ export const sol = {
 export const walletAddress = '7Yk4L5M6N7P8Q9R2tB6dF8gH1jK4L5M6N7P8Q9R2tB6d';
 
 type WorkerError = { code: string; message: string };
-type MockResponse = { data?: unknown; error?: WorkerError; status?: number };
+type MockResponse = {
+  data?: unknown;
+  error?: WorkerError;
+  status?: number;
+  meta?: Record<string, unknown>;
+};
 type Handler = (url: URL) => MockResponse | undefined;
 
 export type WorkerMock = {
@@ -27,7 +32,13 @@ const wallet = {
   address: walletAddress,
   label: 'Treasury Wallet',
   description: 'Public portfolio',
-  valuation: { pricedSubtotalUsd: 1234.56, complete: false },
+  valuation: {
+    pricedSubtotalUsd: 1234.56,
+    complete: false,
+    holdingCount: 2,
+    pricedHoldingCount: 1,
+    unpricedHoldingCount: 1,
+  },
   holdingsTruncated: true,
   balances: [
     {
@@ -113,7 +124,17 @@ function defaultResponse(url: URL): MockResponse | undefined {
         ],
       },
     };
-  if (pathname === `/v3/wallets/${walletAddress}`) return { data: { wallet } };
+  if (pathname === `/v3/wallets/${walletAddress}`)
+    return {
+      data: wallet,
+      meta: {
+        wallet: {
+          source: 'helius-das',
+          asOf: '2026-10-22T08:00:00.000Z',
+          cacheState: 'fresh',
+        },
+      },
+    };
   if (pathname === `/v3/wallets/${walletAddress}/transactions`) {
     return url.searchParams.has('cursor')
       ? {
@@ -178,7 +199,11 @@ export async function installWorkerMock(page: Page): Promise<WorkerMock> {
           ? { error: response.error }
           : {
               data: response.data,
-              meta: { source: 'test', requestId: 'e2e-request' },
+              meta: {
+                source: 'test',
+                requestId: 'e2e-request',
+                ...response.meta,
+              },
             },
       ),
     });

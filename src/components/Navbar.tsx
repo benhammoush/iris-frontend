@@ -75,6 +75,7 @@ function Navbar() {
           </NavLink>
           <NavLink to="/api-docs">API Docs</NavLink>
           {accountsEnabled && <NavLink to="/account">Account</NavLink>}
+          {accountsEnabled && <NavLink to="/watchlist">Watchlist</NavLink>}
         </nav>
         <NavbarSearch
           assets={assets}
@@ -161,6 +162,7 @@ function Navbar() {
         </NavLink>
         <NavLink to="/api-docs">API Docs</NavLink>
         {accountsEnabled && <NavLink to="/account">Account</NavLink>}
+        {accountsEnabled && <NavLink to="/watchlist">Watchlist</NavLink>}
       </nav>
     </>
   );

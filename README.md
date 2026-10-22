@@ -27,6 +27,7 @@ For local setup and release policy, see [ENVIRONMENTS.md](./ENVIRONMENTS.md).
 
 The optional [account page](./ACCOUNTS.md) is disabled until its isolated setup
 and lifecycle acceptance are complete; public browsing stays anonymous.
+The [private watchlist UI](./WATCHLISTS.md) shares that activation gate.
 
 Run `npm run verify` for the frontend verification suite, including lint,
 formatting, type and contract checks, unit and browser tests, and the isolated
