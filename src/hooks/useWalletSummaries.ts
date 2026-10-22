@@ -26,8 +26,20 @@ export function useWalletSummaries(addresses: string[]) {
         ? request.address
         : undefined;
     const targets = retry ? [retry] : all;
+    const uid = session.snapshot().user?.uid;
     const unsubscribe = session.subscribe(() => {
       controller.abort();
+      const state = session.snapshot();
+      if (
+        uid &&
+        state.user?.uid === uid &&
+        state.user.verified &&
+        state.status === 'ready' &&
+        !state.signOutFailed
+      ) {
+        setRequest((previous) => ({ key, revision: previous.revision + 1 }));
+        return;
+      }
       setResults({});
       busy.current = false;
       setLoading(false);

@@ -127,3 +127,27 @@ test('removed references are discarded, even when other wallet summaries remain 
   expect(result.current.results[address]).toBeUndefined();
   expect(result.current.results[other].data).toBeDefined();
 });
+
+test('same verified identity events restart an aborted batch without clearing retained summaries', async () => {
+  const { emit, data } = setup();
+  const { result } = renderHook(() => useWalletSummaries([address]));
+  await waitFor(() => expect(result.current.loading).toBe(false));
+  let finish: () => void = () => {};
+  vi.mocked(loadWalletSummaries).mockImplementationOnce(
+    async (_session, _addresses, signal, publish) => {
+      await new Promise<void>((resolve) => {
+        finish = resolve;
+      });
+      expect(signal.aborted).toBe(true);
+      publish(address, { error: 'Late old-token result' });
+    },
+  );
+  act(() => result.current.refresh());
+  act(() => emit({ ...alice }));
+  expect(result.current.results[address].data).toEqual(data);
+  await waitFor(() => expect(loadWalletSummaries).toHaveBeenCalledTimes(3));
+  await waitFor(() => expect(result.current.loading).toBe(false));
+  expect(result.current.results[address]).toEqual({ data });
+  await act(async () => finish());
+  expect(result.current.results[address]).toEqual({ data });
+});
