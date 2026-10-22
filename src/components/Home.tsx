@@ -4,7 +4,8 @@ import { assetsFrom, defillamaFrom } from '../data/normalizers';
 import { useWorkerResource } from '../hooks/useWorkerResource';
 import { useCatalog } from '../contexts/CatalogContext';
 import DataStatus from './DataStatus';
-import AssetIcon from './AssetIcon';
+import CatalogAssetContent from './CatalogAssetContent';
+import CatalogPanel from './CatalogPanel';
 import Navbar from './Navbar';
 import HeliusNetworkCard from './HeliusNetworkCard';
 import DefiLlamaCard from './DefiLlamaCard';
@@ -15,10 +16,6 @@ import ResourceFeedback from './ResourceFeedback';
 
 type Asset = ReturnType<typeof assetsFrom>[number];
 const SOL_MINT = 'So11111111111111111111111111111111111111112';
-const currency = (value: number | null | undefined, digits = 2) =>
-  value === null || value === undefined || !Number.isFinite(Number(value))
-    ? '—'
-    : `$${Number(value).toLocaleString('en-US', { maximumFractionDigits: digits })}`;
 
 export default function Home() {
   const [searchParams] = useSearchParams();
@@ -148,18 +145,6 @@ export default function Home() {
   );
 }
 
-function Change({ value }: { value?: number | null }) {
-  if (value === null || value === undefined || !Number.isFinite(Number(value)))
-    return <span className="iris-muted">—</span>;
-  const change = Number(value);
-  return (
-    <span className={change >= 0 ? 'iris-positive' : 'iris-negative'}>
-      {change >= 0 ? '+' : ''}
-      {change.toFixed(2)}%
-    </span>
-  );
-}
-
 export function JupiterLogo() {
   return (
     <span className="iris-jupiter-mark" aria-hidden="true">
@@ -270,13 +255,7 @@ function CatalogList({
   onSelect: (asset: Asset) => void;
 }) {
   return (
-    <section
-      className={`iris-section iris-catalog-list iris-catalog-list--${tone}`}
-    >
-      <div className="iris-catalog-list-heading">
-        <span aria-hidden="true" />
-        <h2>{title}</h2>
-      </div>
+    <CatalogPanel title={title} tone={tone}>
       {loading && !assets.length ? (
         <div className="iris-catalog-list-rows" aria-busy="true">
           {Array.from({ length: 5 }, (_, index) => (
@@ -302,19 +281,7 @@ function CatalogList({
         <div className="iris-catalog-list-rows">
           {assets.map((asset) => (
             <button key={asset.mint} onClick={() => onSelect(asset)}>
-              <AssetIcon src={asset.imageUrl} symbol={asset.symbol} />
-              <span className="iris-catalog-list-identity">
-                <strong>{asset.symbol}</strong>
-                <small>{asset.name}</small>
-                <small>Volume {currency(asset.activity?.volume24hUsd)}</small>
-                {asset.verification?.isVerified === false && (
-                  <em>Unverified</em>
-                )}
-              </span>
-              <span className="iris-catalog-list-price">
-                {currency(asset.priceUsd, 5)}
-                <Change value={asset.change24hPct} />
-              </span>
+              <CatalogAssetContent asset={asset} />
             </button>
           ))}
         </div>
@@ -325,6 +292,6 @@ function CatalogList({
             : 'No assets are available.'}
         </p>
       )}
-    </section>
+    </CatalogPanel>
   );
 }

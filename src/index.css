@@ -109,6 +109,7 @@ input {
   gap: 2px;
 }
 .iris-nav a {
+  white-space: nowrap;
   padding: 4px 9px;
   border: 1px solid transparent;
   border-radius: 3px;
@@ -1475,6 +1476,13 @@ input {
   font-weight: 700;
   letter-spacing: -0.1px;
 }
+.iris-catalog-list-count {
+  margin-left: auto;
+  color: var(--iris-muted);
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: 10px;
+  white-space: nowrap;
+}
 .iris-catalog-list-rows {
   max-height: 420px;
   overflow-y: auto;
@@ -1489,7 +1497,8 @@ input {
   border-radius: 999px;
   background: rgba(125, 249, 179, 0.48);
 }
-.iris-catalog-list-rows button {
+.iris-catalog-list-rows > button,
+.iris-catalog-list-rows .iris-catalog-asset-row {
   display: grid;
   grid-template-columns: 31px minmax(0, 1fr) auto;
   width: 100%;
@@ -1502,6 +1511,7 @@ input {
   cursor: pointer;
   padding: 8px 7px;
   text-align: left;
+  text-decoration: none;
   transition:
     background 0.16s ease,
     border-color 0.16s ease,
@@ -1517,7 +1527,8 @@ input {
 .iris-catalog-list-placeholder .iris-catalog-list-price {
   gap: 5px;
 }
-.iris-catalog-list-rows button:hover {
+.iris-catalog-list-rows > button:hover,
+.iris-catalog-list-rows .iris-catalog-asset-row:hover {
   border-color: rgba(87, 229, 255, 0.32);
   background: linear-gradient(
     90deg,
@@ -1526,7 +1537,8 @@ input {
   );
   transform: translateX(2px);
 }
-.iris-catalog-list-rows button:focus-visible {
+.iris-catalog-list-rows > button:focus-visible,
+.iris-catalog-list-rows .iris-catalog-asset-row:focus-visible {
   outline: 2px solid #57e5ff;
   outline-offset: 1px;
 }
@@ -2933,11 +2945,13 @@ html[data-theme='light'] .iris-catalog-list-heading {
 html[data-theme='light'] .iris-catalog-list-heading h2 {
   color: #17212f;
 }
-html[data-theme='light'] .iris-catalog-list-rows button,
+html[data-theme='light'] .iris-catalog-list-rows > button,
+html[data-theme='light'] .iris-catalog-list-rows .iris-catalog-asset-row,
 html[data-theme='light'] .iris-defillama-lists .iris-catalog-list-rows > a {
   color: #17212f;
 }
-html[data-theme='light'] .iris-catalog-list-rows button:hover,
+html[data-theme='light'] .iris-catalog-list-rows > button:hover,
+html[data-theme='light'] .iris-catalog-list-rows .iris-catalog-asset-row:hover,
 html[data-theme='light']
   .iris-defillama-lists
   .iris-catalog-list-rows

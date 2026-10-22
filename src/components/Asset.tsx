@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from 'react';
 import { useParams } from 'react-router-dom';
+import SaveControl from './SaveControl';
 import { workerApi } from '../api/worker';
 import type { CandleTimeframe } from '../api/contracts';
 import { isRecord } from '../data/record';
@@ -427,6 +428,7 @@ export default function Asset() {
         error={result.error || candlesResult.error}
       />
       <main id="iris-main" tabIndex={-1} className="iris-page">
+        <SaveControl kind="asset" address={mint} />
         <ResourceFeedback
           label="Asset data"
           error={result.error}

@@ -1,8 +1,10 @@
 import { test, expect } from './support/test';
+import { sol, walletAddress } from './support/workerMock';
 
 test('email account flows use the Firebase SDK without touching live services', async ({
   page,
   browserName,
+  api,
 }) => {
   let verified = false;
   const operations: string[] = [];
@@ -73,7 +75,66 @@ test('email account flows use the Firebase SDK without touching live services', 
     unexpected.push(url.origin + url.pathname);
     return route.abort();
   });
-  await page.goto('/');
+  const savedAt = '2026-10-22T08:00:00.000Z';
+  const saved: {
+    assets: { address: string; savedAt: string }[];
+    wallets: { address: string; savedAt: string }[];
+  } = { assets: [], wallets: [] };
+  const privateOperations: string[] = [];
+  let limitNextSave = false;
+  await page.route('https://iris.test/v3/me/**', async (route) => {
+    const request = route.request();
+    expect(request.headers().authorization).toMatch(/^Bearer /);
+    expect(request.headers().cookie).toBeUndefined();
+    const method = request.method();
+    privateOperations.push(method);
+    const headers = { 'Access-Control-Allow-Origin': '*' };
+    if (method === 'GET')
+      return route.fulfill({
+        headers,
+        json: { data: saved, meta: { requestId: 'private-e2e' } },
+      });
+    const [, kind, address] =
+      new URL(request.url()).pathname.match(
+        /watchlist\/(asset|wallet)\/(.+)$/,
+      ) ?? [];
+    const section = kind === 'asset' ? 'assets' : 'wallets';
+    if (method === 'PUT') {
+      if (limitNextSave) {
+        limitNextSave = false;
+        return route.fulfill({
+          status: 409,
+          headers,
+          json: {
+            error: {
+              code: 'WATCHLIST_LIMIT_REACHED',
+              message: 'limit',
+              requestId: 'private-e2e',
+            },
+          },
+        });
+      }
+      const item = saved[section].find((item) => item.address === address) ?? {
+        address,
+        savedAt,
+      };
+      if (!saved[section].includes(item)) saved[section].push(item);
+      return route.fulfill({
+        headers,
+        json: { data: { kind, ...item }, meta: { requestId: 'private-e2e' } },
+      });
+    }
+    saved[section] = saved[section].filter((item) => item.address !== address);
+    return route.fulfill({
+      headers,
+      json: { data: { removed: true }, meta: { requestId: 'private-e2e' } },
+    });
+  });
+  await page.goto(`/asset/${sol.mint}`);
+  await expect(
+    page.getByRole('link', { name: 'Sign in to save to watchlist' }),
+  ).toBeVisible();
+  expect(privateOperations).toEqual([]);
   await page.getByRole('link', { name: 'Account', exact: true }).click();
   await expect(
     page.getByRole('heading', { name: 'Sign in', exact: true }),
@@ -137,5 +198,116 @@ test('email account flows use the Firebase SDK without touching live services', 
   ).toBe(true);
   expect(operations).toContain('signInWithPassword');
   expect(operations).toContain('signUp');
+  expect(privateOperations.filter((method) => method !== 'GET')).toEqual([]);
+  await page.goto(`/asset/${sol.mint}`);
+  await expect(
+    page.getByRole('button', { name: 'Save to watchlist', exact: true }),
+  ).toBeEnabled();
+  limitNextSave = true;
+  await page
+    .getByRole('button', { name: 'Save to watchlist', exact: true })
+    .click();
+  await expect(page.getByRole('alert')).toContainText('at most 100');
+  await expect(
+    page.getByRole('button', { name: 'Save to watchlist', exact: true }),
+  ).toBeEnabled();
+  await page
+    .getByRole('button', { name: 'Save to watchlist', exact: true })
+    .click();
+  await expect(
+    page.getByRole('button', { name: 'Remove from watchlist', exact: true }),
+  ).toBeEnabled();
+  await page.getByRole('link', { name: 'View watchlist' }).click();
+  await expect(
+    page.getByRole('link', { name: `Solana · SOL ${sol.mint}` }),
+  ).toBeVisible();
+  const unknownAddress = '11111111111111111111111111111111';
+  saved.assets.push({
+    address: unknownAddress,
+    savedAt: '2026-10-23T08:00:00.000Z',
+  });
+  saved.wallets.push({ address: walletAddress, savedAt });
+  const walletCalls = () =>
+    api.requests.filter((url) => url.pathname.startsWith('/v3/wallets/'))
+      .length;
+  const beforeWalletCalls = walletCalls();
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await expect(
+    page.getByRole('link', { name: unknownAddress, exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('link', { name: walletAddress, exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('region', { name: 'Wallets' }).getByText('Priced subtotal'),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('region', { name: 'Wallets' }).getByText('$1,234.56'),
+  ).toBeVisible();
+  expect(walletCalls()).toBeGreaterThan(beforeWalletCalls);
+  await expect(
+    page
+      .getByRole('region', { name: 'Wallets' })
+      .locator(
+        '.iris-watchlist-table time[datetime="2026-10-22T08:00:00.000Z"]',
+      ),
+  ).toHaveCount(1);
+  expect(
+    api.requests.filter(
+      (url) => url.pathname === `/v3/wallets/${walletAddress}/transactions`,
+    ),
+  ).toHaveLength(0);
+  await expect(page.getByRole('region', { name: 'Wallets' })).not.toContainText(
+    'Volume',
+  );
+  expect(
+    await page
+      .locator('.iris-watchlist-table')
+      .first()
+      .locator('tbody tr a')
+      .first()
+      .getAttribute('href'),
+  ).toBe(`/asset/${unknownAddress}`);
+  await page.screenshot({
+    path: `test-results/watchlist-${browserName}-mobile-dark.png`,
+    fullPage: true,
+  });
+  for (const row of await page
+    .locator('.iris-watchlist-table tbody tr')
+    .all()) {
+    expect((await row.boundingBox())?.height).toBeLessThanOrEqual(80);
+  }
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.getByRole('button', { name: 'Toggle color theme' }).click();
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.screenshot({
+    path: `test-results/watchlist-${browserName}-desktop-light.png`,
+    fullPage: true,
+  });
+  await page
+    .getByRole('button', { name: `Remove ${sol.mint} from assets` })
+    .click();
+  await expect(
+    page.getByRole('heading', { name: 'Assets', exact: true }),
+  ).toBeFocused();
+  await expect(
+    page
+      .locator('.iris-watchlist-table')
+      .first()
+      .getByRole('link', { name: new RegExp(sol.mint) }),
+  ).toHaveCount(0);
+  await page.getByRole('link', { name: 'Account', exact: true }).click();
+  await page.getByRole('button', { name: 'Sign out', exact: true }).click();
+  await page.getByRole('link', { name: 'Watchlist', exact: true }).click();
+  await expect(
+    page.getByRole('link', { name: 'Sign in', exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('link', { name: unknownAddress, exact: true }),
+  ).toHaveCount(0);
   expect(unexpected).toEqual([]);
 });

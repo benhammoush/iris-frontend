@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import SaveControl from './SaveControl';
 import { workerApi } from '../api/worker';
 import { nextCursorFrom } from '../data/pagination';
 import { isRecord } from '../data/record';
@@ -311,6 +312,7 @@ export default function Wallet() {
         error={summary.error || firstPage.error}
       />
       <main id="iris-main" tabIndex={-1} className="iris-page">
+        <SaveControl kind="wallet" address={address} />
         <ResourceFeedback
           label="Wallet data"
           error={invalidAddress ? null : summary.error}

@@ -10,8 +10,10 @@ import { HeliusDashboardProvider } from './contexts/HeliusDashboardContext';
 import { apiConfigurationError } from './api/client';
 import { ThemeProvider } from './design-system';
 import { AccountProvider } from './contexts/AccountContext';
+import { WatchlistProvider } from './contexts/WatchlistContext';
 const ApiDocs = lazy(() => import('./components/ApiDocs'));
 const Account = lazy(() => import('./components/Account'));
+const Watchlist = lazy(() => import('./components/Watchlist'));
 function App() {
   const location = useLocation();
   const previousPath = useRef(location.pathname);
@@ -55,48 +57,68 @@ function App() {
   return (
     <ThemeProvider>
       <AccountProvider>
-        <CatalogProvider>
-          <HeliusDashboardProvider>
-            <div className="scroll-smooth">
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route
-                  path="/account"
-                  element={
-                    <Suspense
-                      fallback={
-                        <main
-                          id="iris-main"
-                          tabIndex={-1}
-                          className="iris-page"
-                        >
-                          Loading account...
-                        </main>
-                      }
-                    >
-                      <Account />
-                    </Suspense>
-                  }
-                />
-                <Route path="/assets" element={<Catalog kind="assets" />} />
-                <Route path="/wallets" element={<Catalog kind="wallets" />} />
-                <Route
-                  key={location.pathname}
-                  path="/wallet/:address"
-                  element={<Wallet />}
-                />
-                <Route
-                  key={location.pathname}
-                  path="/asset/:mint"
-                  element={<Asset />}
-                />
-                <Route path="*" element={<NoMatch />}>
-                  {' '}
-                </Route>
-              </Routes>
-            </div>
-          </HeliusDashboardProvider>
-        </CatalogProvider>
+        <WatchlistProvider>
+          <CatalogProvider>
+            <HeliusDashboardProvider>
+              <div className="scroll-smooth">
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route
+                    path="/watchlist"
+                    element={
+                      <Suspense
+                        fallback={
+                          <main
+                            id="iris-main"
+                            tabIndex={-1}
+                            className="iris-page"
+                          >
+                            Loading watchlist…
+                          </main>
+                        }
+                      >
+                        <Watchlist />
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="/account"
+                    element={
+                      <Suspense
+                        fallback={
+                          <main
+                            id="iris-main"
+                            tabIndex={-1}
+                            className="iris-page"
+                          >
+                            Loading account...
+                          </main>
+                        }
+                      >
+                        <Account />
+                      </Suspense>
+                    }
+                  />
+                  <Route path="/assets" element={<Catalog kind="assets" />} />
+                  <Route path="/wallets" element={<Catalog kind="wallets" />} />
+                  <Route
+                    key={location.pathname}
+                    path="/wallet/:address"
+                    element={<Wallet />}
+                  />
+                  <Route
+                    key={location.pathname}
+                    path="/asset/:mint"
+                    element={<Asset />}
+                  />
+                  <Route path="*" element={<NoMatch />}>
+                    {' '}
+                  </Route>
+                </Routes>
+              </div>
+            </HeliusDashboardProvider>
+          </CatalogProvider>
+        </WatchlistProvider>
       </AccountProvider>
     </ThemeProvider>
   );
