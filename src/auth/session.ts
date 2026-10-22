@@ -39,6 +39,8 @@ export class AccountSession {
   private controller = new AbortController();
   private listeners = new Set<() => void>();
   private locked = false;
+  private authentication?: Promise<void>;
+  private signingOut?: Promise<void>;
 
   constructor(enabled: boolean) {
     this.state = {
@@ -104,17 +106,31 @@ export class AccountSession {
     return this.driver;
   }
 
-  async signIn(email: string, password: string) {
+  private async authenticate(operation: () => Promise<void>) {
     if (this.locked)
       throw new ApiError('Retry sign-out first.', { code: 'SIGN_OUT_FAILED' });
-    await this.ready().signIn(email, password);
+    if (this.authentication)
+      throw new ApiError('Another account action is still pending.', {
+        code: 'AUTH_BUSY',
+      });
+    const pending = Promise.resolve().then(operation);
+    this.authentication = pending;
+    try {
+      await pending;
+    } finally {
+      this.authentication = undefined;
+    }
   }
-  async signUp(email: string, password: string) {
-    if (this.locked)
-      throw new ApiError('Retry sign-out first.', { code: 'SIGN_OUT_FAILED' });
+  signIn(email: string, password: string) {
+    return this.authenticate(() => this.ready().signIn(email, password));
+  }
+  signUp(email: string, password: string) {
+    return this.authenticate(() => this.createAccount(email, password));
+  }
+  private async createAccount(email: string, password: string) {
     const driver = this.ready();
     const created = await driver.signUp(email, password);
-    if (driver.current()?.uid !== created.uid) return;
+    if (this.locked || driver.current()?.uid !== created.uid) return;
     this.publish({ status: 'ready', user: created, signOutFailed: false });
     // Signup remounts the form to clear credentials; delivery feedback belongs to the new UID.
     let notice: 'requested' | 'failed' = 'requested';
@@ -130,10 +146,8 @@ export class AccountSession {
     )
       this.publish({ ...this.state, verificationNotice: notice });
   }
-  async google() {
-    if (this.locked)
-      throw new ApiError('Retry sign-out first.', { code: 'SIGN_OUT_FAILED' });
-    await this.ready().google();
+  google() {
+    return this.authenticate(() => this.ready().google());
   }
   reset(email: string) {
     return this.ready().reset(email);
@@ -161,10 +175,10 @@ export class AccountSession {
       this.publish({ ...this.state, verificationNotice: 'requested' });
   }
   linkGoogle(password: string) {
-    return this.signedIn().linkGoogle(password);
+    return this.authenticate(() => this.signedIn().linkGoogle(password));
   }
   linkPassword(password: string) {
-    return this.signedIn().linkPassword(password);
+    return this.authenticate(() => this.signedIn().linkPassword(password));
   }
   async refresh() {
     const driver = this.signedIn();
@@ -175,17 +189,29 @@ export class AccountSession {
       this.publish({ status: 'ready', user, signOutFailed: false });
   }
   async signOut() {
+    if (this.signingOut) return this.signingOut;
     const driver = this.ready();
     this.locked = true;
+    const pending = this.authentication;
+    const cleanup = Promise.resolve().then(async () => {
+      // SDK authentication cannot be aborted; drain it before clearing persistence.
+      await pending?.catch(() => {});
+      try {
+        await driver.signOut();
+        this.locked = false;
+      } catch {
+        this.publish({ status: 'ready', user: null, signOutFailed: true });
+        throw new ApiError('Sign-out could not complete. Please retry.', {
+          code: 'SIGN_OUT_FAILED',
+        });
+      }
+    });
+    this.signingOut = cleanup;
     this.publish({ status: 'ready', user: null, signOutFailed: false });
     try {
-      await driver.signOut();
-      this.locked = false;
-    } catch {
-      this.publish({ status: 'ready', user: null, signOutFailed: true });
-      throw new ApiError('Sign-out could not complete. Please retry.', {
-        code: 'SIGN_OUT_FAILED',
-      });
+      await cleanup;
+    } finally {
+      this.signingOut = undefined;
     }
   }
 

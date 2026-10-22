@@ -26,6 +26,10 @@ generated types and the remote vertical-CI Worker pin are unchanged by WL-2.
   view state is cleared and in-flight private requests cancelled on auth changes
   and sign-out. Failed SDK sign-out leaves the private session locked and exposes
   a retry; it must not be presented as successful sign-out on a shared device.
+- Authentication and provider linking are serialized by the session, including
+  across page navigation. Sign-out clears the private view immediately but waits
+  for pending authentication before clearing SDK persistence. Finish or close any
+  outstanding sign-in popup and let sign-out complete before leaving a shared device.
 - No login/linking/verification operation saves a reference or fetches watchlist
   data. `authenticatedRequest` is ready for WL-3: it obtains a Firebase ID token
   per call, restricts destinations to this environment's Worker watchlist routes,
@@ -67,7 +71,8 @@ Reassess that override when Firebase updates its dependency range.
 ## Checks and limits
 
 Unit tests cover SDK persistence/reauthentication, conflicts without merging,
-verification/reset UI, sign-out failure, private-origin/path restrictions,
+verification/reset UI, late authentication versus sign-out, sign-out failure,
+private-origin/path restrictions,
 credential expiry and stale token/response cancellation across accounts.
 The browser account test uses the real Firebase Web SDK with intercepted REST
 responses and synthetic credentials; unexpected external requests are aborted.

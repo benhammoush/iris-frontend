@@ -29,6 +29,8 @@ function friendlyError(cause: unknown): string {
     return 'Too many attempts. Please wait before trying again.';
   if (code === 'SIGN_OUT_FAILED')
     return 'Sign-out could not complete. Your private view is cleared; retry sign-out before leaving a shared device.';
+  if (code === 'AUTH_BUSY')
+    return 'Another account action is still pending. Finish or close its sign-in window before trying again.';
   return 'Could not complete this action. Check your details and connection, then try again.';
 }
 
