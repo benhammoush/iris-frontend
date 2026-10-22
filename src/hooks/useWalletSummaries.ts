@@ -26,39 +26,39 @@ export function useWalletSummaries(addresses: string[]) {
         ? request.address
         : undefined;
     const targets = retry ? [retry] : all;
+    const unsubscribe = session.subscribe(() => {
+      controller.abort();
+      setResults({});
+      busy.current = false;
+      setLoading(false);
+    });
     setResults((previous) =>
-      retry
-        ? Object.fromEntries(
-            Object.entries(previous).filter(([address]) => address !== retry),
-          )
-        : {},
+      Object.fromEntries(
+        Object.entries(previous).filter(([address]) => all.includes(address)),
+      ),
     );
+    const publish = (address: string, result: WalletSummaryResult) => {
+      if (controller.signal.aborted) return;
+      setResults((previous) => {
+        const data = previous[address]?.data;
+        return {
+          ...previous,
+          [address]:
+            result.error && data
+              ? { data: { ...data, stale: true }, error: result.error }
+              : result,
+        };
+      });
+    };
     busy.current = targets.length > 0;
     setLoading(busy.current);
     if (targets.length)
-      void loadWalletSummaries(
-        session,
-        targets,
-        controller.signal,
-        (address, result) => {
-          if (!controller.signal.aborted)
-            setResults((previous) => ({ ...previous, [address]: result }));
-        },
-      )
+      void loadWalletSummaries(session, targets, controller.signal, publish)
         .catch(() => {
-          if (!controller.signal.aborted)
-            setResults((previous) => ({
-              ...previous,
-              ...Object.fromEntries(
-                targets.map((address) => [
-                  address,
-                  {
-                    error:
-                      'Wallet summary is unavailable. Refresh or sign in again.',
-                  },
-                ]),
-              ),
-            }));
+          for (const address of targets)
+            publish(address, {
+              error: 'Wallet summary is unavailable. Refresh or sign in again.',
+            });
         })
         .finally(() => {
           if (!controller.signal.aborted) {
@@ -67,6 +67,7 @@ export function useWalletSummaries(addresses: string[]) {
           }
         });
     return () => {
+      unsubscribe();
       controller.abort();
       busy.current = false;
     };

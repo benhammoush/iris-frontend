@@ -45,8 +45,13 @@ See [ACCOUNTS.md](./ACCOUNTS.md) for authentication boundaries and
   flight and at most 100 saved addresses. Results/queues are tied to the current
   private view and aborted/discarded on identity change or unmount. Page entry,
   visible focus return and explicit refresh reload summaries; there is no polling.
-  Failures stay per row; a manual row retry fetches only that wallet. Throttling or
-  provider outage stops the remaining queue rather than flooding/retrying it.
+  Refresh retains the last successful summary while pending; failure marks it
+  stale with a retry control instead of removing it. Identity changes clear all
+  retained summaries. First-load failures stay per row; a manual row retry fetches
+  only that wallet. Surfaced Worker throttling/outage failures stop the remaining
+  queue rather than flooding/retrying it; swallowed Jupiter enrichment failures
+  cannot yet signal a stop. The backend specification requires provider budgets
+  and typed end-to-end stop propagation before activation.
   Automatic summaries can add up to 100 public wallet reads per refresh; review
   hosted quotas and provider logging/privacy before activation. Reference saves and
   removals remain usable when a public summary cannot load.

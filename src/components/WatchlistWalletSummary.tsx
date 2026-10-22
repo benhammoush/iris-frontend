@@ -20,7 +20,7 @@ export default function WatchlistWalletSummary({
         <span role="status">Loading…</span>
       </td>
     );
-  if (result.error)
+  if (result.error && !result.data)
     return (
       <td colSpan={2} className="iris-watchlist-row-state">
         <span role="alert">{result.error}</span>{' '}
@@ -61,6 +61,21 @@ export default function WatchlistWalletSummary({
         )}
         {summary.stale && (
           <small className="iris-watchlist-row-hint">Stale</small>
+        )}
+        {result.error && (
+          <>
+            <span className="iris-sr-only" role="alert">
+              {result.error} Showing the last successful summary.
+            </span>
+            <button
+              type="button"
+              aria-label="Retry wallet summary"
+              disabled={busy}
+              onClick={onRetry}
+            >
+              Retry
+            </button>
+          </>
         )}
         <span className="iris-sr-only">
           Balances: Helius. Pricing: Jupiter when available.{' '}

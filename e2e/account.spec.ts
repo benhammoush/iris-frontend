@@ -288,6 +288,36 @@ test('email account flows use the Firebase SDK without touching live services', 
     path: `test-results/watchlist-${browserName}-desktop-light.png`,
     fullPage: true,
   });
+  api.setHandler((url) =>
+    url.pathname === `/v3/wallets/${walletAddress}`
+      ? {
+          status: 503,
+          error: { code: 'WALLET_LOOKUP_UNAVAILABLE', message: 'Unavailable' },
+        }
+      : undefined,
+  );
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  const wallets = page.getByRole('region', { name: 'Wallets' });
+  await expect(wallets.getByText('Stale', { exact: true })).toBeVisible();
+  await expect(wallets.getByText('$1,234.56')).toBeVisible();
+  await expect(
+    wallets.getByRole('button', { name: 'Retry wallet summary' }),
+  ).toBeEnabled();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({
+    path: `test-results/watchlist-${browserName}-stale-mobile.png`,
+    fullPage: true,
+  });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  api.setHandler(() => undefined);
+  await wallets.getByRole('button', { name: 'Retry wallet summary' }).click();
+  await expect(wallets.getByText('Stale', { exact: true })).toHaveCount(0);
+  await expect(wallets.getByText('$1,234.56')).toBeVisible();
+  await page.setViewportSize({ width: 1440, height: 1000 });
   await page
     .getByRole('button', { name: `Remove ${sol.mint} from assets` })
     .click();

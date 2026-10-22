@@ -10,7 +10,7 @@ export interface WalletSummary {
   stale: boolean;
 }
 export type WalletSummaryResult =
-  { data: WalletSummary; error?: never } | { error: string; data?: never };
+  { data: WalletSummary; error?: string } | { error: string; data?: never };
 
 /** Public wallet reads stay anonymous, but their scheduling/results belong to this identity. */
 export async function loadWalletSummaries(
