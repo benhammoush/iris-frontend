@@ -73,7 +73,7 @@ export class AccountSession {
           this.publish({
             status: 'ready',
             user,
-            signOutFailed: false,
+            signOutFailed: this.locked && this.state.signOutFailed,
             verificationNotice:
               user?.uid === this.state.user?.uid
                 ? this.state.verificationNotice

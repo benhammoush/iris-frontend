@@ -89,6 +89,8 @@ test('failed late authentication still drains; failed persistence cleanup stays 
   await Promise.all([authenticationFailed, cleanupFailed]);
   fake.emit(alice);
   expect(session.snapshot()).toMatchObject({ user: null, signOutFailed: true });
+  fake.emit(null);
+  expect(session.snapshot()).toMatchObject({ user: null, signOutFailed: true });
   await expect(session.google()).rejects.toMatchObject({
     code: 'SIGN_OUT_FAILED',
   });

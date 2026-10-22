@@ -139,6 +139,25 @@ test('explicit linking reports credential conflicts without merging accounts', a
   expect(screen.getByLabelText('Current password')).toHaveValue('');
 });
 
+test('failed sign-out keeps its retry control after a later null identity event', async () => {
+  const user = await open();
+  act(() => fake.emit(alice));
+  fake.driver.signOut.mockRejectedValueOnce(new Error('cleanup failed'));
+  await user.click(screen.getByRole('button', { name: /^Sign out$/ }));
+  expect(
+    await screen.findByRole('button', { name: 'Retry sign out' }),
+  ).toBeVisible();
+  act(() => fake.emit(null));
+  await user.click(screen.getByRole('button', { name: 'Retry sign out' }));
+  expect(fake.driver.signOut).toHaveBeenCalledTimes(2);
+  expect(
+    screen.queryByRole('button', { name: 'Retry sign out' }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.getByRole('button', { name: 'Sign in with email' }),
+  ).toBeEnabled();
+});
+
 test('Google and password linking are separate explicit actions', async () => {
   const user = await open();
   await user.click(
