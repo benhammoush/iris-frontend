@@ -1,6 +1,6 @@
 {
   "name": "iris-frontend",
-  "version": "1.23.6",
+  "version": "1.24.0",
   "private": true,
   "engines": {
     "node": "24.x"
@@ -8,6 +8,7 @@
   "dependencies": {
     "@scalar/api-reference-react": "0.9.79",
     "@tanstack/react-virtual": "^3.14.19",
+    "firebase": "13.1.0",
     "lightweight-charts": "^5.0.9",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -73,6 +74,9 @@
     "vitest": "5.0.5"
   },
   "overrides": {
+    "@firebase/firestore": {
+      "@grpc/grpc-js": "1.14.6"
+    },
     "@scalar/agent-chat": {
       "ai": "6.0.214",
       "@ai-sdk/vue": "3.0.214"
