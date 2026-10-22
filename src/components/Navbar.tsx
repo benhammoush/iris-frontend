@@ -6,6 +6,7 @@ import { useTheme } from '../design-system';
 import { useHeliusDashboard } from '../contexts/HeliusDashboardContext';
 import ValueSkeleton from './ValueSkeleton';
 import NavbarSearch from './NavbarSearch';
+import { accountsEnabled } from '../auth/config';
 
 function money(value: unknown, digits = 2) {
   return value === null ||
@@ -73,6 +74,7 @@ function Navbar() {
             Home
           </NavLink>
           <NavLink to="/api-docs">API Docs</NavLink>
+          {accountsEnabled && <NavLink to="/account">Account</NavLink>}
         </nav>
         <NavbarSearch
           assets={assets}
@@ -158,6 +160,7 @@ function Navbar() {
           Home
         </NavLink>
         <NavLink to="/api-docs">API Docs</NavLink>
+        {accountsEnabled && <NavLink to="/account">Account</NavLink>}
       </nav>
     </>
   );
