@@ -2,7 +2,7 @@
 
 ## Versioned CI/CD entry points
 
-The [shared contract](https://github.com/benhammoush/ci-cd-workflows/blob/main/docs/contract.md)
+The [shared contract](https://github.com/benhammoush/ci-cd-workflows/blob/1d4b201fc53f05c53de2fdc37ab9b184b676a1be/docs/contract.md)
 is pinned in each repository's `.github/ci-cd.json`. CI checks PRs/main and delivers
 successful exact main commits to enabled dev. Separate manual
 `deploy-production.yml` selects a full merged `sha`, requires retained successful
@@ -32,6 +32,12 @@ remain a separate, explicitly approved recovery path.
 Repositories: `benhammoush/iris-frontend` and `benhammoush/iris-backend`, with two ordinary release CI workflows. No release coordinator or extra GitHub tokens. This is the durable operator runbook, not a live inventory; verify provider and GitHub settings before activation or promotion.
 
 Both repositories also retain `dependency-audit.yml` for independent scheduled/manual default-branch dependency audits and `merge-eligibility.yml` for read-only PR readiness reports. Neither is a competing deployment path or a substitute for CI, required reviews or native production approval.
+
+### Migration prerequisite
+
+The daily release flow below applies only after both repositories have adopted the versioned workflows on `main`. For this rollout, merge the [backend migration #20](https://github.com/benhammoush/iris-backend/pull/20) before the [frontend migration #29](https://github.com/benhammoush/iris-frontend/pull/29), under separate merge authorization. Until then, a migration PR or its passing CI does not make the new production entry point available on `main`; do not use the legacy combined workflow as a substitute for retained-dev-evidence checks. Merging can automatically deliver an already-enabled dev target and must account for that consequence.
+
+The frontend's `workerSha` and `VITE_OPENAPI_URL` pins select a compatible API/schema revision for integration and documentation, not the backend's release-workflow revision. They may intentionally predate the workflow migration. Keep them unchanged for this workflow-only rollout; any later compatibility-pin update needs its own deliberate validation. Release tooling follows trusted `main`, while candidate application sources are selected by their exact merged SHAs.
 
 ## Fresh bootstrap
 
@@ -97,7 +103,7 @@ Leave environment variable `DEPLOY_ENABLED` unset or `false` until that target's
 - Before acceptance, record both source SHAs/versions, provider deployment identities, any previous compatible recovery pair and relevant configuration/pins in release notes. If production has no accepted predecessor, use the explicit first-production policy below rather than inventing a recovery pair. Check the browser flow, `/health`, `/ready`, fresh `/v3/status`, browser-to-API access, CORS and the affected user flow in dev. Fixture data or basic probes do not certify live-provider behavior. Workflow summaries/logs help identify deployments; inspect provider identities rather than assuming a green run proves acceptance.
 - Recheck candidate provider identities and relevant configuration after acceptance and immediately before promotion. If another deployment or configuration change interrupted validation, repeat affected acceptance on the selected candidate. Shared dev is mutable; the source input alone is not acceptance evidence, and no custom coordinator or freeze service is introduced.
 - After a production failure, inspect both providers before retrying. Production reruns are rejected: start a new exact-SHA dispatch from main and obtain fresh native approval.
-- Manually run **Deploy production** (`deploy-production.yml`) in each repository from `main` with its same full dev-accepted source SHA, Worker first when both change. Existing checks rerun against each selected source, and retained successful dev-delivery evidence for that exact SHA is verified automatically. As sole maintainer, explicitly approve the pair and rollback plan through each repository's native production gate. Production Worker refreshes automatically on release; dev refresh remains explicit. Human acceptance, compatibility and recovery eligibility remain operator checks. Subsequent production smoke checks are read-only.
+- After the migration prerequisite above is complete, manually run **Deploy production** (`deploy-production.yml`) in each repository from `main` with that repository's full dev-accepted source SHA, Worker first when both change. The compatible pair has two independently selected source SHAs, not one SHA shared across repositories. Existing checks rerun against each selected source, and retained successful dev-delivery evidence for that exact SHA is verified automatically. As sole maintainer, explicitly approve the pair and rollback plan through each repository's native production gate. Production Worker refreshes automatically on release; dev refresh remains explicit. Human acceptance, compatibility and recovery eligibility remain operator checks. Subsequent production smoke checks are read-only.
 
 ## Rollback
 
