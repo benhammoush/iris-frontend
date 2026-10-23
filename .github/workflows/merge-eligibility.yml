@@ -38,7 +38,7 @@ concurrency:
 jobs:
   observe:
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       # Every supported event uses main's GITHUB_SHA, never the PR's head/merge ref.

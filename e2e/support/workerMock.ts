@@ -158,56 +158,59 @@ export async function installWorkerMock(page: Page): Promise<WorkerMock> {
   const unexpected: string[] = [];
   let handler: Handler | undefined;
 
-  await page.route('https://iris.test/**', async (route) => {
-    const url = new URL(route.request().url());
-    requests.push(url);
-    if (route.request().method() !== 'GET') {
-      unexpected.push(`${route.request().method()} ${url.pathname}`);
-      await route.fulfill({
-        status: 405,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          error: {
-            code: 'METHOD_NOT_ALLOWED',
-            message: 'Test mock accepts GET only',
-          },
-        }),
-      });
-      return;
-    }
-    const response = handler?.(url) ?? defaultResponse(url);
-    if (!response) {
-      unexpected.push(`GET ${url.pathname}${url.search}`);
-      await route.fulfill({
-        status: 500,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          error: {
-            code: 'UNEXPECTED_REQUEST',
-            message: 'No E2E mock response was configured',
-          },
-        }),
-      });
-      return;
-    }
-    const status = response.status ?? (response.error ? 503 : 200);
-    await route.fulfill({
-      status,
-      contentType: 'application/json',
-      body: JSON.stringify(
-        response.error
-          ? { error: response.error }
-          : {
-              data: response.data,
-              meta: {
-                source: 'test',
-                requestId: 'e2e-request',
-                ...response.meta,
-              },
+  await page.route(
+    `${process.env.VITE_API_BASE || 'https://iris.test'}/**`,
+    async (route) => {
+      const url = new URL(route.request().url());
+      requests.push(url);
+      if (route.request().method() !== 'GET') {
+        unexpected.push(`${route.request().method()} ${url.pathname}`);
+        await route.fulfill({
+          status: 405,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            error: {
+              code: 'METHOD_NOT_ALLOWED',
+              message: 'Test mock accepts GET only',
             },
-      ),
-    });
-  });
+          }),
+        });
+        return;
+      }
+      const response = handler?.(url) ?? defaultResponse(url);
+      if (!response) {
+        unexpected.push(`GET ${url.pathname}${url.search}`);
+        await route.fulfill({
+          status: 500,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            error: {
+              code: 'UNEXPECTED_REQUEST',
+              message: 'No E2E mock response was configured',
+            },
+          }),
+        });
+        return;
+      }
+      const status = response.status ?? (response.error ? 503 : 200);
+      await route.fulfill({
+        status,
+        contentType: 'application/json',
+        body: JSON.stringify(
+          response.error
+            ? { error: response.error }
+            : {
+                data: response.data,
+                meta: {
+                  source: 'test',
+                  requestId: 'e2e-request',
+                  ...response.meta,
+                },
+              },
+        ),
+      });
+    },
+  );
 
   return {
     requests,

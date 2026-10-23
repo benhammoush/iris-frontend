@@ -1,4 +1,5 @@
 import { expect, test } from './support/test';
+import { apiOrigin, openapiUrl } from './support/origins';
 
 const document = {
   openapi: '3.0.3',
@@ -45,20 +46,20 @@ test('loads the pinned document, sends a direct request, deep-links and returns 
   page.on('pageerror', (error) => pageErrors.push(error.message));
   page.on('request', (request) => {
     if (
-      ![previewOrigin, 'https://openapi.test', 'https://iris.test'].includes(
+      ![previewOrigin, new URL(openapiUrl).origin, apiOrigin].includes(
         new URL(request.url()).origin,
       )
     ) {
       externalRequests.push(request.url());
     }
   });
-  await page.route('https://openapi.test/openapi.yaml', (route) =>
+  await page.route(openapiUrl, (route) =>
     route.fulfill({
       contentType: 'application/json',
       body: JSON.stringify(document),
     }),
   );
-  await page.route('https://iris.test/health', (route) =>
+  await page.route(`${apiOrigin}/health`, (route) =>
     route.fulfill({
       contentType: 'application/json',
       body: '{"status":"iris-docs-request-ok"}',
@@ -83,10 +84,10 @@ test('loads the pinned document, sends a direct request, deep-links and returns 
   await page
     .getByRole('button', { name: 'Test Request (get /health)', exact: true })
     .click();
-  const request = page.waitForRequest('https://iris.test/health');
+  const request = page.waitForRequest(`${apiOrigin}/health`);
   await page
     .getByRole('button', {
-      name: 'Send get request to https://iris.test/health',
+      name: `Send get request to ${apiOrigin}/health`,
       exact: true,
     })
     .click();

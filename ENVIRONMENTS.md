@@ -1,5 +1,34 @@
 # Iris: localhost, dev, production
 
+## Versioned CI/CD entry points
+
+The [shared contract](https://github.com/benhammoush/ci-cd-workflows/blob/main/docs/contract.md)
+is pinned in each repository's `.github/ci-cd.json`. CI checks PRs/main and delivers
+successful exact main commits to enabled dev. Separate manual
+`deploy-production.yml` selects a full merged `sha`, requires retained successful
+dev evidence, verifies the candidate and waits for native approval. CI dispatch
+is the exact-SHA dev recovery path; the Worker retains explicit `refresh_dev`,
+default false. These supersede older combined-workflow/target-selector invocations,
+not compatibility, native approval, acceptance, refresh or recovery requirements.
+
+All Ubuntu jobs use `ubuntu-24.04`. The frontend retains all three-engine
+account-enabled fixtures and its Chromium vertical suite before building/testing
+the actual deployable target. Public core journeys repeat on that exact output in
+all three engines; account activation remains a separate setup gate. Worker and
+OpenAPI pins stay deliberately unchanged. Explicit public build inputs must match
+the selected target; extra provider-only public build values require reviewed
+contract changes. Prebuilt frontend and prebundled Worker delivery retain
+artifact/configuration digests and immutable provider identities. Frontend smoke
+also checks public API/CORS. Production Worker refresh remains one explicit part
+of the approved release, without blind retry after uncertainty.
+
+Executable guard rejection tests now live with the pinned shared implementation;
+application tests protect delegation, meaningful checks and unchanged resource
+contracts. Existing required-check names remain compatibility gates. No merge,
+activation, data refresh or deployment is authorized by this migration. Historical
+sources lacking versioned hooks fail closed; eligible immutable recovery artifacts
+remain a separate, explicitly approved recovery path.
+
 Repositories: `benhammoush/iris-frontend` and `benhammoush/iris-backend`, with two ordinary release CI workflows. No release coordinator or extra GitHub tokens. This is the durable operator runbook, not a live inventory; verify provider and GitHub settings before activation or promotion.
 
 ## Fresh bootstrap

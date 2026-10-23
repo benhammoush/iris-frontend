@@ -698,5 +698,15 @@ test('workflow uses trusted main code and read-only permissions without installs
     new URL('../.github/workflows/ci.yml', import.meta.url),
     'utf8',
   );
-  assert.ok(ci.includes('run: npm run test:merge-policy'));
+  assert.match(
+    ci,
+    /ci-cd-workflows\/\.github\/workflows\/verify-web.yml@[a-f0-9]{40}/,
+  );
+  const packageScripts = JSON.parse(
+    readFileSync(new URL('../package.json', import.meta.url), 'utf8'),
+  ).scripts;
+  assert.ok(packageScripts['ci:quality'].includes('npm run verify:fast'));
+  assert.ok(
+    packageScripts['verify:fast'].includes('npm run test:merge-policy'),
+  );
 });
