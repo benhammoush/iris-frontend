@@ -27,17 +27,17 @@ jobs:
   # can produce different frontend bytes from the same accepted source revision.
   # Shared: verification has no deployment secrets; its artifact is retained intact.
   verify_release:
-    uses: benhammoush/ci-cd-workflows/.github/workflows/verify-web.yml@d7d0c297f0b4038e9815349fd16f79bb92d77ceb
+    uses: benhammoush/ci-cd-workflows/.github/workflows/verify-web.yml@a35aea526ca8b69d7ec27ff7952cff6af8c1bbe5
     with:
       # Shared: use the same immutable implementation and reusable workflow SHA.
-      automation_sha: d7d0c297f0b4038e9815349fd16f79bb92d77ceb
+      automation_sha: a35aea526ca8b69d7ec27ff7952cff6af8c1bbe5
       source_sha: ${{ inputs.sha }}
       # Project public inputs come from .github/ci-cd.json buildEnvironment.production.
       environment: production
       node_version: '24'
   # Shared: verification precedes the called production environment approval gate.
   # GitHub settings own required reviewers, main-only access and disabled admin bypass.
-  # After approval, recheck dev evidence/source/artifact identity and enablement;
+  # After approval, recheck dev evidence/source/artifact identity and isolation;
   # serialize production mutations without cancelling an active deployment.
   # Project: ci-deploy.mjs uploads the checked Vercel output without a provider build,
   # checks release identity/public API/CORS and retains immutable/prior identities.
@@ -47,9 +47,9 @@ jobs:
   deploy_production:
     needs: verify_release
     if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
-    uses: benhammoush/ci-cd-workflows/.github/workflows/deploy-web.yml@d7d0c297f0b4038e9815349fd16f79bb92d77ceb
+    uses: benhammoush/ci-cd-workflows/.github/workflows/deploy-web.yml@a35aea526ca8b69d7ec27ff7952cff6af8c1bbe5
     with:
-      automation_sha: d7d0c297f0b4038e9815349fd16f79bb92d77ceb
+      automation_sha: a35aea526ca8b69d7ec27ff7952cff6af8c1bbe5
       source_sha: ${{ inputs.sha }}
       environment: production
       node_version: '24'

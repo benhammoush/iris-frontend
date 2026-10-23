@@ -32,6 +32,7 @@ describe('versioned delivery consumer', () => {
     }
   });
   it('keeps automatic dev main-only and production separate, manual and dependent on release verification', () => {
+    expect(config.deploymentVariables).not.toContain('DEPLOY_ENABLED');
     expect(workflow).toContain('pull_request:');
     expect(workflow).toMatch(/branches:\s+- main/);
     expect(workflow).toContain("github.ref == 'refs/heads/main'");

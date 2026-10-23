@@ -2,13 +2,15 @@
 
 ## Versioned CI/CD entry points
 
-Automation 2.0 removes dev opt-ins when this adoption is merged to main.
+Automation 3.0 removes production deployment opt-ins; dev remains automatic.
+The verified immutable v3.0.0 release is pinned below. Delete obsolete live
+deployment flags only after this consumer adoption is merged and verified.
 
-The [shared contract](https://github.com/benhammoush/ci-cd-workflows/blob/d7d0c297f0b4038e9815349fd16f79bb92d77ceb/docs/contract.md)
-at v2.0.0 is pinned in this frontend's `.github/ci-cd.json`. Backend adoption is
-tracked separately in [Iris backend #22](https://github.com/benhammoush/iris-backend/pull/22);
-merge that PR first before treating the pair as flag-free. Its existing main pin
-continues to govern backend delivery until then. CI checks PRs/main and
+The [shared contract](https://github.com/benhammoush/ci-cd-workflows/blob/a35aea526ca8b69d7ec27ff7952cff6af8c1bbe5/docs/contract.md)
+at v3.0.0 is pinned in this frontend's `.github/ci-cd.json`. Backend adoption is
+tracked in the [backend configuration](https://github.com/benhammoush/iris-backend/blob/main/.github/ci-cd.json);
+adopt v3.0.0 there first before treating the pair as flag-free. This tooling-only
+change preserves the selected compatible Worker/OpenAPI pins. CI checks PRs/main and
 delivers successful exact main commits to dev without an opt-in switch. Separate manual
 `deploy-production.yml` selects a full merged `sha`, requires retained successful
 dev evidence, verifies the candidate and waits for native approval. CI dispatch
@@ -55,7 +57,7 @@ Use only the new environment resources below. Vercel domains and KV namespaces m
 | Dev        | `iris-frontend-dev` / `https://iris-frontend-dev.vercel.app`               | `iris-backend-dev` / `https://iris-backend-dev.benhxm.workers.dev`               | `iris-backend-dev-SNAPSHOTS`        |
 | Production | `iris-frontend-production` / `https://iris-frontend-production.vercel.app` | `iris-backend-production` / `https://iris-backend-production.benhxm.workers.dev` | `iris-backend-production-SNAPSHOTS` |
 
-Complete dev configuration and native protections before merging: successful main verification automatically deploys dev, regardless of `DEPLOY_ENABLED`. Keep production's `DEPLOY_ENABLED` unset or `false` throughout bootstrap. Publish the backend first, set the frontend's `.github/ci-cd.json` `workerSha` to its exact compatible new commit, and pin each target's `VITE_OPENAPI_URL` build input to that repository's exact compatible SHA.
+Complete dev configuration and native protections before merging: successful main verification automatically deploys dev, regardless of `DEPLOY_ENABLED`. Hold production by not dispatching its workflow during bootstrap. Publish the backend first, set the frontend's `.github/ci-cd.json` `workerSha` to its exact compatible new commit when compatibility changes, and pin each target's `VITE_OPENAPI_URL` build input to that repository's exact compatible SHA. A tooling-only migration does not silently change compatibility pins.
 
 ## Localhost
 
@@ -77,7 +79,7 @@ Run `npm ci` in both repositories. Start the Worker with `npm run dev` (local KV
 - Create separate fresh `REFRESH_TOKEN` values for dev and production and store them securely. Each Worker's secret must match the corresponding GitHub environment's `IRIS_REFRESH_TOKEN` secret. Configure scoped deployment credentials separately (`VERCEL_TOKEN` and `CLOUDFLARE_API_TOKEN`); an interactive CLI login does not populate GitHub secrets.
 - Worker creation/initial code deployment, secret entry, merging configuration PRs and activation are explicit operator actions. If a provider requires a Worker to exist before accepting secrets, the maintainer must handle that initial creation without enabling production Cron or data refresh before credentials and production gates are ready. Reverify deployed source/version and bindings afterward; setting secrets may change a provider version identity.
 - After the backend configuration is merged, explicitly select and record its exact compatible source SHA in the frontend's `.github/ci-cd.json` `workerSha` and both target-specific `VITE_OPENAPI_URL` build inputs (`https://raw.githubusercontent.com/benhammoush/iris-backend/<exact-backend-sha>/openapi.yaml`). Do not pin an unmerged configuration branch or silently retain the bootstrap OpenAPI placeholder. Set declared `VITE_API_BASE` build inputs and matching environment variables, plus the Worker's `IRIS_WORKER_ORIGIN`, to the corresponding intended API origin above, then verify that endpoint after the operator deploys it. These values are configuration, not deployed acceptance.
-- Dev has no deployment-enable flag; merging invokes delivery after successful verification. Keep both production `DEPLOY_ENABLED` values false until their prerequisites are met. Validate the configured dev pair and recovery path first; only then approve production activation. A passing bootstrap or configuration PR cannot replace hosted acceptance.
+- Neither target has a deployment-enable flag; merging invokes dev delivery after successful verification. Do not dispatch either production workflow until its prerequisites are met. Validate the configured dev pair and recovery path first; only then approve production execution. A passing bootstrap or configuration PR cannot replace hosted acceptance.
 
 Configure these in each GitHub environment, not as shared production repository secrets:
 
@@ -98,7 +100,7 @@ Use the corresponding environment's project/API URLs. API origins must be HTTPS 
 
 The frontend's `.github/ci-cd.json` `workerSha` selects the exact compatible Worker commit used by vertical CI; the versioned workflow does not read the legacy repository variable `IRIS_WORKER_SHA`. Update the declared pin deliberately for coordinated changes, and keep it at the dev-accepted compatible Worker SHA when testing/promoting the frontend. The vertical-CI pin and target OpenAPI pin are separate inputs; record and verify both. A missing pin fails CI; no matching-branch guessing or implicit pin changes.
 
-Dev ignores `DEPLOY_ENABLED`; verify its settings, storage isolation, secrets, CORS, and protections before merging. Missing configuration or credentials fail delivery instead of silently skipping it. Production retains `DEPLOY_ENABLED=true` under separate activation authorization, dev candidate acceptance, applicable recovery evidence and native approval. The workflows trust native GitHub protections; they do not audit provider settings or prove manual acceptance for you.
+Both targets ignore `DEPLOY_ENABLED`; verify dev settings, storage isolation, secrets, CORS, and protections before merging. Missing configuration or credentials fail delivery instead of silently skipping it. Production requires a new manual dispatch under separate execution authorization, dev candidate acceptance, applicable recovery evidence and native approval. The workflows trust native GitHub protections; they do not audit provider settings or prove manual acceptance for you.
 
 ## Daily flow
 
@@ -120,7 +122,7 @@ Before first production, validate the exact compatible dev pair and rehearse dev
 
 If first production fails or its outcome is uncertain, stop and inspect both providers and any release-refresh/Cron effects. Recover only through fresh, separately authorized exact-SHA dispatches from main with new native production approval in each affected repository, using an exact dev-accepted compatible pair, Worker first when both change. Repeat affected dev acceptance if source, configuration or compatibility changes. Never blindly retry, rerun production jobs, bypass approval or revert KV data.
 
-Retain the first accepted immutable frontend deployment and compatible Worker version, both source SHAs/versions, configuration/pins and acceptance evidence as the rollback candidate for later releases; reverify eligibility before recovery. The workflows already permit initial deployment without a predecessor, but do not prove these manual prerequisites. This policy does not authorize publication, target activation, resource creation, refresh, deployment or data mutation; production `DEPLOY_ENABLED` and native protections remain mandatory.
+Retain the first accepted immutable frontend deployment and compatible Worker version, both source SHAs/versions, configuration/pins and acceptance evidence as the rollback candidate for later releases; reverify eligibility before recovery. The workflows already permit initial deployment without a predecessor, but do not prove these manual prerequisites. This policy does not authorize publication, target activation, resource creation, refresh, deployment or data mutation; production manual dispatch and native protections remain mandatory.
 
 ## Old infrastructure retirement
 
@@ -132,4 +134,4 @@ Keep new application SHAs, versions, deployment IDs and acceptance evidence in r
 
 See [RELEASE-NOTES.md](./RELEASE-NOTES.md) for dated dev rehearsal, production acceptance and recovery evidence. Those observations are not a live inventory or authorization to restore a deployment.
 
-Check live bindings, environment-scoped secret names, native gates, `DEPLOY_ENABLED`, stable aliases and the exact compatible Worker/OpenAPI pins before a release. A checked-in configuration or historical successful run does not establish current provider state. Do not change remote settings or refresh data as part of a local check.
+Check live bindings, environment-scoped secret names, native gates, stable aliases and the exact compatible Worker/OpenAPI pins before a release. A checked-in configuration or historical successful run does not establish current provider state. Do not change remote settings or refresh data as part of a local check.
