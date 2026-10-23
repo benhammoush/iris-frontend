@@ -698,6 +698,8 @@ test('workflow uses trusted main code and read-only permissions without installs
     new URL('../.github/workflows/ci.yml', import.meta.url),
     'utf8',
   );
+  assert.match(workflow, /workflows: \[CI\]/);
+  assert.match(ci, /^name: CI$/m);
   assert.match(
     ci,
     /ci-cd-workflows\/\.github\/workflows\/verify-web.yml@[a-f0-9]{40}/,
