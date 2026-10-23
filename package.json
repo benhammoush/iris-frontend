@@ -15,6 +15,9 @@
     "react-router-dom": "^7.9.4"
   },
   "scripts": {
+    "ci:quality": "npm run verify:fast && npm run format:check && npm run check:tooling && npm run audit:dependencies && npm run check:versions && npm run build",
+    "ci:integration": "npm run test:e2e && npm run check:contracts && npm run test:vertical",
+    "ci:browser": "playwright test --config playwright.release.config.ts",
     "lint": "eslint .",
     "check:tooling": "node scripts/check-tooling.mjs",
     "format": "prettier --write .",

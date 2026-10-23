@@ -1,5 +1,6 @@
 import { expect, test } from './support/test';
 import { sol } from './support/workerMock';
+import { openapiUrl } from './support/origins';
 
 for (const width of [1440, 390]) {
   test(`keeps asset summary text readable in both themes at ${width}px`, async ({
@@ -92,7 +93,7 @@ for (const width of [1440, 390]) {
     page,
   }, testInfo) => {
     await page.setViewportSize({ width, height: 900 });
-    await page.route('https://openapi.test/openapi.yaml', (route) =>
+    await page.route(openapiUrl, (route) =>
       route.fulfill({
         contentType: 'application/yaml',
         body: 'openapi: 3.0.3\ninfo:\n  title: Styling API\n  version: 1.0.0\npaths: {}\n',

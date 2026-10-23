@@ -1,6 +1,43 @@
 # Iris: localhost, dev, production
 
+## Versioned CI/CD entry points
+
+The [shared contract](https://github.com/benhammoush/ci-cd-workflows/blob/1d4b201fc53f05c53de2fdc37ab9b184b676a1be/docs/contract.md)
+is pinned in each repository's `.github/ci-cd.json`. CI checks PRs/main and delivers
+successful exact main commits to enabled dev. Separate manual
+`deploy-production.yml` selects a full merged `sha`, requires retained successful
+dev evidence, verifies the candidate and waits for native approval. CI dispatch
+is the exact-SHA dev recovery path; the Worker retains explicit `refresh_dev`,
+default false. These supersede older combined-workflow/target-selector invocations,
+not compatibility, native approval, acceptance, refresh or recovery requirements.
+
+All Ubuntu jobs use `ubuntu-24.04`. The frontend retains all three-engine
+account-enabled fixtures and its Chromium vertical suite before building/testing
+the actual deployable target. Public core journeys repeat on that exact output in
+all three engines; account activation remains a separate setup gate. Worker and
+OpenAPI pins stay deliberately unchanged. Explicit public build inputs must match
+the selected target; extra provider-only public build values require reviewed
+contract changes. Prebuilt frontend and prebundled Worker delivery retain
+artifact/configuration digests and immutable provider identities. Frontend smoke
+also checks public API/CORS. Production Worker refresh remains one explicit part
+of the approved release, without blind retry after uncertainty.
+
+Executable guard rejection tests now live with the pinned shared implementation;
+application tests protect delegation, meaningful checks and unchanged resource
+contracts. Existing required-check names remain compatibility gates. No merge,
+activation, data refresh or deployment is authorized by this migration. Historical
+sources lacking versioned hooks fail closed; eligible immutable recovery artifacts
+remain a separate, explicitly approved recovery path.
+
 Repositories: `benhammoush/iris-frontend` and `benhammoush/iris-backend`, with two ordinary release CI workflows. No release coordinator or extra GitHub tokens. This is the durable operator runbook, not a live inventory; verify provider and GitHub settings before activation or promotion.
+
+Both repositories also retain `dependency-audit.yml` for independent scheduled/manual default-branch dependency audits and `merge-eligibility.yml` for read-only PR readiness reports. Neither is a competing deployment path or a substitute for CI, required reviews or native production approval.
+
+### Migration prerequisite
+
+The daily release flow below applies only after both repositories have adopted the versioned workflows on `main`. For this rollout, merge the [backend migration #20](https://github.com/benhammoush/iris-backend/pull/20) before the [frontend migration #29](https://github.com/benhammoush/iris-frontend/pull/29), under separate merge authorization. Until then, a migration PR or its passing CI does not make the new production entry point available on `main`; do not use the legacy combined workflow as a substitute for retained-dev-evidence checks. Merging can automatically deliver an already-enabled dev target and must account for that consequence.
+
+The frontend's `workerSha` and `VITE_OPENAPI_URL` pins select a compatible API/schema revision for integration and documentation, not the backend's release-workflow revision. They may intentionally predate the workflow migration. Keep them unchanged for this workflow-only rollout; any later compatibility-pin update needs its own deliberate validation. Release tooling follows trusted `main`, while candidate application sources are selected by their exact merged SHAs.
 
 ## Fresh bootstrap
 
@@ -13,7 +50,7 @@ Use only the new environment resources below. Vercel domains and KV namespaces m
 | Dev        | `iris-frontend-dev` / `https://iris-frontend-dev.vercel.app`               | `iris-backend-dev` / `https://iris-backend-dev.benhxm.workers.dev`               | `iris-backend-dev-SNAPSHOTS`        |
 | Production | `iris-frontend-production` / `https://iris-frontend-production.vercel.app` | `iris-backend-production` / `https://iris-backend-production.benhxm.workers.dev` | `iris-backend-production-SNAPSHOTS` |
 
-Leave `DEPLOY_ENABLED` unset or `false` in both GitHub environments throughout bootstrap. Publishing the first commits can start CI, but must not enable provider deployment. Publish the backend first, set frontend `IRIS_WORKER_SHA` to its exact compatible new commit, and pin each `VITE_OPENAPI_URL` to that repository's exact compatible SHA. Complete native protections before any later deployment authorization.
+Leave `DEPLOY_ENABLED` unset or `false` in both GitHub environments throughout bootstrap. Publishing the first commits can start CI, but must not enable provider deployment. Publish the backend first, set the frontend's `.github/ci-cd.json` `workerSha` to its exact compatible new commit, and pin each target's `VITE_OPENAPI_URL` build input to that repository's exact compatible SHA. Complete native protections before any later deployment authorization.
 
 ## Localhost
 
@@ -34,7 +71,7 @@ Run `npm ci` in both repositories. Start the Worker with `npm run dev` (local KV
 - Reuse the existing `HELIUS_API_KEY`, `JUPITER_API_KEY` and `BIRDEYE_API_KEY` from the maintainer's password manager. Enter them directly as secrets on each new Worker, never as GitHub variables, Vercel/browser values, committed files or chat messages. Do not rotate/revoke them or disturb old Workers as part of this setup. Reuse can share provider quotas across environments; keep the old Cron/triggers in the retirement inventory.
 - Create separate fresh `REFRESH_TOKEN` values for dev and production and store them securely. Each Worker's secret must match the corresponding GitHub environment's `IRIS_REFRESH_TOKEN` secret. Configure scoped deployment credentials separately (`VERCEL_TOKEN` and `CLOUDFLARE_API_TOKEN`); an interactive CLI login does not populate GitHub secrets.
 - Worker creation/initial code deployment, secret entry, merging configuration PRs and activation are explicit operator actions. If a provider requires a Worker to exist before accepting secrets, the maintainer must handle that initial creation without enabling production Cron or data refresh before credentials and production gates are ready. Reverify deployed source/version and bindings afterward; setting secrets may change a provider version identity.
-- After the backend configuration is merged, explicitly select and record its exact compatible source SHA for `IRIS_WORKER_SHA` and both environment-specific `VITE_OPENAPI_URL` values (`https://raw.githubusercontent.com/benhammoush/iris-backend/<exact-backend-sha>/openapi.yaml`). Do not pin an unmerged configuration branch or silently retain the bootstrap OpenAPI placeholder. Set `VITE_API_BASE` and `IRIS_WORKER_ORIGIN` to the corresponding intended API origin above, then verify that endpoint after the operator deploys it. These values are configuration, not deployed acceptance.
+- After the backend configuration is merged, explicitly select and record its exact compatible source SHA in the frontend's `.github/ci-cd.json` `workerSha` and both target-specific `VITE_OPENAPI_URL` build inputs (`https://raw.githubusercontent.com/benhammoush/iris-backend/<exact-backend-sha>/openapi.yaml`). Do not pin an unmerged configuration branch or silently retain the bootstrap OpenAPI placeholder. Set declared `VITE_API_BASE` build inputs and matching environment variables, plus the Worker's `IRIS_WORKER_ORIGIN`, to the corresponding intended API origin above, then verify that endpoint after the operator deploys it. These values are configuration, not deployed acceptance.
 - Keep all four `DEPLOY_ENABLED` values false until their prerequisites are met. Validate the configured dev pair and recovery path first; only then approve production activation. A passing bootstrap or configuration PR cannot replace hosted acceptance.
 
 Configure these in each GitHub environment, not as shared production repository secrets:
@@ -54,19 +91,19 @@ and removal are separately authorized; this runbook does not revoke credentials.
 
 Use the corresponding environment's project/API URLs. API origins must be HTTPS with no path/trailing slash. `VITE_OPENAPI_URL` should pin the compatible Worker SHA's public `openapi.yaml`, not a moving branch. `IRIS_REFRESH_TOKEN` must match that Worker's `REFRESH_TOKEN`. Tokens need only their provider's deployment permissions; no cross-repository dispatch or administration-read token is needed.
 
-Set frontend repository variable `IRIS_WORKER_SHA` to the exact compatible Worker commit used by vertical CI. Update it deliberately for coordinated changes, and keep it at the dev-accepted compatible Worker SHA when testing/promoting the frontend. The vertical-CI pin and target OpenAPI pin are separate inputs; record and verify both. A missing pin fails CI; no matching-branch guessing or implicit pin changes.
+The frontend's `.github/ci-cd.json` `workerSha` selects the exact compatible Worker commit used by vertical CI; the versioned workflow does not read the legacy repository variable `IRIS_WORKER_SHA`. Update the declared pin deliberately for coordinated changes, and keep it at the dev-accepted compatible Worker SHA when testing/promoting the frontend. The vertical-CI pin and target OpenAPI pin are separate inputs; record and verify both. A missing pin fails CI; no matching-branch guessing or implicit pin changes.
 
 Leave environment variable `DEPLOY_ENABLED` unset or `false` until that target's settings, storage isolation, secrets, CORS, and protections are verified. Then, with separate activation authorization, set it to `true`. Enable dev first; production requires dev candidate acceptance and applicable recovery evidence. The workflows trust native GitHub protections; they do not audit provider settings or prove manual acceptance for you.
 
 ## Daily flow
 
 - Develop locally → PR → existing checks → merge. Each repository independently deploys its tested `main` commit to **dev**.
-- For initial dev data or a later refresh, manually run **Iris Worker API — CI & Deploy** from `main`, choose `dev`, provide its exact SHA, and enable `refresh_dev`. Automatic dev merges do not refresh snapshots. Inspect failures before retrying.
+- For initial dev data or a later refresh, manually run **CI** (`ci.yml`) in the Worker repository from `main`, provide its exact merged SHA, and enable `refresh_dev`. This entry point targets dev only; there is no target selector. Automatic dev merges do not refresh snapshots. Inspect failures before retrying.
 - Select a compatible merged frontend/Worker pair for release validation in dev. Manual **dev** redeployment can select an exact SHA from `main`; run the Worker first when both change. All deployments reuse the existing CI checks, not a second test framework. Only automatic dev pushes reject superseded main commits; explicit manual candidate selection may use an older merged SHA.
 - Before acceptance, record both source SHAs/versions, provider deployment identities, any previous compatible recovery pair and relevant configuration/pins in release notes. If production has no accepted predecessor, use the explicit first-production policy below rather than inventing a recovery pair. Check the browser flow, `/health`, `/ready`, fresh `/v3/status`, browser-to-API access, CORS and the affected user flow in dev. Fixture data or basic probes do not certify live-provider behavior. Workflow summaries/logs help identify deployments; inspect provider identities rather than assuming a green run proves acceptance.
 - Recheck candidate provider identities and relevant configuration after acceptance and immediately before promotion. If another deployment or configuration change interrupted validation, repeat affected acceptance on the selected candidate. Shared dev is mutable; the source input alone is not acceptance evidence, and no custom coordinator or freeze service is introduced.
 - After a production failure, inspect both providers before retrying. Production reruns are rejected: start a new exact-SHA dispatch from main and obtain fresh native approval.
-- Manually run **Iris Frontend — CI & Deploy** and **Iris Worker API — CI & Deploy** in their respective repositories from `main`, choose **production**, and provide those same dev-accepted source SHAs. Existing checks rerun against each selected source. As sole maintainer, explicitly approve the pair and rollback plan through each repository's native production gate. Production refreshes automatically on release; dev refresh remains explicit. Promotion history is an operator check, not a custom automated gate. Subsequent production smoke checks are read-only.
+- After the migration prerequisite above is complete, manually run **Deploy production** (`deploy-production.yml`) in each repository from `main` with that repository's full dev-accepted source SHA, Worker first when both change. The compatible pair has two independently selected source SHAs, not one SHA shared across repositories. Existing checks rerun against each selected source, and retained successful dev-delivery evidence for that exact SHA is verified automatically. As sole maintainer, explicitly approve the pair and rollback plan through each repository's native production gate. Production Worker refreshes automatically on release; dev refresh remains explicit. Human acceptance, compatibility and recovery eligibility remain operator checks. Subsequent production smoke checks are read-only.
 
 ## Rollback
 
