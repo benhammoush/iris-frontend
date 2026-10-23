@@ -42,7 +42,7 @@ Use only the new environment resources below. Vercel domains and KV namespaces m
 | Dev        | `iris-frontend-dev` / `https://iris-frontend-dev.vercel.app`               | `iris-backend-dev` / `https://iris-backend-dev.benhxm.workers.dev`               | `iris-backend-dev-SNAPSHOTS`        |
 | Production | `iris-frontend-production` / `https://iris-frontend-production.vercel.app` | `iris-backend-production` / `https://iris-backend-production.benhxm.workers.dev` | `iris-backend-production-SNAPSHOTS` |
 
-Leave `DEPLOY_ENABLED` unset or `false` in both GitHub environments throughout bootstrap. Publishing the first commits can start CI, but must not enable provider deployment. Publish the backend first, set frontend `IRIS_WORKER_SHA` to its exact compatible new commit, and pin each `VITE_OPENAPI_URL` to that repository's exact compatible SHA. Complete native protections before any later deployment authorization.
+Leave `DEPLOY_ENABLED` unset or `false` in both GitHub environments throughout bootstrap. Publishing the first commits can start CI, but must not enable provider deployment. Publish the backend first, set the frontend's `.github/ci-cd.json` `workerSha` to its exact compatible new commit, and pin each target's `VITE_OPENAPI_URL` build input to that repository's exact compatible SHA. Complete native protections before any later deployment authorization.
 
 ## Localhost
 
