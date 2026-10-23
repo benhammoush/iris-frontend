@@ -33,17 +33,17 @@ jobs:
   # Project: ci:browser tests that deployable output in all three engines using
   # playwright.release.config.ts; fixture output is not the release artifact.
   verify:
-    uses: benhammoush/ci-cd-workflows/.github/workflows/verify-web.yml@37151e604a66c0dbb68b5631534c7124d4d95798
+    uses: benhammoush/ci-cd-workflows/.github/workflows/verify-web.yml@d7d0c297f0b4038e9815349fd16f79bb92d77ceb
     with:
       # Shared: use identical immutable workflow and implementation revisions.
-      automation_sha: 37151e604a66c0dbb68b5631534c7124d4d95798
+      automation_sha: d7d0c297f0b4038e9815349fd16f79bb92d77ceb
       # Shared: explicit manual SHA, otherwise the exact PR/main event revision.
       source_sha: ${{ inputs.sha || github.sha }}
       environment: dev
       # Project: frontend runtime; the compatible Worker has its own Node setting.
       node_version: '24'
   # Shared: only successful main push/manual dev runs can enter delivery.
-  # The called job binds dev, checks enablement/artifact integrity/freshness and
+  # The called job binds dev, checks artifact integrity/freshness without an opt-in and
   # serializes target mutations, retaining exact-SHA delivery/smoke evidence.
   # Project: scripts/ci-deploy.mjs handles prebuilt Vercel delivery and public
   # API/CORS smoke. This is frontend delivery, not coordinated backend promotion.
@@ -51,9 +51,9 @@ jobs:
   deploy_dev:
     needs: verify
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
-    uses: benhammoush/ci-cd-workflows/.github/workflows/deploy-web.yml@37151e604a66c0dbb68b5631534c7124d4d95798
+    uses: benhammoush/ci-cd-workflows/.github/workflows/deploy-web.yml@d7d0c297f0b4038e9815349fd16f79bb92d77ceb
     with:
-      automation_sha: 37151e604a66c0dbb68b5631534c7124d4d95798
+      automation_sha: d7d0c297f0b4038e9815349fd16f79bb92d77ceb
       source_sha: ${{ inputs.sha || github.sha }}
       environment: dev
       node_version: '24'
