@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "profile": "web",
   "nodeVersion": "24",
-  "automationSha": "1d73e4b1124ca2a065cf748d52747ffb63a014e9",
+  "automationSha": "37151e604a66c0dbb68b5631534c7124d4d95798",
   "integration": true,
   "workerRepository": "benhammoush/iris-backend",
   "workerSha": "568d38a8acbfa42689c59f7162b975c41cea98b0",

@@ -2,7 +2,7 @@
 
 ## Versioned CI/CD entry points
 
-The [shared contract](https://github.com/benhammoush/ci-cd-workflows/blob/1d73e4b1124ca2a065cf748d52747ffb63a014e9/docs/contract.md)
+The [shared contract](https://github.com/benhammoush/ci-cd-workflows/blob/37151e604a66c0dbb68b5631534c7124d4d95798/docs/contract.md)
 at v1.0.1 is pinned in each repository's `.github/ci-cd.json`. CI checks PRs/main and
 delivers successful exact main commits to enabled dev. Separate manual
 `deploy-production.yml` selects a full merged `sha`, requires retained successful
