@@ -5,7 +5,10 @@
 Automation 2.0 removes dev opt-ins when this adoption is merged to main.
 
 The [shared contract](https://github.com/benhammoush/ci-cd-workflows/blob/d7d0c297f0b4038e9815349fd16f79bb92d77ceb/docs/contract.md)
-at v2.0.0 is pinned in each repository's `.github/ci-cd.json`. CI checks PRs/main and
+at v2.0.0 is pinned in this frontend's `.github/ci-cd.json`. Backend adoption is
+tracked separately in [Iris backend #22](https://github.com/benhammoush/iris-backend/pull/22);
+merge that PR first before treating the pair as flag-free. Its existing main pin
+continues to govern backend delivery until then. CI checks PRs/main and
 delivers successful exact main commits to dev without an opt-in switch. Separate manual
 `deploy-production.yml` selects a full merged `sha`, requires retained successful
 dev evidence, verifies the candidate and waits for native approval. CI dispatch
