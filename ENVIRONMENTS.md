@@ -31,6 +31,8 @@ remain a separate, explicitly approved recovery path.
 
 Repositories: `benhammoush/iris-frontend` and `benhammoush/iris-backend`, with two ordinary release CI workflows. No release coordinator or extra GitHub tokens. This is the durable operator runbook, not a live inventory; verify provider and GitHub settings before activation or promotion.
 
+Both repositories also retain `dependency-audit.yml` for independent scheduled/manual default-branch dependency audits and `merge-eligibility.yml` for read-only PR readiness reports. Neither is a competing deployment path or a substitute for CI, required reviews or native production approval.
+
 ## Fresh bootstrap
 
 The new repositories start with independent bootstrap commits; they do not import old Git history or local secrets. Preserve the old repositories until the replacements are verified; archive them only with separate authorization. Do not copy their Git directories, deployment links or environment credentials into Git.
