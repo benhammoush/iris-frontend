@@ -2,14 +2,23 @@
 
 ## Versioned CI/CD entry points
 
-Automation 3.0 removes production deployment opt-ins; dev remains automatic.
-The verified immutable v3.0.0 release is pinned below. Delete obsolete live
-deployment flags only after this consumer adoption is merged and verified.
+The parent-scoped `@scalar/json-magic` override keeps Undici on patched 7.30.1
+without upgrading Scalar or changing its public API. Remove it when Scalar's
+declared dependency naturally resolves to a patched compatible release; do not
+substitute an Undici major upgrade to silence the audit.
 
-The [shared contract](https://github.com/benhammoush/ci-cd-workflows/blob/a35aea526ca8b69d7ec27ff7952cff6af8c1bbe5/docs/contract.md)
-at v3.0.0 is pinned in this frontend's `.github/ci-cd.json`. Backend adoption is
+The backend similarly scopes an Undici 7.30.1 override to Miniflare, keeping the
+reviewed Worker toolchain. Remove that override when Miniflare's declared
+dependency naturally resolves to a patched compatible release.
+
+Automation 4.0 retains flag-free delivery and adds consistent job names and weekly
+vulnerability audits. The published immutable shared revision is pinned below;
+source adoption does not change live settings or authorize deployment.
+
+The [shared contract](https://github.com/benhammoush/ci-cd-workflows/blob/64b5e00a3d2895a8cba05b040f0d5a0415613d9e/docs/contract.md)
+at v4.0.0 is pinned in this frontend's `.github/ci-cd.json`. Backend adoption is
 tracked in the [backend configuration](https://github.com/benhammoush/iris-backend/blob/main/.github/ci-cd.json);
-adopt v3.0.0 there first before treating the pair as flag-free. This tooling-only
+adopt the same reviewed shared revision there too. This tooling-only
 change preserves the selected compatible Worker/OpenAPI pins. CI checks PRs/main and
 delivers successful exact main commits to dev without an opt-in switch. Separate manual
 `deploy-production.yml` selects a full merged `sha`, requires retained successful
@@ -38,7 +47,11 @@ remain a separate, explicitly approved recovery path.
 
 Repositories: `benhammoush/iris-frontend` and `benhammoush/iris-backend`, with two ordinary release CI workflows. No release coordinator or extra GitHub tokens. This is the durable operator runbook, not a live inventory; verify provider and GitHub settings before activation or promotion.
 
-Both repositories also retain `dependency-audit.yml` for independent scheduled/manual default-branch dependency audits and `merge-eligibility.yml` for read-only PR readiness reports. Neither is a competing deployment path or a substitute for CI, required reviews or native production approval.
+Both repositories retire the advisory `merge-eligibility.yml` pilot; required CI and current-head reviews still gate manual merges. The tested read-only CLI tools remain available, but have no automatic workflow entry point.
+
+Prepared job naming replaces the old verification aliases with standalone `Verify` in both repositories. The settings described below remain the live pre-migration requirements until the owner approves their coordinated replacement. Do not merge these naming changes under unchanged protections; follow the [shared check-name migration](https://github.com/benhammoush/ci-cd-workflows/blob/main/docs/contract.md#canonical-job-names-and-required-check-migration). Workflow comments are limited to two header lines; release procedures remain in this runbook and the shared contract.
+
+The old `dependency-audit.yml` implementations are replaced by thin `weekly-vuln-audit.yml` callers pinned to the same published shared revision as release workflows. Each audit runs weekly or manually after adoption on main. See the [shared audit contract](https://github.com/benhammoush/ci-cd-workflows/blob/64b5e00a3d2895a8cba05b040f0d5a0415613d9e/docs/contract.md#weekly-vulnerability-audits). These checks supplement normal CI; they do not deploy or authorize merges.
 
 ### Migration prerequisite
 
@@ -71,7 +84,7 @@ Run `npm ci` in both repositories. Start the Worker with `npm run dev` (local KV
 2. Provision/verify fresh dev and production Vercel projects with Node 24, stable URLs, and Git auto-deployment disabled. Each project's Vercel Production target serves that Iris environment—it does not make dev an Iris production deployment. Downtime and new URLs are acceptable; data deletion is a separate decision.
 3. Verify the two fresh, distinct hosted Worker KV namespaces against the configured IDs and frontend CORS origins in the backend's `wrangler.toml`; reverify dev/production bindings before activation. Default/local/E2E placeholders stay local. Do not add `remote=true` to local bindings. Production CORS allows only the new production dashboard, never local, dev or retired frontend origins. Verify the backend's canonical OpenAPI server against the newly deployed production API origin.
 4. Configure provider keys and `REFRESH_TOKEN` separately as secrets on each remote Worker. Shared dev has no Cron; production retains hourly Cron. Dev still has on-demand provider caches.
-5. Manual-merge policy: require PRs and strict successful CI on `main` (frontend `test-and-build` + `vertical`, Worker `test`) plus app-bound `CodeRabbit`, including administrators. Require at least one approving review, stale-review dismissal, independent last-push approval and resolved conversations. CodeRabbit must review and approve the current head; a successful status alone is not approval. The owner decides when to merge; no automatic merger or merge PAT is required. Block force pushes and deletion. Configure GitHub environments `dev` and `production` in **both** repositories. Production requires your explicit approval where supported, with **prevent self-review off** so you are not locked out; restrict deployment branches to protected `main` and disable administrator approval bypass. Verify the single `production` gate rather than creating a differently capitalized duplicate. If your GitHub plan cannot enforce approval, keep production disabled and resolve that policy first.
+5. Manual-merge policy: require PRs and strict successful app-bound `Verify` (GitHub Actions) and `CodeRabbit` checks on `main` in both repositories, including administrators. Replace the former CI aliases only through the coordinated check-name migration. Require at least one approving review, stale-review dismissal, independent last-push approval and resolved conversations. CodeRabbit must review and approve the current head; a successful status alone is not approval. The owner decides when to merge; no automatic merger or merge PAT is required. Block force pushes and deletion. Configure GitHub environments `dev` and `production` in **both** repositories. Production requires your explicit approval where supported, with **prevent self-review off** so you are not locked out; restrict deployment branches to protected `main` and disable administrator approval bypass. Verify the single `production` gate rather than creating a differently capitalized duplicate. If your GitHub plan cannot enforce approval, keep production disabled and resolve that policy first.
 
 ### Operator credential and initial-deployment handoff
 

@@ -7,7 +7,7 @@
   "maxFiles": 3,
   "maxChangedLines": 80,
   "workflow": ".github/workflows/ci.yml",
-  "jobs": ["test-and-build", "vertical"],
+  "jobs": ["Verify"],
   "reviewBot": "coderabbitai[bot]",
   "reviewContext": "CodeRabbit"
 }

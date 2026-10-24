@@ -63,10 +63,14 @@ describe('versioned delivery consumer', () => {
     expect(adapter).toContain('publishWeb');
     expect(adapter).toContain('access-control-allow-origin');
   });
-  it('preserves current review contexts and deliberately selected Worker/OpenAPI compatibility pins', () => {
-    expect(config.legacyChecks).toEqual(['test-and-build', 'vertical']);
-    for (const name of config.legacyChecks)
-      expect(workflow).toContain(`name: ${name}`);
+  it('uses the canonical Verify gate without changing selected Worker/OpenAPI compatibility pins', () => {
+    expect(config.legacyChecks).toEqual([]);
+    expect(workflow).toMatch(
+      /verify_result:\s+name: Verify\s+needs: verify\s+if: always\(\)/,
+    );
+    expect(workflow).toContain('test "$VERIFY_RESULT" = success');
+    expect(workflow).toContain('VERIFY_RESULT: ${{ needs.verify.result }}');
+    expect(workflow).not.toMatch(/legacy_\d+:/);
     expect(config.workerRepository).toBe('benhammoush/iris-backend');
     expect(config.workerSha).toBe('568d38a8acbfa42689c59f7162b975c41cea98b0');
     for (const target of ['dev', 'production']) {
