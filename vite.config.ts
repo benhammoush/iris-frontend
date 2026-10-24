@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   build: { target: ['chrome111', 'firefox128', 'safari16.4'] },
   esbuild: {
-    include: /src\/.*\.(js|ts|tsx)$/,
+    include: /(?:src|tests)\/.*\.(js|ts|tsx)$/,
     exclude: [],
     loader: 'tsx',
     jsx: 'automatic',
@@ -14,7 +14,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
-    setupFiles: './src/setupTests.ts',
-    include: ['src/**/*.{test,spec}.{js,ts,tsx}'],
+    setupFiles: './tests/unit/setup.ts',
+    include: ['tests/{unit,tooling}/**/*.{test,spec}.{ts,tsx}'],
   },
 });

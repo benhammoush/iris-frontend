@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
-  testDir: './e2e',
+  testDir: './tests/e2e',
   testIgnore: ['vertical/**'],
   fullyParallel: true,
   // Isolate browser rendering on shared CI runners without relaxing checks.

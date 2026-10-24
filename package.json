@@ -29,7 +29,7 @@
     "verify:fast": "npm run lint && npm run check && npm test && npm run test:merge-policy",
     "verify": "npm run verify:fast && npm run format:check && npm run check:tooling && npm run audit:dependencies && npm run check:versions && npm run build && npm run check:contracts && npm run test:e2e && npm run test:vertical",
     "check:versions": "node scripts/check-version.mjs",
-    "test:merge-policy": "node --test scripts/test-merge-policy.mjs",
+    "test:merge-policy": "node --test tests/tooling/merge-policy.test.mjs",
     "generate:contracts": "node scripts/generate-contracts.mjs",
     "check:contracts": "node scripts/generate-contracts.mjs --check",
     "test": "vitest run",

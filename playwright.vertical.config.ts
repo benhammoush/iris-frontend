@@ -3,7 +3,7 @@ import { defineConfig, devices } from '@playwright/test';
 const workerRoot = process.env.IRIS_WORKER_ROOT || '../iris-backend';
 
 export default defineConfig({
-  testDir: './e2e/vertical',
+  testDir: './tests/e2e/vertical',
   fullyParallel: false,
   forbidOnly: Boolean(process.env.CI),
   retries: 0,
