@@ -1,3 +1,8 @@
+/**
+ * Frontend build modes, plugins and deterministic test configuration.
+ * @packageDocumentation
+ */
+
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';

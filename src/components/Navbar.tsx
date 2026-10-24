@@ -1,3 +1,8 @@
+/**
+ * Shared navigation, market metrics and responsive search entry points.
+ * @packageDocumentation
+ */
+
 import { useRef, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useCatalog } from '../contexts/CatalogContext';
@@ -8,6 +13,7 @@ import ValueSkeleton from './ValueSkeleton';
 import NavbarSearch from './NavbarSearch';
 import { accountsEnabled } from '../auth/config';
 
+/** Format an available monetary metric without substituting zero for missing data. */
 function money(value: unknown, digits = 2) {
   return value === null ||
     value === undefined ||
@@ -16,6 +22,7 @@ function money(value: unknown, digits = 2) {
     : `$${Number(value).toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits })}`;
 }
 
+/** Scale a known display metric to millions without changing its source value. */
 function millions(value: unknown) {
   return value === null ||
     value === undefined ||
@@ -24,6 +31,7 @@ function millions(value: unknown) {
     : `$${(Number(value) / 1_000_000).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}M`;
 }
 
+/** Normalize or format the numeric value according to this boundary and its unavailable fallback. */
 function number(value: unknown, digits = 0) {
   return value === null ||
     value === undefined ||
@@ -32,6 +40,7 @@ function number(value: unknown, digits = 0) {
     : Number(value).toLocaleString('en-US', { maximumFractionDigits: digits });
 }
 
+/** Format a lamport-denominated network metric as a display SOL amount. */
 function sol(lamports: unknown) {
   return lamports === null ||
     lamports === undefined ||
@@ -40,6 +49,7 @@ function sol(lamports: unknown) {
     : `${(Number(lamports) / 1_000_000_000).toFixed(6)} SOL`;
 }
 
+/** Render shared navigation, market context and asset search. */
 function Navbar() {
   const { assets, loading: assetsLoading, error: assetsError } = useCatalog();
   const { network, loading: networkLoading } = useHeliusDashboard();
@@ -50,6 +60,7 @@ function Navbar() {
   const navbarMarket =
     assets.find((asset) => asset.symbol === 'SOL') || assets[0] || null;
 
+  /** Navigate to the selected application path. */
   function go(path: string) {
     navigate(path);
   }
@@ -168,6 +179,7 @@ function Navbar() {
   );
 }
 
+/** Reserve accessible market-metric layout during loading. */
 function MarketSkeleton({
   className,
   label,

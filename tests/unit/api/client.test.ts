@@ -1,3 +1,8 @@
+/**
+ * Regression coverage and controlled fixtures for client.
+ * @packageDocumentation
+ */
+
 import { afterEach, expect, test, vi } from 'vitest';
 
 afterEach(() => {
@@ -6,6 +11,7 @@ afterEach(() => {
   vi.resetModules();
 });
 
+/** Load a fresh client module under the test configuration. */
 async function loadClient() {
   vi.stubEnv('PROD', false);
   vi.stubEnv('VITE_API_BASE', 'http://iris.test/');

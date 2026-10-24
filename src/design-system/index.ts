@@ -1,3 +1,8 @@
+/**
+ * Application entry point and runtime integration boundaries.
+ * @packageDocumentation
+ */
+
 export { ThemeProvider, useTheme } from './ThemeProvider';
 export { applyThemeMode, getTheme, getThemeMode, theme } from './theme';
 export type { ThemeTokens, UiThemeMode } from './theme';

@@ -1,3 +1,8 @@
+/**
+ * Regression coverage and controlled fixtures for delivery.
+ * @packageDocumentation
+ */
+
 // @vitest-environment node
 /** Consumer contracts; executable release-rejection tests live with the pinned shared guards. */
 import { readFileSync } from 'node:fs';

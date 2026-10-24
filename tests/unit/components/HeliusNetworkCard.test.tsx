@@ -1,3 +1,8 @@
+/**
+ * Regression coverage and controlled fixtures for helius network card.
+ * @packageDocumentation
+ */
+
 import { render, screen } from '@testing-library/react';
 import { expect, test } from 'vitest';
 import HeliusNetworkCard from '../../../src/components/HeliusNetworkCard';
@@ -14,6 +19,7 @@ test('keeps row and animation classes separate for new and existing signatures',
   const { rerender } = render(
     <HeliusNetworkCard {...props} transactions={[previous]} />,
   );
+  /** Build the prior transaction row used to verify retained-data behaviour. */
   const previousRow = () => screen.getByRole('row', { name: /previous/ });
   expect(previousRow()).toHaveClass('iris-recent-transaction-row');
   expect(previousRow()).not.toHaveClass('is-new');

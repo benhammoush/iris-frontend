@@ -1,3 +1,8 @@
+/**
+ * Regression coverage and controlled fixtures for asset.
+ * @packageDocumentation
+ */
+
 import { expect, test } from './support/test';
 import { sol } from './support/workerMock';
 

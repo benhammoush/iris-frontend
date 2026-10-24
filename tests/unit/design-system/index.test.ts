@@ -1,3 +1,8 @@
+/**
+ * Regression coverage and controlled fixtures for index.
+ * @packageDocumentation
+ */
+
 import { getTheme, type UiThemeMode } from '../../../src/design-system/index';
 import { describe, expect, it } from 'vitest';
 

@@ -1,3 +1,8 @@
+/**
+ * Account- and feature-gated watchlist save controls.
+ * @packageDocumentation
+ */
+
 import { Link } from 'react-router-dom';
 import { accountsEnabled } from '../auth/config';
 import { useAccount } from '../contexts/AccountContext';
@@ -8,6 +13,7 @@ import { itemKey } from '../watchlist/store';
 import WatchlistFeedback from './WatchlistFeedback';
 import './Watchlist.css';
 
+/** Gate the watchlist action on account readiness and feature availability. */
 export default function SaveControl({
   kind,
   address,
@@ -50,6 +56,7 @@ export default function SaveControl({
     />
   );
 }
+/** Render the account-scoped save action once the watchlist session is ready. */
 function ReadySaveControl({
   kind,
   address,

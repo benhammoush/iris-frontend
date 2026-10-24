@@ -1,3 +1,8 @@
+/**
+ * Regression coverage and controlled fixtures for account.
+ * @packageDocumentation
+ */
+
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
@@ -15,6 +20,7 @@ vi.mock('../../../src/auth/firebaseDriver', () => ({
   createFirebaseDriver: vi.fn(),
 }));
 vi.mock('../../../src/components/Navbar', () => ({
+  /** Render the minimal navigation substitute used to isolate this component test. */
   default: () => <nav>Public navigation</nav>,
 }));
 let fake = fakeDriver();
@@ -22,6 +28,7 @@ beforeEach(() => {
   fake = fakeDriver();
   vi.mocked(createFirebaseDriver).mockImplementation(async () => fake.driver);
 });
+/** Open the controlled account or watchlist view for the UI test. */
 async function open() {
   render(
     <MemoryRouter>

@@ -1,3 +1,8 @@
+/**
+ * React ownership and subscription boundary for the account-scoped watchlist store.
+ * @packageDocumentation
+ */
+
 import {
   createContext,
   useContext,
@@ -10,6 +15,7 @@ import { useAccount } from './AccountContext';
 import { WatchlistStore } from '../watchlist/store';
 
 const WatchlistContext = createContext<WatchlistStore | null>(null);
+/** Own the account-scoped watchlist subscription and its cleanup. */
 export function WatchlistProvider({ children }: { children: ReactNode }) {
   const { session } = useAccount();
   const [store] = useState(() => new WatchlistStore(session));
@@ -20,6 +26,7 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
     </WatchlistContext.Provider>
   );
 }
+/** Read watchlist state and reject use outside its provider. */
 export function useWatchlist() {
   const store = useContext(WatchlistContext);
   if (!store) throw new Error('WatchlistProvider is required.');

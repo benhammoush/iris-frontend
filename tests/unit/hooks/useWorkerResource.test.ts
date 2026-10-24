@@ -1,3 +1,8 @@
+/**
+ * Regression coverage and controlled fixtures for use worker resource.
+ * @packageDocumentation
+ */
+
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import {
@@ -12,6 +17,7 @@ beforeEach(() => {
   hidden = false;
   Object.defineProperty(document, 'hidden', {
     configurable: true,
+    /** Read the controlled cache or boundary value used by this assertion. */
     get: () => hidden,
   });
 });

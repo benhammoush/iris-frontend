@@ -1,3 +1,8 @@
+/**
+ * Published Worker API reference embedded in the application shell.
+ * @packageDocumentation
+ */
+
 import type { ComponentProps } from 'react';
 import { Link } from 'react-router-dom';
 import { ApiReferenceReact } from '@scalar/api-reference-react';
@@ -24,6 +29,7 @@ export const apiDocsConfiguration = {
   ComponentProps<typeof ApiReferenceReact>['configuration']
 >;
 
+/** Render the published API reference inside the application shell. */
 function ApiDocs() {
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-6 text-slate-900 sm:px-6">

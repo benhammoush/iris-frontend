@@ -1,3 +1,8 @@
+/**
+ * Regression coverage and controlled fixtures for use wallet summaries.
+ * @packageDocumentation
+ */
+
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, expect, test, vi } from 'vitest';
 import { AccountSession } from '../../../src/auth/session';
@@ -11,6 +16,7 @@ import { useWalletSummaries } from '../../../src/hooks/useWalletSummaries';
 
 const context = vi.hoisted(() => ({ session: null as AccountSession | null }));
 vi.mock('../../../src/contexts/AccountContext', () => ({
+  /** Read the account context and reject use outside its provider. */
   useAccount: () => ({ session: context.session }),
 }));
 vi.mock('../../../src/watchlist/walletSummaries', () => ({
@@ -19,6 +25,7 @@ vi.mock('../../../src/watchlist/walletSummaries', () => ({
 afterEach(() => vi.resetAllMocks());
 const address = 'So11111111111111111111111111111111111111112';
 const other = '11111111111111111111111111111111';
+/** Create isolated dependencies and controlled session state for this test. */
 function setup() {
   const session = new AccountSession(true);
   const fake = fakeDriver(alice);
@@ -42,10 +49,12 @@ test('focus refresh retains pending values, marks failed values stale and retry 
   const { data } = setup();
   const { result } = renderHook(() => useWalletSummaries([address, other]));
   await waitFor(() => expect(result.current.loading).toBe(false));
+  /** Publish the new scoped state to subscribers without mutating unrelated state. */
   let publish: (
     address: string,
     result: WalletSummaryResult,
   ) => void = () => {};
+  /** Complete queued fixture work before checking the final state. */
   let finish: () => void = () => {};
   vi.mocked(loadWalletSummaries).mockImplementationOnce(
     async (_session, _addresses, _signal, callback) => {
@@ -83,10 +92,12 @@ test.each(['sign-out', 'switch', 'unverified'] as const)(
     const { emit } = setup();
     const { result } = renderHook(() => useWalletSummaries([address]));
     await waitFor(() => expect(result.current.loading).toBe(false));
+    /** Publish the new scoped state to subscribers without mutating unrelated state. */
     let publish: (
       address: string,
       result: WalletSummaryResult,
     ) => void = () => {};
+    /** Complete queued fixture work before checking the final state. */
     let finish: () => void = () => {};
     vi.mocked(loadWalletSummaries).mockImplementationOnce(
       async (_session, _addresses, _signal, callback) => {
@@ -132,6 +143,7 @@ test('same verified identity events restart an aborted batch without clearing re
   const { emit, data } = setup();
   const { result } = renderHook(() => useWalletSummaries([address]));
   await waitFor(() => expect(result.current.loading).toBe(false));
+  /** Complete queued fixture work before checking the final state. */
   let finish: () => void = () => {};
   vi.mocked(loadWalletSummaries).mockImplementationOnce(
     async (_session, _addresses, signal, publish) => {

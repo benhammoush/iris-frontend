@@ -1,3 +1,8 @@
+/**
+ * Regression coverage and controlled fixtures for smoke.
+ * @packageDocumentation
+ */
+
 import { expect, test } from './support/test';
 import { sol } from './support/workerMock';
 

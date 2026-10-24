@@ -1,3 +1,8 @@
+/**
+ * Regression coverage and controlled fixtures for pagination.
+ * @packageDocumentation
+ */
+
 import { expect, test } from 'vitest';
 import { nextCursorFrom } from '../../../src/data/pagination';
 

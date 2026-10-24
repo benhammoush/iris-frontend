@@ -1,9 +1,16 @@
+/**
+ * Accessible loading placeholders that preserve metric layout.
+ * @packageDocumentation
+ */
+
+/** Loading placeholder dimensions, styling and accessible label. */
 type ValueSkeletonProps = {
   className?: string;
   width?: string;
   label?: string;
 };
 
+/** Reserve accessible metric layout while a value is loading. */
 export default function ValueSkeleton({
   className = '',
   width,

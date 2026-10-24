@@ -1,3 +1,8 @@
+/**
+ * Regression coverage and controlled fixtures for normalizers.
+ * @packageDocumentation
+ */
+
 import { expect, test } from 'vitest';
 import {
   assetCandlesFrom,

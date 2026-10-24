@@ -1,3 +1,9 @@
+/**
+ * Independent feedback for watchlist reads, refreshes and mutations.
+ * @packageDocumentation
+ */
+
+/** Render independent watchlist load, mutation and refresh feedback. */
 export default function WatchlistFeedback({
   loadError,
   mutationError,
@@ -9,6 +15,7 @@ export default function WatchlistFeedback({
   mutationError: string;
   feedback: string;
   loading: boolean;
+  /** Refresh the currently scoped resource without accepting results from a superseded identity. */
   refresh: () => Promise<void>;
 }) {
   return (

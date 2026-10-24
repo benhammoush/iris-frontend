@@ -1,3 +1,8 @@
+/**
+ * Private Worker requests bound to the captured account session.
+ * @packageDocumentation
+ */
+
 import {
   API_BASE,
   ApiError,
@@ -57,6 +62,7 @@ export async function authenticatedRequest(
     });
   const identity = session.capture();
   const controller = new AbortController();
+  /** Cancel the request owned by this operation without cancelling unrelated work. */
   const abort = () => controller.abort();
   identity.signal.addEventListener('abort', abort, { once: true });
   signal?.addEventListener('abort', abort, { once: true });

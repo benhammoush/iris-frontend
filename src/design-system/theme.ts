@@ -1,3 +1,9 @@
+/**
+ * Shared UI tokens and persisted light/dark theme selection.
+ * @packageDocumentation
+ */
+
+/** Supported light and dark interface modes. */
 export type UiThemeMode = 'dark' | 'light';
 
 const baseTheme = {
@@ -98,19 +104,23 @@ const lightTheme = {
 
 const themes = { dark: darkTheme, light: lightTheme } as const;
 
+/** Shared interface colors, dimensions and typography used by the theme boundary. */
 export type ThemeTokens = typeof darkTheme | typeof lightTheme;
 
 export let theme: ThemeTokens = lightTheme;
 let currentThemeMode: UiThemeMode = 'light';
 
+/** Resolve the token set for the supported theme mode. */
 export function getTheme(mode: UiThemeMode = currentThemeMode): ThemeTokens {
   return themes[mode];
 }
 
+/** Return the current in-memory theme mode without reading persistence or system preferences. */
 export function getThemeMode(): UiThemeMode {
   return currentThemeMode;
 }
 
+/** Apply the selected theme tokens to the document boundary. */
 export function applyThemeMode(mode: UiThemeMode): ThemeTokens {
   currentThemeMode = mode;
   theme = themes[mode];

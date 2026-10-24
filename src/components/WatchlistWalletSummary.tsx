@@ -1,10 +1,17 @@
+/**
+ * Saved-wallet summary with explicit unavailable valuation and retry feedback.
+ * @packageDocumentation
+ */
+
 import type { WalletSummaryResult } from '../watchlist/walletSummaries';
 
+/** Format an available monetary metric without substituting zero for missing data. */
 const money = (value: number | null | undefined) =>
   value == null || !Number.isFinite(value)
     ? '—'
     : `$${value.toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
 
+/** Render a saved wallet summary without claiming unavailable valuation is zero. */
 export default function WatchlistWalletSummary({
   result,
   busy,
@@ -12,6 +19,7 @@ export default function WatchlistWalletSummary({
 }: {
   result?: WalletSummaryResult;
   busy: boolean;
+  /** Ask the resource owner to retry its failed load. */
   onRetry: () => void;
 }) {
   if (!result)

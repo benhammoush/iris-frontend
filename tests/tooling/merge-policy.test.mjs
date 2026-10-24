@@ -1,3 +1,8 @@
+/**
+ * Regression coverage and controlled fixtures for merge policy.
+ * @file
+ */
+
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
@@ -501,7 +506,9 @@ function fixtureClient(options = {}) {
   let reads = 0;
   let statusReads = 0;
   return {
+    /** Resolve review-thread evidence for the merge-policy decision. */
     threads: async () => value.native,
+    /** Read the controlled cache or boundary value used by this assertion. */
     get: async (path) => {
       if (path.endsWith('/pulls/7')) {
         reads++;
@@ -592,6 +599,7 @@ test('GitHub adapter exposes GETs and one fixed read-only GraphQL query; failure
     calls.push({ url, ...options });
     return {
       ok: true,
+      /** Return the controlled JSON payload for this provider-response fixture. */
       json: async () => ({
         data: {
           repository: {
@@ -629,6 +637,7 @@ test('GitHub adapter exposes GETs and one fixed read-only GraphQL query; failure
 
 test('event selection ignores PR prose and validates dispatch numbers', async () => {
   const client = {
+    /** Read the controlled cache or boundary value used by this assertion. */
     get: async () => [
       { number: 7, head: { sha: head } },
       { number: 8, head: { sha: base } },
@@ -662,6 +671,7 @@ test('GraphQL walkthrough collection preserves editor provenance and rejects tru
   for (const truncated of [false, true]) {
     const client = githubReader('fixture', async () => ({
       ok: true,
+      /** Return the controlled JSON payload for this provider-response fixture. */
       json: async () => ({
         data: {
           repository: {

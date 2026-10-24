@@ -1,3 +1,8 @@
+/**
+ * Regression coverage and controlled fixtures for search.
+ * @packageDocumentation
+ */
+
 import { expect, test } from './support/test';
 import { sol, walletAddress } from './support/workerMock';
 

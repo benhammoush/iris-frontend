@@ -1,9 +1,16 @@
+/**
+ * Network metrics and recent transactions with independent resource feedback.
+ * @packageDocumentation
+ */
+
 import { useEffect, useMemo, useRef } from 'react';
 import ValueSkeleton from './ValueSkeleton';
 import { isRecord } from '../data/record';
 import ResourceFeedback from './ResourceFeedback';
 
+/** Network metrics and freshness fields rendered by the dashboard card. */
 type Network = Record<string, unknown>;
+/** Transaction fields rendered by the network dashboard sample. */
 type Transaction = {
   signature?: string | null;
   slot?: number | null;
@@ -11,12 +18,15 @@ type Transaction = {
   action?: string | null;
 };
 
+/** Normalize or format the numeric value according to this boundary and its unavailable fallback. */
 const number = (value: unknown) =>
   value === null || value === undefined || !Number.isFinite(Number(value))
     ? '—'
     : Number(value).toLocaleString('en-US');
+/** Shorten the displayed transaction signature while retaining its full link identity. */
 const shortSignature = (value: string) =>
   `${value.slice(0, 8)}...${value.slice(-8)}`;
+/** Map supported transaction actions to readable labels. */
 const actionLabel = (value: string | null | undefined) =>
   value
     ? value
@@ -24,6 +34,7 @@ const actionLabel = (value: string | null | undefined) =>
         .replace(/\b\w/g, (letter) => letter.toUpperCase())
     : 'Unknown';
 
+/** Format the observation age for the dashboard display. */
 function relativeTime(value: string | null | undefined) {
   if (!value || !Number.isFinite(Date.parse(value))) return '—';
   const seconds = Math.max(
@@ -35,6 +46,7 @@ function relativeTime(value: string | null | undefined) {
   return `${Math.floor(seconds / 3600)}h ago`;
 }
 
+/** Render one network metric with a loading placeholder when needed. */
 function Field({
   label,
   value,
@@ -52,6 +64,7 @@ function Field({
   );
 }
 
+/** Render network and transaction resources with independent loading and failure feedback. */
 export default function HeliusNetworkCard({
   network,
   loading,
@@ -69,6 +82,7 @@ export default function HeliusNetworkCard({
   transactionsLoading: boolean;
   transactionsError: unknown;
   refreshing?: boolean;
+  /** Ask the resource owner to retry its failed load. */
   onRetry?: () => void;
 }) {
   const previousSignatures = useRef<Set<string> | null>(null);

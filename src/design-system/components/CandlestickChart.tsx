@@ -1,3 +1,8 @@
+/**
+ * OHLC chart lifecycle with user-view preservation and earlier-history loading.
+ * @packageDocumentation
+ */
+
 import {
   CandlestickSeries,
   ColorType,
@@ -11,6 +16,7 @@ import {
 import { useEffect, useRef } from 'react';
 import { useTheme } from '../ThemeProvider';
 
+/** Observed time and OHLC values accepted by the candlestick chart. */
 export interface CandleChartPoint {
   timestamp: string;
   openUsd: number;
@@ -20,14 +26,18 @@ export interface CandleChartPoint {
   volumeUsd: number;
 }
 
+/** Inputs and owner callbacks accepted by CandlestickChart. */
 interface Props {
   candles: CandleChartPoint[];
   height?: number;
+  /** Format an available chart value for the visible price axis. */
   valueFormatter?: (value: number) => string;
   canLoadEarlier?: boolean;
+  /** Request the preceding historical window from the resource owner. */
   onLoadEarlier?: () => Promise<void>;
 }
 
+/** Convert supported candles to the chart OHLC representation. */
 function asChartCandles(candles: CandleChartPoint[]) {
   return candles.flatMap((candle) => {
     const timestamp = new Date(candle.timestamp).getTime();
@@ -53,6 +63,7 @@ function asChartCandles(candles: CandleChartPoint[]) {
   });
 }
 
+/** Own the candlestick chart and its optional earlier-history loading interaction. */
 export default function CandlestickChart({
   candles,
   height = 360,
@@ -85,6 +96,7 @@ export default function CandlestickChart({
     if (!container) return undefined;
 
     const style = getComputedStyle(document.documentElement);
+    /** Read a chart color from the current theme with the supported fallback. */
     const color = (name: string, fallback: string) =>
       style.getPropertyValue(name).trim() || fallback;
     const green = color('--iris-green', '#24d166');
@@ -125,6 +137,7 @@ export default function CandlestickChart({
       priceFormat: valueFormatterRef.current
         ? {
             type: 'custom',
+            /** Use the latest caller formatter without recreating the chart-owned callback. */
             formatter: (value: number) =>
               valueFormatterRef.current
                 ? valueFormatterRef.current(value)
@@ -145,9 +158,11 @@ export default function CandlestickChart({
     hasDataRef.current = false;
     let loadingEarlier = false;
     let userNavigated = false;
+    /** Record explicit chart navigation so data refresh does not reset the chosen view. */
     const markUserNavigation = () => {
       userNavigated = true;
     };
+    /** Request preceding history when the visible range reaches the supported boundary. */
     const loadEarlier = (visibleRange: { from: number } | null) => {
       if (
         !userNavigated ||

@@ -1,3 +1,8 @@
+/**
+ * Discovery catalog route with independent loading and failure feedback.
+ * @packageDocumentation
+ */
+
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useCatalog } from '../contexts/CatalogContext';
@@ -7,6 +12,7 @@ import { looksLikeSolanaAddress } from '../data/solana';
 import ValueSkeleton from './ValueSkeleton';
 import ResourceFeedback from './ResourceFeedback';
 
+/** Render the requested discovery catalog without mixing catalog identities. */
 export default function Catalog({ kind }: { kind: 'assets' | 'wallets' }) {
   const { assets, loading, refreshing, error, refetch } = useCatalog();
   const [address, setAddress] = useState('');

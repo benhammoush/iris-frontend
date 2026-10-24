@@ -1,4 +1,6 @@
-/** Deliver the checked target-specific frontend and verify API connectivity without refresh or private operations. @file */
+/** Deliver the checked target-specific frontend and verify API connectivity without refresh or private operations.
+ * @file
+ */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
