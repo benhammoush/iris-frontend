@@ -36,7 +36,7 @@ export default [
     },
   },
   {
-    files: ['src/**/*.{js,ts,tsx}'],
+    files: ['src/**/*.{js,ts,tsx}', 'tests/unit/**/*.{ts,tsx}'],
     plugins: { 'react-hooks': hooks },
     rules: {
       'react-hooks/rules-of-hooks': 'error',
@@ -56,7 +56,7 @@ export default [
     },
   },
   {
-    files: ['src/**/*.{test,spec}.{js,ts,tsx}', 'src/setupTests.{js,ts}'],
+    files: ['tests/**/*.{test,spec}.{ts,tsx}', 'tests/unit/setup.ts'],
     languageOptions: {
       globals: {
         vi: 'readonly',
@@ -72,7 +72,7 @@ export default [
     },
   },
   {
-    files: ['*.{js,mjs,ts}', 'scripts/**', 'e2e/**'],
+    files: ['*.{js,mjs,ts}', 'scripts/**', 'tests/tooling/**', 'tests/e2e/**'],
     languageOptions: { globals: globals.node },
   },
 ];

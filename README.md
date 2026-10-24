@@ -1,41 +1,40 @@
 # Iris — dashboard
 
 A read-only Solana market monitor and public-wallet viewer, with asset charts,
-token information and wallet activity. No wallet connection or transaction
-signing is required.
+token information and wallet activity. Public browsing requires no wallet
+connection or transaction signing.
 
-## Tech stack and system design
+## Tech stack
 
-| Layer                 | Tools                                         |
+| Layer                 | Technology                                    |
 | --------------------- | --------------------------------------------- |
 | Interface and routing | React, TypeScript, React Router, Tailwind CSS |
 | Charts                | Lightweight Charts                            |
 | API documentation     | Scalar                                        |
 | Build and testing     | Vite, Vitest, Testing Library, Playwright     |
 
-The browser application gets market and wallet data from the
-[Iris Worker API](https://github.com/benhammoush/iris-backend), not directly from
-chain or pricing providers. Provider credentials remain in the Worker, which
-manages upstream requests, caching and snapshots.
+## Features
 
-A shared API client handles request timeouts and errors. The interface retains
-previous results while refreshing and displays unavailable values.
-The `/api-docs` route loads the interactive API reference separately from
-the dashboard.
+- Browse and search assets and public wallet addresses.
+- Explore token prices, charts, market metrics and on-chain details.
+- Inspect public-wallet balances and transaction activity.
+- View Solana network activity and DeFi market summaries.
+- See loading, unavailable and refreshing states without discarding previous results.
+- Browse the interactive API reference separately from the dashboard.
 
-For local setup and release policy, see [ENVIRONMENTS.md](./ENVIRONMENTS.md).
+Accounts and private watchlists are optional, disabled-by-default features, not a
+requirement for public browsing. Their hosted setup and lifecycle acceptance
+remain separate from the public dashboard.
 
-The optional [account page](./ACCOUNTS.md) is disabled until its isolated setup
-and lifecycle acceptance are complete; public browsing stays anonymous.
-The [private watchlist UI](./WATCHLISTS.md) shares that activation gate.
+## Boundaries and integration
 
-Run `npm run verify` for the frontend verification suite, including lint,
-formatting, type and contract checks, unit and browser tests, and the isolated
-vertical test.
+The browser gets market and wallet data from the
+[Iris API](https://github.com/benhammoush/iris-backend), not directly from chain
+or pricing providers. The backend owns provider credentials, upstream requests,
+caching and snapshots; the frontend handles navigation, charts and presentation.
 
-## API and release references
+Freshness and unavailable values are preserved rather than presenting missing
+information as zero. The dashboard does not trade, sign transactions or move funds.
 
-- [Worker API contract](https://github.com/benhammoush/iris-backend/blob/main/openapi.yaml)
-- [Worker architecture](https://github.com/benhammoush/iris-backend/blob/main/ARCHITECTURE.md)
-- [Release evidence](./RELEASE-NOTES.md)
-- [Environment and recovery runbook](./ENVIRONMENTS.md)
+See [the backend API contract](https://github.com/benhammoush/iris-backend/blob/main/openapi.yaml)
+for data formats and endpoints.
