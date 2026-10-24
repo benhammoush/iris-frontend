@@ -11,7 +11,9 @@ test('shows an empty chart without reporting an unavailable asset', async ({
   });
   await page.goto(`/asset/${sol.mint}`);
   await expect(page.getByText('No price history is available.')).toBeVisible();
-  await expect(page.getByRole('heading', { name: /Solana SOL/ })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Solana SOL', exact: true }),
+  ).toBeVisible();
   await expect(page.getByRole('button', { name: 'Retry asset' })).toHaveCount(
     0,
   );
