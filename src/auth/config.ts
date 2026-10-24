@@ -1,3 +1,8 @@
+/**
+ * Environment validation and effective runtime configuration.
+ * @packageDocumentation
+ */
+
 export const accountsEnabled = import.meta.env.VITE_ENABLE_ACCOUNTS === 'true';
 export const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY as string | undefined,

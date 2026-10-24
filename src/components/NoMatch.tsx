@@ -1,5 +1,11 @@
+/**
+ * Recovery navigation for unmatched client-side routes.
+ * @packageDocumentation
+ */
+
 import Navbar from './Navbar';
 
+/** Render recovery navigation for an unmatched client-side route. */
 function NoMatch() {
   return (
     <div className="App bg-background_light font-poppins dark:bg-background_dark">

@@ -1,3 +1,8 @@
+/**
+ * Bounded browser API transport and validated response envelopes.
+ * @packageDocumentation
+ */
+
 import { isRecord } from '../data/record';
 import type { WireMeta } from './contracts';
 
@@ -11,11 +16,13 @@ export const API_BASE = (
 ).replace(/\/$/, '');
 const DEFAULT_TIMEOUT_MS = 10000;
 
+/** Cancellation and deadline controls supplied by a browser resource caller. */
 export interface ApiGetOptions {
   signal?: AbortSignal;
   timeoutMs?: number;
 }
 
+/** Validated resource payload paired with response metadata. */
 export interface ApiResult {
   // Endpoint normalizers must narrow provider-backed JSON before consuming it.
   data: unknown;
@@ -23,25 +30,30 @@ export interface ApiResult {
   error?: ApiError;
 }
 
+/** Public failure fields retained by the browser API error boundary. */
 interface ApiErrorOptions {
   code?: string;
   status?: number;
   requestId?: string;
 }
 
+/** Read supported public error fields from an untrusted response body. */
 function errorFields(body: unknown): Record<string, unknown> {
   return isRecord(body) && isRecord(body.error) ? body.error : {};
 }
 
+/** Normalize the public error code without relying on provider-specific payloads. */
 function errorCode(value: unknown): string | undefined {
   return typeof value === 'string' ? value : undefined;
 }
 
+/** Public API failure retaining supported error code, status and request correlation. */
 export class ApiError extends Error {
   readonly code: string;
   readonly status: number | undefined;
   readonly requestId: string | undefined;
 
+  /** Initialize this error or state owner with the supplied context. */
   constructor(
     message: string,
     { code = 'REQUEST_FAILED', status, requestId }: ApiErrorOptions = {},
@@ -54,6 +66,7 @@ export class ApiError extends Error {
   }
 }
 
+/** Create or normalize a request identifier for response and diagnostic correlation. */
 function requestId() {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID();
@@ -61,6 +74,7 @@ function requestId() {
   return `iris-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
+/** Validate the response envelope and preserve request correlation for failures. */
 function parseEnvelope(
   body: unknown,
   id: string,
@@ -84,6 +98,7 @@ function parseEnvelope(
   );
 }
 
+/** Fetch and validate a Worker response with cancellation, timeout and public error semantics. */
 export async function apiGet(
   path: string,
   { signal, timeoutMs = DEFAULT_TIMEOUT_MS }: ApiGetOptions = {},
@@ -94,6 +109,7 @@ export async function apiGet(
   const id = requestId();
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  /** Cancel the request owned by this operation without cancelling unrelated work. */
   const abort = () => controller.abort();
   if (signal) signal.addEventListener('abort', abort, { once: true });
 

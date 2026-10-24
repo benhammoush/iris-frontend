@@ -1,3 +1,8 @@
+/**
+ * Regression coverage and controlled fixtures for catalog asset content.
+ * @packageDocumentation
+ */
+
 import { render, screen } from '@testing-library/react';
 import { expect, test, vi } from 'vitest';
 import { assetsFrom } from '../../../src/data/normalizers';

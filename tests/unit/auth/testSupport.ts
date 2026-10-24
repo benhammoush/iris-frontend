@@ -1,3 +1,8 @@
+/**
+ * Regression coverage and controlled fixtures for test support.
+ * @packageDocumentation
+ */
+
 import { vi } from 'vitest';
 import type { AccountDriver, AccountUser } from '../../../src/auth/session';
 
@@ -7,14 +12,18 @@ export const alice: AccountUser = {
   verified: true,
   providers: ['password'],
 };
+/** Provide a controlled authentication driver without contacting a live identity service. */
 export function fakeDriver(initial: AccountUser | null = null) {
   let current = initial;
+  /** Record the controlled subscription notification used by the test. */
   let listener: (user: AccountUser | null) => void = () => {};
+  /** Publish a controlled authentication state transition to fixture subscribers. */
   const emit = (user: AccountUser | null) => {
     current = user;
     listener(user);
   };
   const driver = {
+    /** Check that delayed work still belongs to the captured account generation. */
     current: () => current,
     subscribe: vi.fn((next: (user: AccountUser | null) => void) => {
       listener = next;

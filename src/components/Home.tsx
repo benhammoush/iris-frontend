@@ -1,3 +1,8 @@
+/**
+ * Market overview with provider context and bounded discovery previews.
+ * @packageDocumentation
+ */
+
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { workerApi } from '../api/worker';
 import { assetsFrom, defillamaFrom } from '../data/normalizers';
@@ -14,9 +19,11 @@ import { useHeliusDashboard } from '../contexts/HeliusDashboardContext';
 import { isRecord } from '../data/record';
 import ResourceFeedback from './ResourceFeedback';
 
+/** Asset identity and metrics consumed by catalog previews. */
 type Asset = ReturnType<typeof assetsFrom>[number];
 const SOL_MINT = 'So11111111111111111111111111111111111111112';
 
+/** Render the market overview and its discovery resources. */
 export default function Home() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -145,6 +152,7 @@ export default function Home() {
   );
 }
 
+/** Render the provider identity artwork used by the market overview. */
 export function JupiterLogo() {
   return (
     <span className="iris-jupiter-mark" aria-hidden="true">
@@ -239,6 +247,7 @@ export function JupiterLogo() {
   );
 }
 
+/** Render a bounded catalog preview and its loading or failure feedback. */
 function CatalogList({
   title,
   tone,
@@ -252,6 +261,7 @@ function CatalogList({
   assets: Asset[];
   loading: boolean;
   error?: unknown;
+  /** Notify the owner of the selected asset without owning navigation state. */
   onSelect: (asset: Asset) => void;
 }) {
   return (

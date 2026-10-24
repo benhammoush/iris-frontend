@@ -1,3 +1,8 @@
+/**
+ * Regression coverage and controlled fixtures for setup.
+ * @packageDocumentation
+ */
+
 // Register jest-dom matchers and their Vitest-specific assertion types.
 // allows you to do things like:
 // expect(element).toHaveTextContent(/react/i)

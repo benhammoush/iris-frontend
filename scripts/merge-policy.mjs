@@ -1,3 +1,8 @@
+/**
+ * Pure merge-eligibility decisions over required checks and review evidence.
+ * @file
+ */
+
 /** Deterministic, advisory-only eligibility. No merge or repository mutations. */
 
 const sensitiveNames = new Set([

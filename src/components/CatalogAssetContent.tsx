@@ -1,6 +1,12 @@
+/**
+ * Asset identity and nullable price/change metrics for catalog rows.
+ * @packageDocumentation
+ */
+
 import type { AssetView } from '../data/normalizers';
 import AssetIcon from './AssetIcon';
 
+/** Format a known monetary value for display and preserve the unavailable-data fallback. */
 const currency = (value: number | null | undefined, digits = 2) =>
   value === null || value === undefined || !Number.isFinite(Number(value))
     ? '—'
@@ -25,6 +31,7 @@ export default function CatalogAssetContent({ asset }: { asset: AssetView }) {
   );
 }
 
+/** Render a signed percentage change with an explicit unavailable fallback. */
 function Change({ value }: { value?: number | null }) {
   if (value === null || value === undefined || !Number.isFinite(Number(value)))
     return <span className="iris-muted">—</span>;

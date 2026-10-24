@@ -1,3 +1,8 @@
+/**
+ * Wallet holdings, nullable valuation and cursor-paginated activity.
+ * @packageDocumentation
+ */
+
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import SaveControl from './SaveControl';
@@ -14,6 +19,7 @@ import { solanaExplorerUrl } from '../data/solana';
 import ValueSkeleton from './ValueSkeleton';
 import ResourceFeedback from './ResourceFeedback';
 
+/** Wallet holding identity, exact quantity and nullable valuation fields. */
 type Holding = {
   symbol?: string | null;
   name?: string | null;
@@ -27,6 +33,7 @@ type Holding = {
   balance?: number | string;
   rawBalance?: number | string;
 };
+/** Normalized wallet transfer including direction and asset quantity. */
 type Transfer = {
   symbol?: string;
   mint?: string;
@@ -37,6 +44,7 @@ type Transfer = {
   from?: string | null;
   to?: string | null;
 };
+/** Wallet activity record used to derive transaction table rows. */
 type Activity = {
   id?: string;
   timestamp?: string;
@@ -46,6 +54,7 @@ type Activity = {
   description?: string;
   transfers?: Transfer[];
 };
+/** Stable transaction table identity and its normalized activity fields. */
 type TransactionRow = {
   id: string;
   timestamp?: string;
@@ -56,26 +65,32 @@ type TransactionRow = {
   decimals?: number;
   transferIndex: number;
 };
+/** Format a known monetary value for display and preserve the unavailable-data fallback. */
 const currency = (value: number | undefined | null) =>
   value === null || value === undefined || !Number.isFinite(Number(value))
     ? '—'
     : `$${Number(value).toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
+/** Format a wallet holding while preserving its exact source quantity. */
 const balance = (asset: Holding) => {
   const value =
     asset.displayBalance ?? asset.amount ?? asset.balance ?? asset.rawBalance;
   return value == null ? '—' : String(value);
 };
+/** Format an available observation timestamp for the user. */
 const dateTime = (value: string | undefined) => {
   const date = value && new Date(value);
   return date && !Number.isNaN(date.valueOf())
     ? date.toLocaleString('en-US')
     : value || '-';
 };
+/** Shorten a display identifier without changing the full value used by requests or links. */
 const short = (value: string | null | undefined) =>
   value ? `${value.slice(0, 5)}...${value.slice(-5)}` : '—';
+/** Derive stable row identity from transaction activity evidence. */
 const activityKey = (activity: Activity) =>
   activity.id ||
   `${activity.timestamp || ''}:${activity.type || ''}:${activity.description || ''}`;
+/** Normalize activity into table rows without duplicating transaction identities. */
 const transactionRowsFrom = (activities: Activity[]): TransactionRow[] =>
   activities.flatMap((activity) => {
     const transfers = activity.transfers?.length ? activity.transfers : [null];
@@ -97,7 +112,9 @@ const holdingsColumns: VirtualTableColumn<Holding>[] = [
     id: 'asset',
     label: 'Asset',
     width: 240,
+    /** Extract the row value used for sorting and filtering. */
     value: (asset) => `${asset.symbol || ''} ${asset.name || ''}`,
+    /** Render the table cell while preserving the row value used by actions and links. */
     cell: (asset) => (
       <span className="iris-asset-cell">
         <AssetIcon src={asset.imageUrl} symbol={asset.symbol} />
@@ -115,7 +132,9 @@ const holdingsColumns: VirtualTableColumn<Holding>[] = [
     label: 'Price',
     width: 130,
     align: 'right',
+    /** Extract the row value used for sorting and filtering. */
     value: (asset) => asset.price || 0,
+    /** Render the table cell while preserving the row value used by actions and links. */
     cell: (asset) => currency(asset.price),
   },
   {
@@ -131,14 +150,18 @@ const holdingsColumns: VirtualTableColumn<Holding>[] = [
     label: 'Value',
     width: 150,
     align: 'right',
+    /** Extract the row value used for sorting and filtering. */
     value: (asset) => asset.value || 0,
+    /** Render the table cell while preserving the row value used by actions and links. */
     cell: (asset) => currency(asset.value),
   },
   {
     id: 'valuation',
     label: 'Valuation',
     width: 105,
+    /** Extract the row value used for sorting and filtering. */
     value: (asset) => (asset.value == null ? 'Unpriced' : 'Priced'),
+    /** Render the table cell while preserving the row value used by actions and links. */
     cell: (asset) => (
       <span
         className={
@@ -158,7 +181,9 @@ const activityColumns: VirtualTableColumn<TransactionRow>[] = [
     label: 'Time',
     width: 150,
     grow: 1,
+    /** Extract the row value used for sorting and filtering. */
     value: (transaction) => transaction.timestamp || '',
+    /** Render the table cell while preserving the row value used by actions and links. */
     cell: (transaction) => dateTime(transaction.timestamp),
   },
   {
@@ -166,7 +191,9 @@ const activityColumns: VirtualTableColumn<TransactionRow>[] = [
     label: 'Action',
     width: 115,
     grow: 1,
+    /** Extract the row value used for sorting and filtering. */
     value: (transaction) => transaction.action || 'Unknown',
+    /** Render the table cell while preserving the row value used by actions and links. */
     cell: (transaction) => transaction.action || 'Unknown',
   },
   {
@@ -174,7 +201,9 @@ const activityColumns: VirtualTableColumn<TransactionRow>[] = [
     label: 'Sender',
     width: 150,
     grow: 2,
+    /** Extract the row value used for sorting and filtering. */
     value: (transaction) => transaction.sender || '',
+    /** Render the table cell while preserving the row value used by actions and links. */
     cell: (transaction) =>
       transaction.sender ? (
         <a
@@ -192,7 +221,9 @@ const activityColumns: VirtualTableColumn<TransactionRow>[] = [
     label: 'Recipient',
     width: 150,
     grow: 2,
+    /** Extract the row value used for sorting and filtering. */
     value: (transaction) => transaction.recipient || '',
+    /** Render the table cell while preserving the row value used by actions and links. */
     cell: (transaction) =>
       transaction.recipient ? (
         <a
@@ -210,7 +241,9 @@ const activityColumns: VirtualTableColumn<TransactionRow>[] = [
     label: 'Amount',
     width: 140,
     grow: 1,
+    /** Extract the row value used for sorting and filtering. */
     value: (transaction) => transaction.amount || '',
+    /** Render the table cell while preserving the row value used by actions and links. */
     cell: (transaction) =>
       transaction.amount === null
         ? '—'
@@ -222,7 +255,9 @@ const activityColumns: VirtualTableColumn<TransactionRow>[] = [
     label: 'Transaction',
     width: 170,
     grow: 1.5,
+    /** Extract the row value used for sorting and filtering. */
     value: (transaction) => transaction.id,
+    /** Render the table cell while preserving the row value used by actions and links. */
     cell: (transaction) => {
       const url = solanaExplorerUrl('tx', transaction.id);
       return url ? (
@@ -241,6 +276,7 @@ const activityColumns: VirtualTableColumn<TransactionRow>[] = [
   },
 ];
 
+/** Render wallet holdings, valuation and cursor-paginated transaction activity. */
 export default function Wallet() {
   const { address = '' } = useParams();
   const navigate = useNavigate();
@@ -279,6 +315,7 @@ export default function Wallet() {
     setLoadingMore(false);
     setLoadMoreError(null);
   }, [address]);
+  /** Request the next transaction page without duplicating in-flight pagination. */
   async function loadMore() {
     if (!nextCursor || loadingMore) return;
     setLoadingMore(true);
@@ -501,6 +538,7 @@ export default function Wallet() {
     </div>
   );
 }
+/** Render the wallet-specific unavailable state with its address context. */
 function Unavailable({ address, text }: { address: string; text: string }) {
   return (
     <div className="iris-loading" role="status">

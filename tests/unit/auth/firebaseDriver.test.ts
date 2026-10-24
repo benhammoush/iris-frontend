@@ -1,3 +1,8 @@
+/**
+ * Regression coverage and controlled fixtures for firebase driver.
+ * @packageDocumentation
+ */
+
 import { beforeEach, expect, test, vi } from 'vitest';
 const mocks = vi.hoisted(() => {
   const user = {
@@ -31,11 +36,14 @@ const mocks = vi.hoisted(() => {
   };
 });
 vi.mock('firebase/app', () => ({
+  /** Return the controlled Firebase app inventory for the adapter test. */
   getApps: () => [],
   initializeApp: mocks.initializeApp,
 }));
 vi.mock('firebase/auth', () => ({
+  /** Return the controlled Firebase authentication instance for the adapter test. */
   getAuth: () => mocks.auth,
+  /** Return the controlled authentication instance without contacting Firebase. */
   initializeAuth: () => mocks.auth,
   browserPopupRedirectResolver: 'popup',
   setPersistence: mocks.persistence,

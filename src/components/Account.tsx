@@ -1,3 +1,8 @@
+/**
+ * Account authentication, linking and recovery forms with action-specific feedback.
+ * @packageDocumentation
+ */
+
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useAccount } from '../contexts/AccountContext';
@@ -5,6 +10,7 @@ import { isRecord } from '../data/record';
 import Navbar from './Navbar';
 import './Account.css';
 
+/** Map supported account failures to actionable UI text without exposing raw provider errors. */
 function friendlyError(cause: unknown): string {
   const code = isRecord(cause) ? cause.code : undefined;
   if (
@@ -34,6 +40,7 @@ function friendlyError(cause: unknown): string {
   return 'Could not complete this action. Check your details and connection, then try again.';
 }
 
+/** Render the account route within its authentication state boundary. */
 export default function Account() {
   const { status, user } = useAccount();
   useEffect(() => {
@@ -76,6 +83,7 @@ export default function Account() {
   );
 }
 
+/** Render account actions and their pending, successful and failed states. */
 function AccountPanel() {
   const { user, session, signOutFailed, verificationNotice } = useAccount();
   const [mode, setMode] = useState<'signin' | 'signup' | 'reset'>('signin');
@@ -88,6 +96,7 @@ function AccountPanel() {
   useEffect(() => {
     heading.current?.focus({ preventScroll: true });
   }, [mode]);
+  /** Run an account action and publish its user-visible outcome. */
   async function act(action: () => Promise<void>, success: string) {
     setBusy(true);
     setMessage('');
@@ -102,6 +111,7 @@ function AccountPanel() {
       setBusy(false);
     }
   }
+  /** Handle form submission without allowing the browser default navigation. */
   function submit(event: FormEvent) {
     event.preventDefault();
     if (mode === 'reset') {
@@ -125,6 +135,7 @@ function AccountPanel() {
       );
     }
   }
+  /** Switch the account form mode and clear feedback tied to the previous action. */
   function changeMode(next: typeof mode) {
     setMode(next);
     setPassword('');

@@ -1,3 +1,8 @@
+/**
+ * Reusable loading, retained-data and retry feedback for resource views.
+ * @packageDocumentation
+ */
+
 import { useEffect, useRef, useState } from 'react';
 
 /** Announces resource transitions and keeps keyboard focus stable during retries. */
@@ -14,6 +19,7 @@ export default function ResourceFeedback({
   error?: unknown;
   busy?: boolean;
   hasData?: boolean;
+  /** Ask the resource owner to retry its failed load. */
   onRetry?: () => void;
   retryLabel?: string;
   errorMessage?: string;

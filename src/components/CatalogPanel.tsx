@@ -1,5 +1,11 @@
+/**
+ * Labeled catalog region with shared heading, count and tone treatment.
+ * @packageDocumentation
+ */
+
 import { type ReactNode, type Ref } from 'react';
 
+/** Provide a labeled catalog region with the supplied heading, count and content. */
 export default function CatalogPanel({
   title,
   tone,

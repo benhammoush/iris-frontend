@@ -1,3 +1,8 @@
+/**
+ * Account-scoped watchlist state, subscriptions and mutation lifecycle.
+ * @packageDocumentation
+ */
+
 import { authenticatedRequest } from '../api/authenticated';
 import { AccountSession } from '../auth/session';
 import { isRecord } from '../data/record';
@@ -12,6 +17,7 @@ import {
   type WatchlistKind,
 } from './contract';
 
+/** Observable account-scoped watchlist collections, progress and feedback. */
 interface State {
   data: Watchlist | null;
   loading: boolean;
@@ -20,6 +26,7 @@ interface State {
   mutationError: string;
   feedback: string;
 }
+/** Create a fresh empty state without sharing mutable collections between sessions. */
 const empty = (): State => ({
   data: null,
   loading: false,
@@ -28,8 +35,10 @@ const empty = (): State => ({
   mutationError: '',
   feedback: '',
 });
+/** Build watchlist item identity from both resource kind and address. */
 export const itemKey = (kind: WatchlistKind, address: string) =>
   `${kind}:${address}`;
+/** Normalize an unknown failure to the supported caller-facing message. */
 function errorMessage(cause: unknown): string {
   const code = isRecord(cause) ? cause.code : undefined;
   if (code === 'WATCHLIST_LIMIT_REACHED')
@@ -44,6 +53,7 @@ function errorMessage(cause: unknown): string {
     return 'The Worker returned an invalid watchlist response. Refresh to check the current list.';
   return 'Watchlist request could not be confirmed. Refresh to check the current list before trying again.';
 }
+/** Identify private-access failures requiring account-bound state invalidation. */
 function accessDenied(cause: unknown) {
   return (
     isRecord(cause) &&
@@ -61,25 +71,32 @@ export class WatchlistStore {
   private generation = 0;
   private read?: AbortController;
   private write?: AbortController;
+  /** Initialize this error or state owner with the supplied context. */
   constructor(private account: AccountSession) {}
+  /** Expose current watchlist state for external-store subscribers. */
   snapshot = () => this.state;
+  /** Register a state listener and return cleanup for that subscription. */
   subscribe = (listener: () => void) => {
     this.listeners.add(listener);
     return () => {
       this.listeners.delete(listener);
     };
   };
+  /** Publish the new scoped state to subscribers without mutating unrelated state. */
   private publish(patch: Partial<State>) {
     this.state = { ...this.state, ...patch };
     for (const listener of this.listeners) listener();
   }
+  /** Require the current account state to permit private watchlist operations. */
   private allowed() {
     const state = this.account.snapshot();
     return (
       state.status === 'ready' && state.user?.verified && !state.signOutFailed
     );
   }
+  /** Subscribe to the underlying session source and own the corresponding cleanup. */
   connect() {
+    /** Invalidate prior-account work and clear private state before optionally refreshing. */
     const reset = () => {
       this.generation++;
       this.read?.abort();
@@ -90,6 +107,7 @@ export class WatchlistStore {
     };
     const unsubscribe = this.account.subscribe(reset);
     reset();
+    /** Refresh eligible account-scoped data when the page regains focus. */
     const focus = () => {
       if (this.active && !document.hidden) void this.refresh();
     };
@@ -104,12 +122,14 @@ export class WatchlistStore {
       this.write?.abort();
     };
   }
+  /** Activate watchlist work only for the current eligible account session. */
   activate() {
     if (++this.active === 1) void this.refresh();
     return () => {
       this.active--;
     };
   }
+  /** Refresh the currently scoped resource without accepting results from a superseded identity. */
   refresh = async () => {
     if (!this.allowed() || this.write || this.read) return;
     const generation = this.generation;
@@ -139,6 +159,7 @@ export class WatchlistStore {
       }
     }
   };
+  /** Apply one account-scoped save or removal while preventing concurrent writes and superseded-session publication. */
   mutate = async (kind: WatchlistKind, address: string, remove: boolean) => {
     if (
       !this.allowed() ||

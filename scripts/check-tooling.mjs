@@ -1,8 +1,14 @@
+/**
+ * Assert TypeScript-only application surfaces and blocking lint/format configuration.
+ * @file
+ */
+
 import assert from 'node:assert/strict';
 import { ESLint } from 'eslint';
 import { check, resolveConfig } from 'prettier';
 import { readdir } from 'node:fs/promises';
 
+/** Reject handwritten application JavaScript outside the explicitly permitted tooling surfaces. */
 async function assertTypeScriptOnly(directory) {
   for (const entry of await readdir(directory, { withFileTypes: true })) {
     const path = new URL(

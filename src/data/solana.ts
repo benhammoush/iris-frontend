@@ -1,3 +1,9 @@
+/**
+ * Allowlisted explorer links, address syntax checks and decoded public-key length validation.
+ * @packageDocumentation
+ */
+
+/** Build an allowlisted Solana explorer link for the supported resource kind. */
 export function solanaExplorerUrl(
   kind: unknown,
   value: unknown,
@@ -9,6 +15,7 @@ export function solanaExplorerUrl(
     : null;
 }
 
+/** Check address syntax for search routing; this is not proof of an existing on-chain account. */
 export function looksLikeSolanaAddress(value: unknown): value is string {
   return (
     typeof value === 'string' && /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(value)

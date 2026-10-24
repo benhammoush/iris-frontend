@@ -1,5 +1,11 @@
+/**
+ * Visible resource provenance, freshness and failure feedback.
+ * @packageDocumentation
+ */
+
 import { isRecord } from '../data/record';
 
+/** Expose response freshness or failure without mislabeling stale data as live. */
 function DataStatus({ meta, error }: { meta?: unknown; error?: unknown }) {
   if (!meta && !error) return null;
   const detail = isRecord(error) ? error.message : error;

@@ -1,4 +1,11 @@
-/** @type {import('tailwindcss').Config} */
+/**
+ * Shared utility styling tokens and application source discovery.
+ * @file
+ */
+
+/** Shared utility styling tokens and application source discovery.
+ * @type {import('tailwindcss').Config}
+ */
 module.exports = {
   content: ['./src/**/*.{js,jsx,ts,tsx}'],
   darkMode: 'selector',

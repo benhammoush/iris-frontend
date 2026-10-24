@@ -1,3 +1,8 @@
+/**
+ * Regression coverage and controlled fixtures for wallet.
+ * @packageDocumentation
+ */
+
 import { expect, test } from './support/test';
 import { walletAddress } from './support/workerMock';
 

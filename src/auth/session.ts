@@ -1,5 +1,11 @@
+/**
+ * Account lifecycle, captured-session guards and authentication operations.
+ * @packageDocumentation
+ */
+
 import { ApiError } from '../api/client';
 
+/** Application-safe authenticated identity independent of provider SDK objects. */
 export interface AccountUser {
   uid: string;
   email: string | null;
@@ -7,24 +13,38 @@ export interface AccountUser {
   providers: string[];
 }
 
+/** Authentication adapter consumed by the account-session lifecycle. */
 export interface AccountDriver {
+  /** Read the driver's current authenticated identity, or null when signed out. */
   current(): AccountUser | null;
+  /** Register a state listener and return cleanup for that subscription. */
   subscribe(
     next: (user: AccountUser | null) => void,
     error: () => void,
   ): () => void;
+  /** Issue an identity token only for the requested currently authenticated account. */
   token(uid: string): Promise<string>;
+  /** Authenticate the email account using the provided credentials. */
   signIn(email: string, password: string): Promise<void>;
+  /** Create the email account through the configured authentication driver. */
   signUp(email: string, password: string): Promise<AccountUser>;
+  /** Authenticate through the configured Google account flow. */
   google(): Promise<void>;
+  /** Request password recovery for the supplied email address. */
   reset(email: string): Promise<void>;
+  /** Request verification for the current authenticated email account. */
   verify(): Promise<void>;
+  /** Refresh the currently scoped resource without accepting results from a superseded identity. */
   refresh(): Promise<AccountUser | null>;
+  /** Link Google credentials to the current account with the required reauthentication. */
   linkGoogle(password: string): Promise<void>;
+  /** Link password credentials to the current account without switching its identity. */
   linkPassword(password: string): Promise<void>;
+  /** End the current authentication session and invalidate identity-bound work. */
   signOut(): Promise<void>;
 }
 
+/** Observable authentication state including initialization and failure transitions. */
 interface AccountState {
   status: 'disabled' | 'loading' | 'ready' | 'unavailable';
   user: AccountUser | null;
@@ -42,6 +62,7 @@ export class AccountSession {
   private authentication?: Promise<void>;
   private signingOut?: Promise<void>;
 
+  /** Initialize this error or state owner with the supplied context. */
   constructor(enabled: boolean) {
     this.state = {
       status: enabled ? 'loading' : 'disabled',
@@ -50,7 +71,9 @@ export class AccountSession {
     };
   }
 
+  /** Expose current account state for external-store subscribers. */
   snapshot = () => this.state;
+  /** Register a state listener and return cleanup for that subscription. */
   subscribe = (listener: () => void) => {
     this.listeners.add(listener);
     return () => {
@@ -58,6 +81,7 @@ export class AccountSession {
     };
   };
 
+  /** Publish the new scoped state to subscribers without mutating unrelated state. */
   private publish(state: AccountState) {
     this.controller.abort();
     this.controller = new AbortController();
@@ -65,6 +89,7 @@ export class AccountSession {
     for (const listener of this.listeners) listener();
   }
 
+  /** Subscribe to the underlying session source and own the corresponding cleanup. */
   connect(driver: AccountDriver) {
     this.driver = driver;
     return driver.subscribe(
@@ -89,15 +114,18 @@ export class AccountSession {
     );
   }
 
+  /** Represent unavailable data or configuration without treating it as an empty successful result. */
   unavailable() {
     this.publish({ status: 'unavailable', user: null, signOutFailed: false });
   }
 
+  /** Release the owned subscription and invalidate work tied to the disconnected session. */
   disconnect() {
     this.driver = undefined;
     this.controller.abort();
   }
 
+  /** Require a ready authentication driver or raise the public unavailable error. */
   private ready() {
     if (!this.driver || this.state.status !== 'ready')
       throw new ApiError('Accounts are unavailable.', {
@@ -106,6 +134,7 @@ export class AccountSession {
     return this.driver;
   }
 
+  /** Run an authentication operation while preserving account transition and failure state. */
   private async authenticate(operation: () => Promise<void>) {
     if (this.locked)
       throw new ApiError('Retry sign-out first.', { code: 'SIGN_OUT_FAILED' });
@@ -121,12 +150,15 @@ export class AccountSession {
       this.authentication = undefined;
     }
   }
+  /** Authenticate the email account using the provided credentials. */
   signIn(email: string, password: string) {
     return this.authenticate(() => this.ready().signIn(email, password));
   }
+  /** Create the email account through the configured authentication driver. */
   signUp(email: string, password: string) {
     return this.authenticate(() => this.createAccount(email, password));
   }
+  /** Create the email account and establish its application session. */
   private async createAccount(email: string, password: string) {
     const driver = this.ready();
     const created = await driver.signUp(email, password);
@@ -146,12 +178,15 @@ export class AccountSession {
     )
       this.publish({ ...this.state, verificationNotice: notice });
   }
+  /** Authenticate through the configured Google account flow. */
   google() {
     return this.authenticate(() => this.ready().google());
   }
+  /** Request password recovery for the supplied email address. */
   reset(email: string) {
     return this.ready().reset(email);
   }
+  /** Require an authenticated account before running a protected session operation. */
   private signedIn() {
     const driver = this.ready();
     if (
@@ -162,6 +197,7 @@ export class AccountSession {
       throw new ApiError('Sign in to continue.', { code: 'AUTH_REQUIRED' });
     return driver;
   }
+  /** Request verification for the current authenticated email account. */
   async verify() {
     const driver = this.signedIn();
     const uid = this.state.user?.uid;
@@ -174,12 +210,15 @@ export class AccountSession {
     )
       this.publish({ ...this.state, verificationNotice: 'requested' });
   }
+  /** Link Google credentials to the current account with the required reauthentication. */
   linkGoogle(password: string) {
     return this.authenticate(() => this.signedIn().linkGoogle(password));
   }
+  /** Link password credentials to the current account without switching its identity. */
   linkPassword(password: string) {
     return this.authenticate(() => this.signedIn().linkPassword(password));
   }
+  /** Refresh the currently scoped resource without accepting results from a superseded identity. */
   async refresh() {
     const driver = this.signedIn();
     const signal = this.controller.signal;
@@ -188,6 +227,7 @@ export class AccountSession {
     if (!signal.aborted && !this.locked)
       this.publish({ status: 'ready', user, signOutFailed: false });
   }
+  /** End the current authentication session and invalidate identity-bound work. */
   async signOut() {
     if (this.signingOut) return this.signingOut;
     const driver = this.ready();
@@ -215,6 +255,7 @@ export class AccountSession {
     }
   }
 
+  /** Capture account identity and generation so delayed work can reject a superseded session. */
   capture() {
     const driver = this.ready();
     const user = this.state.user;
@@ -227,11 +268,13 @@ export class AccountSession {
     const signal = this.controller.signal;
     return {
       signal,
+      /** Reject delayed work after cancellation, account lock or a captured-identity change. */
       isCurrent: () =>
         !signal.aborted &&
         !this.locked &&
         this.state.user?.uid === user.uid &&
         driver.current()?.uid === user.uid,
+      /** Issue an identity token only for the requested currently authenticated account. */
       token: () => driver.token(user.uid),
     };
   }

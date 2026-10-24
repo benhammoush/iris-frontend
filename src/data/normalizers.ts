@@ -1,6 +1,12 @@
+/**
+ * Runtime response normalization with explicit unavailable-value semantics.
+ * @packageDocumentation
+ */
+
 import { isRecord } from './record';
 import type { WireAsset } from '../api/contracts';
 
+/** UI-safe normalized asset fields with nullable unavailable metrics. */
 export type AssetView = Pick<
   WireAsset,
   | 'priceUsd'
@@ -27,26 +33,32 @@ export type AssetView = Pick<
   verification: Partial<WireAsset['verification']> & { tags: string[] };
 };
 
+/** Narrow an unknown boundary value to a record, using an empty record when it is not an object. */
 function record(value: unknown): Record<string, unknown> {
   return isRecord(value) ? value : {};
 }
 
+/** Normalize an unknown collection to an array before iterating it. */
 function array(value: unknown): unknown[] {
   return Array.isArray(value) ? value : [];
 }
 
+/** Normalize a supported text field from untrusted response data. */
 function text(value: unknown): string | undefined {
   return typeof value === 'string' ? value : undefined;
 }
 
+/** Accept numeric primitives without coercion; other input types remain undefined. */
 function number(value: unknown): number | undefined {
   return typeof value === 'number' ? value : undefined;
 }
 
+/** Map nonnumeric input types to null without coercing numeric strings. */
 function nullableNumber(value: unknown): number | null {
   return number(value) ?? null;
 }
 
+/** Normalize the response asset collection into UI-safe asset records. */
 export function assetsFrom(data: unknown): AssetView[] {
   const items = Array.isArray(data) ? array(data) : array(record(data).assets);
   return items
@@ -97,6 +109,7 @@ export function assetsFrom(data: unknown): AssetView[] {
     }));
 }
 
+/** Normalize wallet response data while preserving unavailable balances and valuation. */
 export function walletFrom(data: unknown) {
   const wallet = record(data).wallet || data;
   if (!isRecord(wallet)) return null;
@@ -147,11 +160,13 @@ export function walletFrom(data: unknown) {
   };
 }
 
+/** Normalize the response transaction collection for UI consumers. */
 export function transactionsFrom(data: unknown) {
   const page = record(data).transactions || record(data).events || data;
   return array(page).filter(isRecord).map(transactionFrom);
 }
 
+/** Normalize recent transaction samples and their supported display fields. */
 export function recentTransactionsFrom(data: unknown) {
   const transactions = array(record(data).transactions);
   return transactions.flatMap((transaction) => {
@@ -185,6 +200,7 @@ export function recentTransactionsFrom(data: unknown) {
   });
 }
 
+/** Normalize one transaction record from an unknown response value. */
 function transactionFrom(transaction: Record<string, unknown>) {
   return {
     ...transaction,
@@ -198,6 +214,7 @@ function transactionFrom(transaction: Record<string, unknown>) {
   };
 }
 
+/** Normalize one supported transfer and its direction. */
 function transferFrom(
   transfer: Record<string, unknown>,
   kind: 'native' | 'token',
@@ -221,6 +238,7 @@ function transferFrom(
   };
 }
 
+/** Normalize supported transfers without accepting malformed entries. */
 function transfersFrom(transfers: unknown) {
   if (Array.isArray(transfers))
     return array(transfers)
@@ -244,6 +262,7 @@ function transfersFrom(transfers: unknown) {
   return [...native, ...tokens];
 }
 
+/** Normalize asset candle data into the chart contract. */
 export function assetCandlesFrom(data: unknown) {
   const candles = array(record(data).candles);
   return candles.flatMap((candle) => {
@@ -272,6 +291,7 @@ export function assetCandlesFrom(data: unknown) {
   });
 }
 
+/** Normalize account distribution data into table records. */
 export function assetDistributionFrom(data: unknown) {
   const accounts = array(record(data).accounts);
   return accounts.flatMap((account) =>
@@ -297,6 +317,7 @@ export function assetDistributionFrom(data: unknown) {
   );
 }
 
+/** Normalized asset transaction identity and display fields. */
 export interface MintTransaction {
   signature: string;
   timestamp: string | null;
@@ -309,6 +330,7 @@ export interface MintTransaction {
   amount: string | null;
 }
 
+/** Normalize asset transaction data into supported transaction rows. */
 export function assetTransactionsFrom(data: unknown): MintTransaction[] {
   const transactions = array(record(data).transactions);
   return transactions.flatMap<MintTransaction>((transaction) => {
@@ -361,6 +383,7 @@ export function assetTransactionsFrom(data: unknown): MintTransaction[] {
   });
 }
 
+/** Normalize available network metrics without manufacturing missing measurements. */
 export function networkFrom(data: unknown) {
   return isRecord(data)
     ? {
@@ -373,10 +396,13 @@ export function networkFrom(data: unknown) {
     : null;
 }
 
+/** Normalize supported external dashboard collections and metrics. */
 export function defillamaFrom(data: unknown) {
   const dashboard = record(data);
+  /** Coerce with Number and return null only for non-finite results; null and empty text coerce to zero. */
   const numberOrNull = (value: unknown) =>
     Number.isFinite(Number(value)) ? Number(value) : null;
+  /** Normalize collection items using the supported field allowlist. */
   const itemsFrom = (items: unknown, fields: string[]) =>
     array(items)
       .filter(isRecord)

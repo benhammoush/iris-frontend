@@ -1,3 +1,8 @@
+/**
+ * Regression coverage and controlled fixtures for solana.
+ * @packageDocumentation
+ */
+
 import { expect, test } from 'vitest';
 import {
   looksLikeSolanaAddress,

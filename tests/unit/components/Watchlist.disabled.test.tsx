@@ -1,3 +1,8 @@
+/**
+ * Regression coverage and controlled fixtures for watchlist disabled.
+ * @packageDocumentation
+ */
+
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { expect, test, vi } from 'vitest';
@@ -9,6 +14,7 @@ vi.mock('../../../src/auth/config', () => ({
   accountsConfigured: false,
 }));
 vi.mock('../../../src/components/Navbar', () => ({
+  /** Render the minimal navigation substitute used to isolate this component test. */
   default: () => <nav>Public navigation</nav>,
 }));
 

@@ -1,3 +1,8 @@
+/**
+ * Area-series chart creation, theme updates and owned resource cleanup.
+ * @packageDocumentation
+ */
+
 import {
   AreaSeries,
   ColorType,
@@ -7,17 +12,21 @@ import {
 import { useEffect, useRef } from 'react';
 import { useTheme } from '../ThemeProvider';
 
+/** Observed time/value pair accepted by the area-series chart. */
 export interface AreaChartPoint {
   date: string;
   value: number;
 }
 
+/** Inputs and owner callbacks accepted by AreaChart. */
 interface Props {
   points: AreaChartPoint[];
   height?: number;
+  /** Format an available chart value for the visible price axis. */
   valueFormatter?: (value: number) => string;
 }
 
+/** Convert supported history points to the chart time and value representation. */
 function asChartPoints(points: AreaChartPoint[]) {
   return points.flatMap(({ date, value }) => {
     const timestamp = new Date(date).getTime();
@@ -27,6 +36,7 @@ function asChartPoints(points: AreaChartPoint[]) {
   });
 }
 
+/** Own the chart instance, data updates and cleanup for an area-series view. */
 export default function AreaChart({
   points,
   height = 360,
@@ -40,6 +50,7 @@ export default function AreaChart({
     if (!container) return undefined;
 
     const style = getComputedStyle(document.documentElement);
+    /** Read a chart color from the current theme with the supported fallback. */
     const color = (name: string) => style.getPropertyValue(name).trim();
     const chart = createChart(container, {
       autoSize: true,

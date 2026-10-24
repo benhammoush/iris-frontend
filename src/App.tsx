@@ -1,3 +1,8 @@
+/**
+ * Application route selection and page-level state boundaries.
+ * @packageDocumentation
+ */
+
 import { lazy, Suspense, useEffect, useRef } from 'react';
 import { Route, Routes, useLocation } from 'react-router-dom';
 import Home from './components/Home';
@@ -14,6 +19,7 @@ import { WatchlistProvider } from './contexts/WatchlistContext';
 const ApiDocs = lazy(() => import('./components/ApiDocs'));
 const Account = lazy(() => import('./components/Account'));
 const Watchlist = lazy(() => import('./components/Watchlist'));
+/** Select and render the application route within its shared providers. */
 function App() {
   const location = useLocation();
   const previousPath = useRef(location.pathname);

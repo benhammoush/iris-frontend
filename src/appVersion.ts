@@ -1,3 +1,8 @@
+/**
+ * Runtime version identity checked against package metadata.
+ * @packageDocumentation
+ */
+
 /** Single source for the release shown in the Iris application shell. */
 export const APP_PACKAGE_VERSION = '1.25.0';
 
