@@ -152,20 +152,6 @@ export function transactionsFrom(data: unknown) {
   return array(page).filter(isRecord).map(transactionFrom);
 }
 
-export function swapsFrom(data: unknown) {
-  const events = Array.isArray(data)
-    ? data
-    : record(data).swaps || record(data).events;
-  return array(events)
-    .filter(isRecord)
-    .map((event) => ({
-      id: text(event.id) || text(event.signature),
-      timestamp: text(event.timestamp),
-      type: text(event.type) || text(event.side) || 'Swap',
-      maker: text(event.maker) || text(event.wallet),
-    }));
-}
-
 export function recentTransactionsFrom(data: unknown) {
   const transactions = array(record(data).transactions);
   return transactions.flatMap((transaction) => {
@@ -258,28 +244,6 @@ function transfersFrom(transfers: unknown) {
   return [...native, ...tokens];
 }
 
-export function assetHistoryFrom(
-  asset: unknown,
-): [string, number | string | null | undefined][] {
-  const history = Array.isArray(asset)
-    ? asset
-    : record(asset).history ||
-      record(asset).points ||
-      record(asset).priceHistory;
-  if (!Array.isArray(history)) return [];
-  return array(history)
-    .filter(isRecord)
-    .map((point): [string, number | string | null | undefined] => [
-      text(point.date) || text(point.timestamp) || '',
-      (point.priceUsd ?? point.price) === null
-        ? null
-        : typeof (point.priceUsd ?? point.price) === 'number'
-          ? number(point.priceUsd ?? point.price)
-          : text(point.priceUsd ?? point.price),
-    ])
-    .filter(([date, price]) => date && Number.isFinite(Number(price)));
-}
-
 export function assetCandlesFrom(data: unknown) {
   const candles = array(record(data).candles);
   return candles.flatMap((candle) => {
@@ -306,72 +270,6 @@ export function assetCandlesFrom(data: unknown) {
       ? [{ timestamp, openUsd, highUsd, lowUsd, closeUsd, volumeUsd }]
       : [];
   });
-}
-
-export function assetOnchainFrom(data: unknown) {
-  if (!isRecord(data)) return null;
-  const mintState = record(data.mintState);
-  const metadata = record(data.metadata);
-  return {
-    mint: typeof data.mint === 'string' ? data.mint : null,
-    interface: typeof data.interface === 'string' ? data.interface : null,
-    tokenProgram:
-      typeof data.tokenProgram === 'string' ? data.tokenProgram : null,
-    metadata: {
-      description:
-        typeof metadata.description === 'string' ? metadata.description : null,
-    },
-    mintState: {
-      supplyAtomic:
-        typeof mintState.supplyAtomic === 'string'
-          ? mintState.supplyAtomic
-          : null,
-      supply: typeof mintState.supply === 'string' ? mintState.supply : null,
-      mintAuthority:
-        typeof mintState.mintAuthority === 'string'
-          ? mintState.mintAuthority
-          : null,
-      freezeAuthority:
-        typeof mintState.freezeAuthority === 'string'
-          ? mintState.freezeAuthority
-          : null,
-      isMutable:
-        typeof mintState.isMutable === 'boolean' ? mintState.isMutable : null,
-      extensions: Array.isArray(mintState.extensions)
-        ? array(mintState.extensions).filter(
-            (extension) => typeof extension === 'string',
-          )
-        : [],
-    },
-  };
-}
-
-export function assetHoldersFrom(data: unknown) {
-  const holders = array(record(data).holders);
-  return {
-    holders: holders.flatMap((holder) =>
-      isRecord(holder) &&
-      typeof holder.owner === 'string' &&
-      typeof holder.amount === 'string'
-        ? [
-            {
-              tokenAccount:
-                typeof holder.tokenAccount === 'string'
-                  ? holder.tokenAccount
-                  : null,
-              owner: holder.owner,
-              amount: holder.amount,
-              frozen: typeof holder.frozen === 'boolean' ? holder.frozen : null,
-            },
-          ]
-        : [],
-    ),
-    total:
-      typeof record(data).total === 'number' &&
-      Number.isInteger(record(data).total)
-        ? (number(record(data).total) ?? null)
-        : null,
-  };
 }
 
 export function assetDistributionFrom(data: unknown) {

@@ -2,9 +2,6 @@ import { expect, test } from 'vitest';
 import {
   assetCandlesFrom,
   assetDistributionFrom,
-  assetHoldersFrom,
-  assetHistoryFrom,
-  assetOnchainFrom,
   assetTransactionsFrom,
   assetsFrom,
   defillamaFrom,
@@ -124,7 +121,7 @@ test('normalizes canonical v3 assets and atomic transaction events', () => {
   ]);
 });
 
-test('keeps nullable Worker market fields and ignores unavailable history', () => {
+test('keeps nullable Worker market fields and validates candles', () => {
   const [asset] = assetsFrom([
     {
       mint: 'MintCaseSensitiveABC',
@@ -136,12 +133,6 @@ test('keeps nullable Worker market fields and ignores unavailable history', () =
 
   expect(asset.priceUsd).toBeNull();
   expect(asset.marketCapUsd).toBeNull();
-  expect(assetHistoryFrom({ history: null })).toEqual([]);
-  expect(
-    assetHistoryFrom({
-      history: [{ timestamp: '2026-10-01T00:00:00Z', priceUsd: 2 }],
-    }),
-  ).toEqual([['2026-10-01T00:00:00Z', 2]]);
   expect(
     assetCandlesFrom({
       candles: [
@@ -175,50 +166,7 @@ test('keeps nullable Worker market fields and ignores unavailable history', () =
   ]);
 });
 
-test('normalizes Helius on-chain profiles and token account records without number conversion', () => {
-  expect(
-    assetOnchainFrom({
-      mint: 'MintCaseSensitiveABC',
-      interface: 'FungibleToken',
-      tokenProgram: 'Tokenkeg',
-      metadata: { description: 'Example token' },
-      mintState: {
-        supplyAtomic: '9007199254740993123',
-        supply: '9007199254740.993123',
-        mintAuthority: null,
-        freezeAuthority: 'authority',
-        isMutable: false,
-        extensions: ['transferFeeConfig'],
-      },
-    }),
-  ).toMatchObject({
-    mint: 'MintCaseSensitiveABC',
-    interface: 'FungibleToken',
-    mintState: {
-      supplyAtomic: '9007199254740993123',
-      supply: '9007199254740.993123',
-      extensions: ['transferFeeConfig'],
-    },
-  });
-  expect(
-    assetHoldersFrom({
-      total: 1,
-      holders: [
-        {
-          tokenAccount: 'account',
-          owner: 'owner',
-          amount: '2.5',
-          atomicAmount: '2500000',
-          frozen: false,
-        },
-      ],
-    }),
-  ).toEqual({
-    total: 1,
-    holders: [
-      { tokenAccount: 'account', owner: 'owner', amount: '2.5', frozen: false },
-    ],
-  });
+test('normalizes token distribution and mint transactions without number conversion', () => {
   expect(
     assetDistributionFrom({
       accounts: [
