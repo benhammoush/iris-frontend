@@ -115,7 +115,7 @@ export function getTheme(mode: UiThemeMode = currentThemeMode): ThemeTokens {
   return themes[mode];
 }
 
-/** Resolve the selected theme mode using the supported persistence and system fallbacks. */
+/** Return the current in-memory theme mode without reading persistence or system preferences. */
 export function getThemeMode(): UiThemeMode {
   return currentThemeMode;
 }

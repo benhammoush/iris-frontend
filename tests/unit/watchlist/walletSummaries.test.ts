@@ -16,7 +16,7 @@ const addresses = Array.from(
   { length: 9 },
   (_, index) => '1'.repeat(31) + '23456789A'[index],
 );
-/** Build the gateway JSON response with request correlation and allowed-origin headers. */
+/** Build the controlled wallet JSON envelope containing data and response metadata. */
 const response = (address: string) => ({
   data: {
     address,
