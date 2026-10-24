@@ -33,8 +33,7 @@ export function validatePolicy(policy) {
     policy.base !== 'main' ||
     policy.greenPrefix !== 'docs/user-guide/' ||
     policy.workflow !== '.github/workflows/ci.yml' ||
-    JSON.stringify(policy.jobs) !==
-      JSON.stringify(['test-and-build', 'vertical']) ||
+    JSON.stringify(policy.jobs) !== JSON.stringify(['Verify']) ||
     policy.reviewBot !== 'coderabbitai[bot]' ||
     policy.reviewContext !== 'CodeRabbit' ||
     !Number.isInteger(policy.maxFiles) ||

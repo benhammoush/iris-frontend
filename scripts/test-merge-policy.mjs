@@ -680,25 +680,18 @@ test('GraphQL walkthrough collection preserves editor provenance and rejects tru
   }
 });
 
-test('workflow uses trusted main code and read-only permissions without installs, secrets or merge actions', () => {
-  const workflow = readFileSync(
-    new URL('../.github/workflows/merge-eligibility.yml', import.meta.url),
-    'utf8',
+test('retired merge observer has no workflow entry point', () => {
+  assert.throws(
+    () =>
+      readFileSync(
+        new URL('../.github/workflows/merge-eligibility.yml', import.meta.url),
+      ),
+    { code: 'ENOENT' },
   );
-  assert.ok(workflow.includes("if: github.ref == 'refs/heads/main'"));
-  assert.ok(workflow.includes('ref: ${{ github.sha }}'));
-  assert.ok(workflow.includes('persist-credentials: false'));
-  assert.ok(workflow.includes('run: node scripts/check-merge-eligibility.mjs'));
-  assert.doesNotMatch(
-    workflow,
-    /: write|secrets\.|npm ci|download-artifact|pull_request\.head|gh pr merge|enable-auto-merge/,
-  );
-  assert.equal([...workflow.matchAll(/uses: [^\s]+@[0-9a-f]{40}/g)].length, 2);
   const ci = readFileSync(
     new URL('../.github/workflows/ci.yml', import.meta.url),
     'utf8',
   );
-  assert.match(workflow, /workflows: \[CI\]/);
   assert.match(ci, /^name: CI$/m);
   assert.match(
     ci,
