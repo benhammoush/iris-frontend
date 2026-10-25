@@ -69,7 +69,9 @@ test.each([false, true])(
     rerender(<ResourceFeedback label="Wallet data" hasData onRetry={retry} />);
     expect(status).toHaveFocus();
     expect(status).toHaveTextContent('Wallet data loaded.');
-    act(() => vi.advanceTimersByTime(3000));
+    act(() => {
+      vi.advanceTimersByTime(3000);
+    });
     expect(status).toBeEmptyDOMElement();
     expect(status).toHaveClass('iris-sr-only');
     expect(status).toHaveFocus();

@@ -11,7 +11,9 @@ afterEach(() => {
   vi.resetModules();
 });
 
-/** Load a fresh client module under the test configuration. */
+/** Load a fresh client module under the test configuration.
+ * @returns The client configured with an isolated, non-production Worker origin.
+ */
 async function loadClient() {
   vi.stubEnv('PROD', false);
   vi.stubEnv('VITE_API_BASE', 'http://iris.test/');
@@ -22,7 +24,7 @@ test('keeps atomic strings, null values and metadata at the typed transport boun
   const client = await loadClient();
   const data = { atomicAmount: '9007199254740993123', priceUsd: null };
   const fetchMock = vi
-    .fn()
+    .fn<typeof fetch>()
     .mockResolvedValue(
       new Response(
         JSON.stringify({ data, meta: { source: 'helius', stale: true } }),
@@ -34,12 +36,13 @@ test('keeps atomic strings, null values and metadata at the typed transport boun
   expect(result.meta).toMatchObject({
     source: 'helius',
     stale: true,
-    requestId: expect.any(String),
   });
+  expect(result.meta.requestId).toEqual(expect.any(String));
   expect(fetchMock).toHaveBeenCalledWith(
     'http://iris.test/v3/wallets/example',
-    expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    expect.any(Object),
   );
+  expect(fetchMock.mock.calls[0][1]?.signal).toBeInstanceOf(AbortSignal);
 });
 
 test('rejects missing data and normalizes malformed metadata without an unchecked cast', async () => {
@@ -60,8 +63,8 @@ test('rejects missing data and normalizes malformed metadata without an unchecke
   expect(result.data).toBeNull();
   expect(result.meta).toMatchObject({
     source: 'live',
-    requestId: expect.any(String),
   });
+  expect(result.meta.requestId).toEqual(expect.any(String));
 });
 
 test('preserves HTTP status and provider error diagnostics', async () => {
@@ -80,12 +83,13 @@ test('preserves HTTP status and provider error diagnostics', async () => {
       ),
     ),
   );
-  await expect(client.apiGet('/v3/assets')).rejects.toMatchObject({
+  const pending = client.apiGet('/v3/assets');
+  await expect(pending).rejects.toMatchObject({
     code: 'UPSTREAM_UNAVAILABLE',
     message: 'Provider unavailable',
     status: 502,
-    requestId: expect.any(String),
   });
+  await expect(pending).rejects.toHaveProperty('requestId', expect.any(String));
 });
 
 test('normalizes a rejected abort as the existing TIMEOUT error', async () => {
@@ -96,6 +100,25 @@ test('normalizes a rejected abort as the existing TIMEOUT error', async () => {
   );
   await expect(client.apiGet('/health')).rejects.toMatchObject({
     code: 'TIMEOUT',
+  });
+});
+
+test('does not coerce object-shaped public error messages', async () => {
+  const client = await loadClient();
+  vi.stubGlobal(
+    'fetch',
+    vi
+      .fn()
+      .mockResolvedValue(
+        Response.json(
+          { error: { message: { private: 'not display text' } } },
+          { status: 502 },
+        ),
+      ),
+  );
+  await expect(client.apiGet('/v3/assets')).rejects.toMatchObject({
+    message: 'Worker request failed (502)',
+    status: 502,
   });
 });
 

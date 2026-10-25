@@ -19,7 +19,9 @@ import { WatchlistProvider } from './contexts/WatchlistContext';
 const ApiDocs = lazy(() => import('./components/ApiDocs'));
 const Account = lazy(() => import('./components/Account'));
 const Watchlist = lazy(() => import('./components/Watchlist'));
-/** Select and render the application route within its shared providers. */
+/** Select and render the application route within its shared providers.
+ * @returns The routed application and shared provider boundaries.
+ */
 function App() {
   const location = useLocation();
   const previousPath = useRef(location.pathname);

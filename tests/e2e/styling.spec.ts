@@ -111,7 +111,9 @@ for (const width of [1440, 390]) {
     await expect(
       page.getByRole('button', { name: /SOL Solana/ }).first(),
     ).toBeVisible();
-    /** Read rendered style values for the browser assertion. */
+    /** Read rendered style values for the browser assertion.
+     * @returns Computed header dimensions, background and font.
+     */
     const styles = () =>
       page.locator('.iris-header').evaluate((element) => {
         const style = getComputedStyle(element);

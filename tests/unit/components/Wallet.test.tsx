@@ -14,7 +14,9 @@ vi.mock('../../../src/api/worker', () => ({
   workerApi: { wallet: vi.fn(), walletTransactions: vi.fn() },
 }));
 vi.mock('../../../src/components/Navbar', () => ({
-  /** Render the minimal navigation substitute used to isolate this component test. */
+  /** Render the minimal navigation substitute used to isolate this component test.
+   * @returns An empty named navigation landmark.
+   */
   default: () => <nav aria-label="Main navigation" />,
 }));
 
@@ -63,7 +65,9 @@ const transactions = Array.from({ length: 25 }, (_, index) => ({
   },
 }));
 
-/** Render the wallet route with controlled resource responses. */
+/** Render the wallet route with controlled resource responses.
+ * @returns Testing-library controls for the routed wallet view.
+ */
 function renderWallet() {
   return render(
     <MemoryRouter initialEntries={['/wallet/WalletCaseSensitive123']}>

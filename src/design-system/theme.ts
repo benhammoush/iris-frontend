@@ -110,17 +110,25 @@ export type ThemeTokens = typeof darkTheme | typeof lightTheme;
 export let theme: ThemeTokens = lightTheme;
 let currentThemeMode: UiThemeMode = 'light';
 
-/** Resolve the token set for the supported theme mode. */
+/** Resolve the token set for the supported theme mode.
+ * @param mode - Supported mode, defaulting to the current in-memory selection.
+ * @returns The matching theme tokens without changing the active mode.
+ */
 export function getTheme(mode: UiThemeMode = currentThemeMode): ThemeTokens {
   return themes[mode];
 }
 
-/** Return the current in-memory theme mode without reading persistence or system preferences. */
+/** Return the current in-memory theme mode without reading persistence or system preferences.
+ * @returns The current in-memory selection.
+ */
 export function getThemeMode(): UiThemeMode {
   return currentThemeMode;
 }
 
-/** Apply the selected theme tokens to the document boundary. */
+/** Apply the selected theme tokens to the document boundary.
+ * @param mode - Supported theme mode to make active.
+ * @returns The applied token set.
+ */
 export function applyThemeMode(mode: UiThemeMode): ThemeTokens {
   currentThemeMode = mode;
   theme = themes[mode];

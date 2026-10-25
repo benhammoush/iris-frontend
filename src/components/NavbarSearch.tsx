@@ -30,7 +30,12 @@ interface SearchAction {
   meta: string;
 }
 
-/** Rank an asset match using the query and its normalized form. */
+/** Rank an asset match using the query and its normalized form.
+ * @param asset - Searchable asset identity and labels.
+ * @param query - Original search text.
+ * @param normalized - Normalized query used for label matching.
+ * @returns The match rank used to order supported search results.
+ */
 function matchRank(asset: SearchAsset, query: string, normalized: string) {
   const symbol = asset.symbol?.toUpperCase() || '';
   const name = asset.name?.toUpperCase() || '';
@@ -46,7 +51,11 @@ function matchRank(asset: SearchAsset, query: string, normalized: string) {
   return 2;
 }
 
-/** Return ranked supported asset matches for the current search text. */
+/** Return ranked supported asset matches for the current search text.
+ * @param assets - Available catalog assets to search without mutation.
+ * @param query - Current search text.
+ * @returns Ranked matching assets retaining their original identities.
+ */
 export function searchAssets<T extends SearchAsset>(
   assets: T[],
   query: string,
@@ -73,7 +82,10 @@ export function searchAssets<T extends SearchAsset>(
     .map(({ asset }) => asset);
 }
 
-/** Format available search-result pricing without inventing missing values. */
+/** Format available search-result pricing without inventing missing values.
+ * @param value - Unknown USD price from the search result.
+ * @returns Display pricing or the unavailable placeholder.
+ */
 function formatPrice(value: unknown) {
   return value === null ||
     value === undefined ||
@@ -82,32 +94,46 @@ function formatPrice(value: unknown) {
     : `$${Number(value).toFixed(5)}`;
 }
 
-/** Shorten an address for display while retaining its full action identity. */
+/** Shorten an address for display while retaining its full action identity.
+ * @param value - Full address used by the search action.
+ * @returns A shortened display label, never a request identifier.
+ */
 function shortAddress(value: string) {
   return `${value.slice(0, 6)}...${value.slice(-6)}`;
 }
 
-/** Render keyboard-accessible asset search across desktop and mobile navigation. */
-export default function NavbarSearch({
-  assets,
-  loading,
-  error,
-  navigate,
-  mobileOpen,
-  setMobileOpen,
-  onDismiss,
-}: {
+/** Searchable catalog state and owner-controlled mobile/navigation actions. */
+interface NavbarSearchProps {
   assets: SearchAsset[];
   loading: boolean;
   error?: unknown;
-  /** Navigate to the supplied application route. */
+  /** Navigate to the supplied application route.
+   * @param path - Supported internal destination selected by a search action.
+   */
   navigate: (path: string) => void;
   mobileOpen: boolean;
-  /** Update whether the mobile search surface is open. */
+  /** Update whether the mobile search surface is open.
+   * @param open - Whether the mobile search surface should remain visible.
+   */
   setMobileOpen: (open: boolean) => void;
   /** Notify the owner that the transient search surface was dismissed. */
   onDismiss?: () => void;
-}) {
+}
+
+/** Render keyboard-accessible asset search across desktop and mobile navigation.
+ * @param props - Catalog resource state and owner-controlled navigation/mobile actions.
+ * @returns A keyboard-accessible search surface with ranked assets and public-wallet lookup.
+ */
+export default function NavbarSearch(props: NavbarSearchProps) {
+  const {
+    assets,
+    loading,
+    error,
+    navigate,
+    mobileOpen,
+    setMobileOpen,
+    onDismiss,
+  } = props;
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
@@ -174,7 +200,9 @@ export default function NavbarSearch({
   }, [mobileOpen]);
 
   useEffect(() => {
-    /** Dismiss the active transient UI when the outside interaction permits it. */
+    /** Dismiss the active transient UI when the outside interaction permits it.
+     * @param event - Pointer interaction checked against the owned search region.
+     */
     function dismiss(event: PointerEvent) {
       if (
         !(event.target instanceof Node) ||
@@ -190,7 +218,9 @@ export default function NavbarSearch({
     return () => document.removeEventListener('pointerdown', dismiss);
   }, [setMobileOpen]);
 
-  /** Apply the selected search action and close the transient search UI. */
+  /** Apply the selected search action and close the transient search UI.
+   * @param action - Validated asset or wallet navigation action.
+   */
   function select(action: SearchAction) {
     navigate(action.path);
     setQuery('');
@@ -208,7 +238,9 @@ export default function NavbarSearch({
     if (mobileOpen) onDismiss?.();
   }
 
-  /** Handle the supported keyboard interaction without triggering competing browser actions. */
+  /** Handle the supported keyboard interaction without triggering competing browser actions.
+   * @param event - Search-input key interaction.
+   */
   function onKeyDown(event: KeyboardEvent<HTMLInputElement>) {
     if (event.key === 'ArrowDown') {
       event.preventDefault();

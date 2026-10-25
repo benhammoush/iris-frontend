@@ -18,7 +18,7 @@
     "ci:quality": "npm run verify:fast && npm run format:check && npm run check:tooling && npm run audit:dependencies && npm run check:versions && npm run build",
     "ci:integration": "npm run test:e2e && npm run check:contracts && npm run test:vertical",
     "ci:browser": "playwright test --config playwright.release.config.ts",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings 0",
     "check:tooling": "node scripts/check-tooling.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

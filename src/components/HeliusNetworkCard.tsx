@@ -18,15 +18,24 @@ type Transaction = {
   action?: string | null;
 };
 
-/** Normalize or format the numeric value according to this boundary and its unavailable fallback. */
+/** Normalize or format the numeric value according to this boundary and its unavailable fallback.
+ * @param value - Unknown network metric.
+ * @returns Localized display text or the unavailable placeholder.
+ */
 const number = (value: unknown) =>
   value === null || value === undefined || !Number.isFinite(Number(value))
     ? '—'
     : Number(value).toLocaleString('en-US');
-/** Shorten the displayed transaction signature while retaining its full link identity. */
+/** Shorten the displayed transaction signature while retaining its full link identity.
+ * @param value - Full transaction signature used by the link.
+ * @returns Its shortened display label.
+ */
 const shortSignature = (value: string) =>
   `${value.slice(0, 8)}...${value.slice(-8)}`;
-/** Map supported transaction actions to readable labels. */
+/** Map supported transaction actions to readable labels.
+ * @param value - Optional normalized transaction action.
+ * @returns A readable action label with the existing unknown-action fallback.
+ */
 const actionLabel = (value: string | null | undefined) =>
   value
     ? value
@@ -34,7 +43,10 @@ const actionLabel = (value: string | null | undefined) =>
         .replace(/\b\w/g, (letter) => letter.toUpperCase())
     : 'Unknown';
 
-/** Format the observation age for the dashboard display. */
+/** Format the observation age for the dashboard display.
+ * @param value - Optional observation timestamp text.
+ * @returns A relative age label or the unavailable placeholder.
+ */
 function relativeTime(value: string | null | undefined) {
   if (!value || !Number.isFinite(Date.parse(value))) return '—';
   const seconds = Math.max(
@@ -46,16 +58,19 @@ function relativeTime(value: string | null | undefined) {
   return `${Math.floor(seconds / 3600)}h ago`;
 }
 
-/** Render one network metric with a loading placeholder when needed. */
-function Field({
-  label,
-  value,
-  loading,
-}: {
+/** Label, display text and loading state for one network metric. */
+interface FieldProps {
   label: string;
   value: string;
   loading?: boolean;
-}) {
+}
+
+/** Render one network metric with a loading placeholder when needed.
+ * @param props - Metric label, preformatted value and optional loading state.
+ * @returns A labeled value or its loading placeholder.
+ */
+function Field(props: FieldProps) {
+  const { label, value, loading } = props;
   return (
     <div className="iris-helius-field">
       <span>{label}</span>
@@ -64,17 +79,8 @@ function Field({
   );
 }
 
-/** Render network and transaction resources with independent loading and failure feedback. */
-export default function HeliusNetworkCard({
-  network,
-  loading,
-  error,
-  transactions,
-  transactionsLoading,
-  transactionsError,
-  refreshing = false,
-  onRetry,
-}: {
+/** Independent network and transaction resources with controlled retry state. */
+interface HeliusNetworkCardProps {
   network: Network | null;
   loading: boolean;
   error: unknown;
@@ -84,7 +90,23 @@ export default function HeliusNetworkCard({
   refreshing?: boolean;
   /** Ask the resource owner to retry its failed load. */
   onRetry?: () => void;
-}) {
+}
+
+/** Render network and transaction resources with independent loading and failure feedback.
+ * @param props - Separate metric/sample snapshots, resource feedback and retry control.
+ * @returns Network metrics and a bounded transaction sample, never a complete history claim.
+ */
+export default function HeliusNetworkCard(props: HeliusNetworkCardProps) {
+  const {
+    network,
+    loading,
+    error,
+    transactions,
+    transactionsLoading,
+    transactionsError,
+    refreshing = false,
+    onRetry,
+  } = props;
   const previousSignatures = useRef<Set<string> | null>(null);
   const signatures = useMemo(
     () =>

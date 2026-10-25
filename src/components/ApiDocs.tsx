@@ -29,7 +29,9 @@ export const apiDocsConfiguration = {
   ComponentProps<typeof ApiReferenceReact>['configuration']
 >;
 
-/** Render the published API reference inside the application shell. */
+/** Render the published API reference inside the application shell.
+ * @returns The configured API reference view.
+ */
 function ApiDocs() {
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-6 text-slate-900 sm:px-6">

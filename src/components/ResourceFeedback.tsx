@@ -5,16 +5,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-/** Announces resource transitions and keeps keyboard focus stable during retries. */
-export default function ResourceFeedback({
-  label,
-  error,
-  busy = false,
-  hasData = false,
-  onRetry,
-  retryLabel = 'Retry',
-  errorMessage = `${label} is currently unavailable.`,
-}: {
+/** Independent resource state, controlled messages and an explicit retry action. */
+interface ResourceFeedbackProps {
   label: string;
   error?: unknown;
   busy?: boolean;
@@ -23,7 +15,22 @@ export default function ResourceFeedback({
   onRetry?: () => void;
   retryLabel?: string;
   errorMessage?: string;
-}) {
+}
+
+/** Announces resource transitions and keeps keyboard focus stable during retries.
+ * @param props - Resource load/refresh state, retained-data state and optional retry control.
+ * @returns A persistent live region with controlled feedback and an explicit retry button.
+ */
+export default function ResourceFeedback(props: ResourceFeedbackProps) {
+  const {
+    label,
+    error,
+    busy = false,
+    hasData = false,
+    onRetry,
+    retryLabel = 'Retry',
+    errorMessage = `${label} is currently unavailable.`,
+  } = props;
   const feedback = useRef<HTMLDivElement>(null);
   const [retried, setRetried] = useState(false);
   useEffect(() => {

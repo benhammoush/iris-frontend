@@ -27,7 +27,9 @@ const filename = 'docs/user-guide/navigation.md';
 const reviewBody =
   '<!-- coderabbit-review-publication v1 publication=fixture -->';
 
-/** A complete positive fixture, including independent current-commit evidence. */
+/** A complete positive fixture, including independent current-commit evidence.
+ * @returns A complete immutable candidate and current native-state evidence snapshot.
+ */
 function snapshot() {
   return {
     policySha: base,
@@ -102,7 +104,9 @@ function snapshot() {
   };
 }
 
-/** Assert a fail-closed observation without confusing it with merge permission. */
+/** Assert a fail-closed observation without confusing it with merge permission.
+ * @param value - Candidate evidence expected to remain ineligible.
+ */
 function held(value) {
   const report = evaluateSnapshot(value, policy);
   assert.equal(report.wouldPassProposedRules, false);
@@ -500,15 +504,23 @@ test('HEAD/base/policy changes, drafts, forks and unknown native/conversation st
   }
 });
 
-/** Model GitHub responses without credentials or network access. */
+/** Model GitHub responses without credentials or network access.
+ * @param options - Controlled races, pagination or evidence failures to simulate.
+ * @returns A metadata-only fixture client.
+ */
 function fixtureClient(options = {}) {
   const value = snapshot();
   let reads = 0;
   let statusReads = 0;
   return {
-    /** Resolve review-thread evidence for the merge-policy decision. */
+    /** Resolve review-thread evidence for the merge-policy decision.
+     * @returns Controlled native conversation and candidate identities.
+     */
     threads: async () => value.native,
-    /** Read the controlled cache or boundary value used by this assertion. */
+    /** Read the controlled GitHub evidence for this assertion.
+     * @param path - Repository evidence path requested by the observer.
+     * @returns The controlled response for that path.
+     */
     get: async (path) => {
       if (path.endsWith('/pulls/7')) {
         reads++;
@@ -599,7 +611,9 @@ test('GitHub adapter exposes GETs and one fixed read-only GraphQL query; failure
     calls.push({ url, ...options });
     return {
       ok: true,
-      /** Return the controlled JSON payload for this provider-response fixture. */
+      /** Return the controlled JSON payload for this provider-response fixture.
+       * @returns Native candidate and review-thread evidence.
+       */
       json: async () => ({
         data: {
           repository: {
@@ -637,7 +651,9 @@ test('GitHub adapter exposes GETs and one fixed read-only GraphQL query; failure
 
 test('event selection ignores PR prose and validates dispatch numbers', async () => {
   const client = {
-    /** Read the controlled cache or boundary value used by this assertion. */
+    /** Read the controlled candidate list.
+     * @returns Two open candidate identities for event-selection assertions.
+     */
     get: async () => [
       { number: 7, head: { sha: head } },
       { number: 8, head: { sha: base } },
@@ -671,7 +687,9 @@ test('GraphQL walkthrough collection preserves editor provenance and rejects tru
   for (const truncated of [false, true]) {
     const client = githubReader('fixture', async () => ({
       ok: true,
-      /** Return the controlled JSON payload for this provider-response fixture. */
+      /** Return the controlled JSON payload for this provider-response fixture.
+       * @returns Comment provenance and controlled pagination completeness.
+       */
       json: async () => ({
         data: {
           repository: {

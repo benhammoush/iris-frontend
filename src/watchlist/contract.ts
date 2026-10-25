@@ -19,7 +19,10 @@ export interface Watchlist {
   assets: WatchlistItem[];
   wallets: WatchlistItem[];
 }
-/** Resolve the watchlist collection corresponding to the supported resource kind. */
+/** Resolve the watchlist collection corresponding to the supported resource kind.
+ * @param kind - Saved asset or wallet resource kind.
+ * @returns The corresponding watchlist collection name.
+ */
 export const sectionFor = (kind: WatchlistKind) =>
   kind === 'asset' ? 'assets' : 'wallets';
 
@@ -27,7 +30,10 @@ export const sectionFor = (kind: WatchlistKind) =>
 function invalid(): never {
   throw new ApiError('Invalid watchlist response.', { code: 'CONTRACT_ERROR' });
 }
-/** Validate one saved item before accepting it into account-scoped state. */
+/** Validate one saved item before accepting it into account-scoped state.
+ * @param value - Unknown saved-item response.
+ * @returns A validated saved item, rejecting malformed identities or timestamps.
+ */
 function itemFrom(value: unknown): WatchlistItem {
   if (
     !isRecord(value) ||
@@ -40,7 +46,10 @@ function itemFrom(value: unknown): WatchlistItem {
     invalid();
   return { address: value.address, savedAt: value.savedAt };
 }
-/** Return watchlist items in deterministic display order. */
+/** Return watchlist items in deterministic display order.
+ * @param items - Validated saved items; the original array is not mutated.
+ * @returns A sorted copy using save time and stable identity ordering.
+ */
 export function sorted(items: WatchlistItem[]): WatchlistItem[] {
   return [...items].sort((a, b) =>
     a.savedAt === b.savedAt
@@ -54,10 +63,16 @@ export function sorted(items: WatchlistItem[]): WatchlistItem[] {
         : 1,
   );
 }
-/** Validate the complete private watchlist response before publishing it. */
+/** Validate the complete private watchlist response before publishing it.
+ * @param value - Unknown private watchlist response payload.
+ * @returns A validated bounded watchlist with deterministic item ordering.
+ */
 export function watchlistFrom(value: unknown): Watchlist {
   if (!isRecord(value)) invalid();
-  /** Resolve the supported watchlist section and reject malformed section data. */
+  /** Resolve the supported watchlist section and reject malformed section data.
+   * @param value - Unknown asset or wallet section.
+   * @returns Its validated, bounded and sorted saved items.
+   */
   const section = (value: unknown) => {
     if (!Array.isArray(value) || value.length > 100) invalid();
     const items = value.map(itemFrom);
@@ -67,7 +82,12 @@ export function watchlistFrom(value: unknown): Watchlist {
   };
   return { assets: section(value.assets), wallets: section(value.wallets) };
 }
-/** Validate a save response against the requested kind and address. */
+/** Validate a save response against the requested kind and address.
+ * @param value - Unknown save-response payload.
+ * @param kind - Resource kind requested by the mutation.
+ * @param address - Exact resource identity requested by the mutation.
+ * @returns The validated saved item matching the request.
+ */
 export function savedItemFrom(
   value: unknown,
   kind: WatchlistKind,
@@ -77,7 +97,9 @@ export function savedItemFrom(
     invalid();
   return itemFrom(value);
 }
-/** Validate the private removal response before accepting mutation success. */
+/** Validate the private removal response before accepting mutation success.
+ * @param value - Unknown removal-response payload.
+ */
 export function removedFrom(value: unknown): void {
   if (!isRecord(value) || value.removed !== true) invalid();
 }

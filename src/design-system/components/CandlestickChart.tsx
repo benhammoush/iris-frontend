@@ -30,14 +30,22 @@ export interface CandleChartPoint {
 interface Props {
   candles: CandleChartPoint[];
   height?: number;
-  /** Format an available chart value for the visible price axis. */
+  /** Format an available chart value for the visible price axis.
+   * @param value - Available numeric price.
+   * @returns Display text for the chart's price axis.
+   */
   valueFormatter?: (value: number) => string;
   canLoadEarlier?: boolean;
-  /** Request the preceding historical window from the resource owner. */
+  /** Request the preceding historical window from the resource owner.
+   * @returns Completion of the earlier-history request.
+   */
   onLoadEarlier?: () => Promise<void>;
 }
 
-/** Convert supported candles to the chart OHLC representation. */
+/** Convert supported candles to the chart OHLC representation.
+ * @param candles - Observed timestamps, USD OHLC prices and USD volume.
+ * @returns Finite candle/volume points with Unix-second chart timestamps.
+ */
 function asChartCandles(candles: CandleChartPoint[]) {
   return candles.flatMap((candle) => {
     const timestamp = new Date(candle.timestamp).getTime();
@@ -63,14 +71,18 @@ function asChartCandles(candles: CandleChartPoint[]) {
   });
 }
 
-/** Own the candlestick chart and its optional earlier-history loading interaction. */
-export default function CandlestickChart({
-  candles,
-  height = 360,
-  valueFormatter,
-  canLoadEarlier = false,
-  onLoadEarlier,
-}: Props) {
+/** Own the candlestick chart and its optional earlier-history loading interaction.
+ * @param props - Candles, display height, axis formatting and controlled history-loading capability.
+ * @returns The chart container, retaining the user view as earlier history is added.
+ */
+export default function CandlestickChart(props: Props) {
+  const {
+    candles,
+    height = 360,
+    valueFormatter,
+    canLoadEarlier = false,
+    onLoadEarlier,
+  } = props;
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const candleSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
@@ -96,7 +108,11 @@ export default function CandlestickChart({
     if (!container) return undefined;
 
     const style = getComputedStyle(document.documentElement);
-    /** Read a chart color from the current theme with the supported fallback. */
+    /** Read a chart color from the current theme with the supported fallback.
+     * @param name - CSS custom-property name for the chart color.
+     * @param fallback - Existing display color when the theme token is absent.
+     * @returns The trimmed theme token or fallback color.
+     */
     const color = (name: string, fallback: string) =>
       style.getPropertyValue(name).trim() || fallback;
     const green = color('--iris-green', '#24d166');
@@ -137,7 +153,10 @@ export default function CandlestickChart({
       priceFormat: valueFormatterRef.current
         ? {
             type: 'custom',
-            /** Use the latest caller formatter without recreating the chart-owned callback. */
+            /** Use the latest caller formatter without recreating the chart-owned callback.
+             * @param value - Available numeric price.
+             * @returns Axis text from the current caller formatter, or the numeric fallback.
+             */
             formatter: (value: number) =>
               valueFormatterRef.current
                 ? valueFormatterRef.current(value)
@@ -162,7 +181,9 @@ export default function CandlestickChart({
     const markUserNavigation = () => {
       userNavigated = true;
     };
-    /** Request preceding history when the visible range reaches the supported boundary. */
+    /** Request preceding history when the visible range reaches the supported boundary.
+     * @param visibleRange - Current logical chart range, or null before a range is available.
+     */
     const loadEarlier = (visibleRange: { from: number } | null) => {
       if (
         !userNavigated ||
@@ -175,7 +196,7 @@ export default function CandlestickChart({
         return;
       loadingEarlier = true;
       userNavigated = false;
-      onLoadEarlierRef.current().finally(() => {
+      void onLoadEarlierRef.current().finally(() => {
         loadingEarlier = false;
       });
     };

@@ -20,15 +20,21 @@ vi.mock('../../../src/auth/firebaseDriver', () => ({
   createFirebaseDriver: vi.fn(),
 }));
 vi.mock('../../../src/components/Navbar', () => ({
-  /** Render the minimal navigation substitute used to isolate this component test. */
+  /** Render the minimal navigation substitute used to isolate this component test.
+   * @returns A public navigation landmark.
+   */
   default: () => <nav>Public navigation</nav>,
 }));
 let fake = fakeDriver();
 beforeEach(() => {
   fake = fakeDriver();
-  vi.mocked(createFirebaseDriver).mockImplementation(async () => fake.driver);
+  vi.mocked(createFirebaseDriver).mockImplementation(() =>
+    Promise.resolve(fake.driver),
+  );
 });
-/** Open the controlled account or watchlist view for the UI test. */
+/** Open the controlled account or watchlist view for the UI test.
+ * @returns User-event controls after the sign-in view is ready.
+ */
 async function open() {
   render(
     <MemoryRouter>

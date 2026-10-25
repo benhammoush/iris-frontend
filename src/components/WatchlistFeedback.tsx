@@ -3,21 +3,24 @@
  * @packageDocumentation
  */
 
-/** Render independent watchlist load, mutation and refresh feedback. */
-export default function WatchlistFeedback({
-  loadError,
-  mutationError,
-  feedback,
-  loading,
-  refresh,
-}: {
+/** Separate watchlist read/mutation messages and controlled refresh state. */
+interface WatchlistFeedbackProps {
   loadError: string;
   mutationError: string;
   feedback: string;
   loading: boolean;
-  /** Refresh the currently scoped resource without accepting results from a superseded identity. */
+  /** Refresh the currently scoped resource without accepting results from a superseded identity.
+   * @returns Completion of the account-scoped refresh.
+   */
   refresh: () => Promise<void>;
-}) {
+}
+
+/** Render independent watchlist load, mutation and refresh feedback.
+ * @param props - Independent read/mutation failures, success feedback and refresh controls.
+ * @returns Accessible feedback and a manual retry for failed watchlist loads.
+ */
+export default function WatchlistFeedback(props: WatchlistFeedbackProps) {
+  const { loadError, mutationError, feedback, loading, refresh } = props;
   return (
     <div className="iris-watchlist-feedback">
       {loadError && (

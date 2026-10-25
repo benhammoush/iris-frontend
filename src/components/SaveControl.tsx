@@ -13,14 +13,18 @@ import { itemKey } from '../watchlist/store';
 import WatchlistFeedback from './WatchlistFeedback';
 import './Watchlist.css';
 
-/** Gate the watchlist action on account readiness and feature availability. */
-export default function SaveControl({
-  kind,
-  address,
-}: {
+/** Exact resource kind and identity targeted by a watchlist control. */
+interface SaveControlProps {
   kind: WatchlistKind;
   address: string;
-}) {
+}
+
+/** Gate the watchlist action on account readiness and feature availability.
+ * @param props - Resource kind and exact Solana address to save.
+ * @returns The eligible save control, account guidance or no control for unsupported identities.
+ */
+export default function SaveControl(props: SaveControlProps) {
+  const { kind, address } = props;
   const { status, user } = useAccount();
   if (!accountsEnabled || !isSolanaAddress(address)) return null;
   if (status === 'loading')
@@ -56,14 +60,12 @@ export default function SaveControl({
     />
   );
 }
-/** Render the account-scoped save action once the watchlist session is ready. */
-function ReadySaveControl({
-  kind,
-  address,
-}: {
-  kind: WatchlistKind;
-  address: string;
-}) {
+/** Render the account-scoped save action once the watchlist session is ready.
+ * @param props - Resource identity already gated by the account boundary.
+ * @returns The account-scoped save/remove action and independent watchlist feedback.
+ */
+function ReadySaveControl(props: SaveControlProps) {
+  const { kind, address } = props;
   const list = useWatchlist();
   const saved =
     list.data?.[sectionFor(kind)].some((item) => item.address === address) ??

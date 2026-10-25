@@ -15,32 +15,66 @@ export interface AccountUser {
 
 /** Authentication adapter consumed by the account-session lifecycle. */
 export interface AccountDriver {
-  /** Read the driver's current authenticated identity, or null when signed out. */
+  /** Read the driver's current authenticated identity, or null when signed out.
+   * @returns The application-safe current identity, or null.
+   */
   current(): AccountUser | null;
-  /** Register a state listener and return cleanup for that subscription. */
+  /** Register a state listener and return cleanup for that subscription.
+   * @param next - Listener receiving application-safe identity transitions.
+   * @param error - Listener notified when the provider subscription becomes unavailable.
+   * @returns Cleanup for this provider subscription.
+   */
   subscribe(
     next: (user: AccountUser | null) => void,
     error: () => void,
   ): () => void;
-  /** Issue an identity token only for the requested currently authenticated account. */
+  /** Issue an identity token only for the requested currently authenticated account.
+   * @param uid - Captured provider identity that must still match.
+   * @returns Its ID token, rejecting identity changes during resolution.
+   */
   token(uid: string): Promise<string>;
-  /** Authenticate the email account using the provided credentials. */
+  /** Authenticate the email account using the provided credentials.
+   * @param email - User-supplied account email.
+   * @param password - Password sent only to the authentication provider.
+   * @returns Completion of provider sign-in.
+   */
   signIn(email: string, password: string): Promise<void>;
-  /** Create the email account through the configured authentication driver. */
+  /** Create the email account through the configured authentication driver.
+   * @param email - User-supplied account email.
+   * @param password - Password sent only to the authentication provider.
+   * @returns The newly created application-safe identity.
+   */
   signUp(email: string, password: string): Promise<AccountUser>;
-  /** Authenticate through the configured Google account flow. */
+  /** Authenticate through the configured Google account flow.
+   * @returns Completion of provider sign-in.
+   */
   google(): Promise<void>;
-  /** Request password recovery for the supplied email address. */
+  /** Request password recovery for the supplied email address.
+   * @param email - Account email receiving provider-managed recovery instructions.
+   * @returns Completion of the recovery request.
+   */
   reset(email: string): Promise<void>;
-  /** Request verification for the current authenticated email account. */
+  /** Request verification for the current authenticated email account.
+   * @returns Completion of the provider-managed verification request.
+   */
   verify(): Promise<void>;
-  /** Refresh the currently scoped resource without accepting results from a superseded identity. */
+  /** Refresh the currently scoped resource without accepting results from a superseded identity.
+   * @returns The refreshed application-safe identity, or null after sign-out.
+   */
   refresh(): Promise<AccountUser | null>;
-  /** Link Google credentials to the current account with the required reauthentication. */
+  /** Link Google credentials to the current account with the required reauthentication.
+   * @param password - Current password used for provider reauthentication.
+   * @returns Completion without merging or switching accounts.
+   */
   linkGoogle(password: string): Promise<void>;
-  /** Link password credentials to the current account without switching its identity. */
+  /** Link password credentials to the current account without switching its identity.
+   * @param password - New password for the current account.
+   * @returns Completion without merging or switching accounts.
+   */
   linkPassword(password: string): Promise<void>;
-  /** End the current authentication session and invalidate identity-bound work. */
+  /** End the current authentication session and invalidate identity-bound work.
+   * @returns Completion of provider sign-out.
+   */
   signOut(): Promise<void>;
 }
 
@@ -62,7 +96,9 @@ export class AccountSession {
   private authentication?: Promise<void>;
   private signingOut?: Promise<void>;
 
-  /** Initialize this error or state owner with the supplied context. */
+  /** Initialize account state without enabling an unavailable authentication feature.
+   * @param enabled - Whether account support is explicitly configured.
+   */
   constructor(enabled: boolean) {
     this.state = {
       status: enabled ? 'loading' : 'disabled',
@@ -71,9 +107,14 @@ export class AccountSession {
     };
   }
 
-  /** Expose current account state for external-store subscribers. */
+  /** Expose current account state for external-store subscribers.
+   * @returns The current immutable state snapshot.
+   */
   snapshot = () => this.state;
-  /** Register a state listener and return cleanup for that subscription. */
+  /** Register a state listener and return cleanup for that subscription.
+   * @param listener - Callback notified after a state transition.
+   * @returns Cleanup removing only this subscription.
+   */
   subscribe = (listener: () => void) => {
     this.listeners.add(listener);
     return () => {
@@ -81,7 +122,9 @@ export class AccountSession {
     };
   };
 
-  /** Publish the new scoped state to subscribers without mutating unrelated state. */
+  /** Publish the new scoped state to subscribers without mutating unrelated state.
+   * @param state - Next account state; publishing also invalidates captured prior work.
+   */
   private publish(state: AccountState) {
     this.controller.abort();
     this.controller = new AbortController();
@@ -89,7 +132,10 @@ export class AccountSession {
     for (const listener of this.listeners) listener();
   }
 
-  /** Subscribe to the underlying session source and own the corresponding cleanup. */
+  /** Subscribe to the underlying session source and own the corresponding cleanup.
+   * @param driver - Authentication provider adapter for this account owner.
+   * @returns Cleanup for the provider's account subscription.
+   */
   connect(driver: AccountDriver) {
     this.driver = driver;
     return driver.subscribe(
@@ -125,7 +171,9 @@ export class AccountSession {
     this.controller.abort();
   }
 
-  /** Require a ready authentication driver or raise the public unavailable error. */
+  /** Require a ready authentication driver or raise the public unavailable error.
+   * @returns The configured driver only while account support is ready.
+   */
   private ready() {
     if (!this.driver || this.state.status !== 'ready')
       throw new ApiError('Accounts are unavailable.', {
@@ -134,7 +182,9 @@ export class AccountSession {
     return this.driver;
   }
 
-  /** Run an authentication operation while preserving account transition and failure state. */
+  /** Run an authentication operation while preserving account transition and failure state.
+   * @param operation - Provider operation to run under session-transition guards.
+   */
   private async authenticate(operation: () => Promise<void>) {
     if (this.locked)
       throw new ApiError('Retry sign-out first.', { code: 'SIGN_OUT_FAILED' });
@@ -150,15 +200,26 @@ export class AccountSession {
       this.authentication = undefined;
     }
   }
-  /** Authenticate the email account using the provided credentials. */
+  /** Authenticate the email account using the provided credentials.
+   * @param email - User-supplied account email.
+   * @param password - Password passed only to the configured authentication driver.
+   * @returns Completion of the guarded sign-in operation.
+   */
   signIn(email: string, password: string) {
     return this.authenticate(() => this.ready().signIn(email, password));
   }
-  /** Create the email account through the configured authentication driver. */
+  /** Create the email account through the configured authentication driver.
+   * @param email - User-supplied account email.
+   * @param password - Password passed only to the configured authentication driver.
+   * @returns Completion of guarded account creation.
+   */
   signUp(email: string, password: string) {
     return this.authenticate(() => this.createAccount(email, password));
   }
-  /** Create the email account and establish its application session. */
+  /** Create the email account and establish its application session.
+   * @param email - User-supplied account email.
+   * @param password - Password passed only to the configured authentication driver.
+   */
   private async createAccount(email: string, password: string) {
     const driver = this.ready();
     const created = await driver.signUp(email, password);
@@ -178,15 +239,22 @@ export class AccountSession {
     )
       this.publish({ ...this.state, verificationNotice: notice });
   }
-  /** Authenticate through the configured Google account flow. */
+  /** Authenticate through the configured Google account flow.
+   * @returns Completion of the guarded Google sign-in operation.
+   */
   google() {
     return this.authenticate(() => this.ready().google());
   }
-  /** Request password recovery for the supplied email address. */
+  /** Request password recovery for the supplied email address.
+   * @param email - Account email receiving provider-managed recovery instructions.
+   * @returns Completion of the provider recovery request.
+   */
   reset(email: string) {
     return this.ready().reset(email);
   }
-  /** Require an authenticated account before running a protected session operation. */
+  /** Require an authenticated account before running a protected session operation.
+   * @returns The driver only while a current authenticated account is available.
+   */
   private signedIn() {
     const driver = this.ready();
     if (
@@ -210,11 +278,17 @@ export class AccountSession {
     )
       this.publish({ ...this.state, verificationNotice: 'requested' });
   }
-  /** Link Google credentials to the current account with the required reauthentication. */
+  /** Link Google credentials to the current account with the required reauthentication.
+   * @param password - Current password used only for provider reauthentication.
+   * @returns Completion without switching the protected account identity.
+   */
   linkGoogle(password: string) {
     return this.authenticate(() => this.signedIn().linkGoogle(password));
   }
-  /** Link password credentials to the current account without switching its identity. */
+  /** Link password credentials to the current account without switching its identity.
+   * @param password - New password for the current account.
+   * @returns Completion of the guarded credential-linking operation.
+   */
   linkPassword(password: string) {
     return this.authenticate(() => this.signedIn().linkPassword(password));
   }
@@ -227,7 +301,9 @@ export class AccountSession {
     if (!signal.aborted && !this.locked)
       this.publish({ status: 'ready', user, signOutFailed: false });
   }
-  /** End the current authentication session and invalidate identity-bound work. */
+  /** End the current authentication session and invalidate identity-bound work.
+   * @returns Completion of sign-out, sharing any already-pending sign-out attempt.
+   */
   async signOut() {
     if (this.signingOut) return this.signingOut;
     const driver = this.ready();
@@ -255,7 +331,9 @@ export class AccountSession {
     }
   }
 
-  /** Capture account identity and generation so delayed work can reject a superseded session. */
+  /** Capture account identity and generation so delayed work can reject a superseded session.
+   * @returns Identity-bound cancellation, currency checks and token access.
+   */
   capture() {
     const driver = this.ready();
     const user = this.state.user;
@@ -268,13 +346,17 @@ export class AccountSession {
     const signal = this.controller.signal;
     return {
       signal,
-      /** Reject delayed work after cancellation, account lock or a captured-identity change. */
+      /** Reject delayed work after cancellation, account lock or a captured-identity change.
+       * @returns Whether the captured session remains eligible for publication.
+       */
       isCurrent: () =>
         !signal.aborted &&
         !this.locked &&
         this.state.user?.uid === user.uid &&
         driver.current()?.uid === user.uid,
-      /** Issue an identity token only for the requested currently authenticated account. */
+      /** Issue an identity token only for the requested currently authenticated account.
+       * @returns A token bound to the captured provider identity.
+       */
       token: () => driver.token(user.uid),
     };
   }

@@ -36,7 +36,10 @@ type Dashboard = {
   protocols: { total: number | null; items: Protocol[] };
 };
 
-/** Format a known monetary value for display and preserve the unavailable-data fallback. */
+/** Format a known monetary value for display and preserve the unavailable-data fallback.
+ * @param value - Available USD metric, or an unavailable value.
+ * @returns Formatted currency text or the unavailable placeholder.
+ */
 const currency = (value: number | null | undefined) =>
   value === null || value === undefined || !Number.isFinite(value)
     ? '—'
@@ -46,7 +49,10 @@ const currency = (value: number | null | undefined) =>
         notation: 'compact',
         maximumFractionDigits: 2,
       }).format(value);
-/** Format an available count while retaining an unavailable fallback. */
+/** Format an available count while retaining an unavailable fallback.
+ * @param value - Available dashboard count, or an unavailable value.
+ * @returns Localized count text or the unavailable placeholder.
+ */
 const count = (value: number | null | undefined) =>
   value === null || value === undefined || !Number.isFinite(value)
     ? '—'
@@ -55,8 +61,17 @@ const preloadImage = {
   fetchpriority: 'high',
 };
 
-/** Render a signed percentage change with an explicit unavailable fallback. */
-function Change({ value }: { value: number | null }) {
+/** Nullable percentage-change metric. */
+interface ChangeProps {
+  value: number | null;
+}
+
+/** Render a signed percentage change with an explicit unavailable fallback.
+ * @param props - Nullable percentage-change metric.
+ * @returns Signed display text or an unavailable placeholder.
+ */
+function Change(props: ChangeProps) {
+  const { value } = props;
   if (value === null || !Number.isFinite(value))
     return <span className="iris-muted">—</span>;
   return (
@@ -67,14 +82,18 @@ function Change({ value }: { value: number | null }) {
   );
 }
 
-/** Link the supported dashboard entity to its external reference. */
-function DefiLlamaLink({
-  slug,
-  children,
-}: {
+/** External protocol identity and visible link content. */
+interface DefiLlamaLinkProps {
   slug: string | null;
   children: React.ReactNode;
-}) {
+}
+
+/** Link the supported dashboard entity to its external reference.
+ * @param props - Optional protocol slug and visible content.
+ * @returns An encoded external reference, or unlinked content when identity is unavailable.
+ */
+function DefiLlamaLink(props: DefiLlamaLinkProps) {
+  const { slug, children } = props;
   return slug ? (
     <a
       href={`https://defillama.com/protocol/${encodeURIComponent(slug)}`}
@@ -88,21 +107,22 @@ function DefiLlamaLink({
   );
 }
 
-/** Render independently available dashboard metrics and their refresh or failure state. */
-export default function DefiLlamaCard({
-  dashboard,
-  loading,
-  error,
-  refreshing = false,
-  onRetry,
-}: {
+/** Normalized dashboard data and independent load/refresh controls. */
+interface DefiLlamaCardProps {
   dashboard: Dashboard | null;
   loading: boolean;
   error: unknown;
   refreshing?: boolean;
   /** Ask the resource owner to retry its failed load. */
   onRetry?: () => void;
-}) {
+}
+
+/** Render independently available dashboard metrics and their refresh or failure state.
+ * @param props - Dashboard snapshot, independent resource state and explicit retry control.
+ * @returns Available metrics or accessible loading, empty and failure feedback.
+ */
+export default function DefiLlamaCard(props: DefiLlamaCardProps) {
+  const { dashboard, loading, error, refreshing = false, onRetry } = props;
   const pending = loading && !dashboard;
   return (
     <section
@@ -244,7 +264,9 @@ export default function DefiLlamaCard({
   );
 }
 
-/** Reserve dashboard row layout while metrics are loading. */
+/** Reserve dashboard row layout while metrics are loading.
+ * @returns Noninteractive loading rows matching the dashboard layout.
+ */
 function PlaceholderRows() {
   return (
     <div className="iris-catalog-list-rows">

@@ -76,7 +76,7 @@ const defillamaFixture = {
 beforeEach(() => {
   window.history.pushState({}, '', '/');
   globalThis.fetch = vi.fn<typeof fetch>((input) => {
-    const url = String(input);
+    const url = input instanceof Request ? input.url : input.toString();
     const data = url.includes('/candles')
       ? { data: { candles: [] } }
       : url.includes('/history')
@@ -215,12 +215,20 @@ test('renders the Worker-backed portfolio shell', async () => {
   expect(
     vi
       .mocked(fetch)
-      .mock.calls.some(([url]) => String(url).includes('/v3/wallets')),
+      .mock.calls.some(([url]) =>
+        (url instanceof Request ? url.url : url.toString()).includes(
+          '/v3/wallets',
+        ),
+      ),
   ).toBe(false);
   expect(
     vi
       .mocked(fetch)
-      .mock.calls.some(([url]) => String(url).includes('/v3/network')),
+      .mock.calls.some(([url]) =>
+        (url instanceof Request ? url.url : url.toString()).includes(
+          '/v3/network',
+        ),
+      ),
   ).toBe(false);
   unmount();
 });
@@ -235,7 +243,11 @@ test('renders the DefiLlama dashboard after Helius and before Jupiter with safe 
   expect(
     vi
       .mocked(fetch)
-      .mock.calls.some(([url]) => String(url).includes('/v3/defillama')),
+      .mock.calls.some(([url]) =>
+        (url instanceof Request ? url.url : url.toString()).includes(
+          '/v3/defillama',
+        ),
+      ),
   ).toBe(true);
   expect(screen.getByText('Kamino')).toBeInTheDocument();
   expect(screen.getByRole('link', { name: /Kamino/ })).toHaveAttribute(
@@ -264,7 +276,10 @@ test('renders the DefiLlama dashboard after Helius and before Jupiter with safe 
   expect(
     container.querySelectorAll('.iris-defillama-lists .iris-catalog-list'),
   ).toHaveLength(2);
-  /** Require the expected test element instead of continuing with a missing fixture node. */
+  /** Require the expected test element instead of continuing with a missing fixture node.
+   * @param selector - CSS selector for the expected element.
+   * @returns That element, rejecting a missing fixture node.
+   */
   function required(selector: string): Element {
     const element = container.querySelector(selector);
     if (!element) throw new Error(`Missing element: ${selector}`);
@@ -419,7 +434,11 @@ test('Home does not request Birdeye candles or render graph controls', async () 
   expect(
     vi
       .mocked(fetch)
-      .mock.calls.some(([url]) => String(url).includes('/candles')),
+      .mock.calls.some(([url]) =>
+        (url instanceof Request ? url.url : url.toString()).includes(
+          '/candles',
+        ),
+      ),
   ).toBe(false);
   expect(screen.queryByRole('button', { name: '7D' })).not.toBeInTheDocument();
 });

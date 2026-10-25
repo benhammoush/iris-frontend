@@ -16,7 +16,9 @@ import { useWalletSummaries } from '../../../src/hooks/useWalletSummaries';
 
 const context = vi.hoisted(() => ({ session: null as AccountSession | null }));
 vi.mock('../../../src/contexts/AccountContext', () => ({
-  /** Read the account context and reject use outside its provider. */
+  /** Read the controlled account context.
+   * @returns The current fixture session.
+   */
   useAccount: () => ({ session: context.session }),
 }));
 vi.mock('../../../src/watchlist/walletSummaries', () => ({
@@ -25,7 +27,9 @@ vi.mock('../../../src/watchlist/walletSummaries', () => ({
 afterEach(() => vi.resetAllMocks());
 const address = 'So11111111111111111111111111111111111111112';
 const other = '11111111111111111111111111111111';
-/** Create isolated dependencies and controlled session state for this test. */
+/** Create isolated dependencies and controlled session state for this test.
+ * @returns The session, authentication controls and normalized wallet summary.
+ */
 function setup() {
   const session = new AccountSession(true);
   const fake = fakeDriver(alice);
@@ -39,8 +43,9 @@ function setup() {
   if (!wallet) throw new Error('Invalid fixture');
   const data = { wallet, asOf: '2026-10-22T08:00:00.000Z', stale: false };
   vi.mocked(loadWalletSummaries).mockImplementation(
-    async (_session, addresses, _signal, publish) => {
+    (_session, addresses, _signal, publish) => {
       for (const item of addresses) publish(item, { data });
+      return Promise.resolve();
     },
   );
   return { session, ...fake, data };
@@ -75,6 +80,7 @@ test('focus refresh retains pending values, marks failed values stale and retry 
     publish(address, { error: 'Unavailable' });
     publish(other, { data });
     finish();
+    await Promise.resolve();
   });
   expect(result.current.results[address]).toEqual({
     data: { ...data, stale: true },
@@ -122,6 +128,7 @@ test.each(['sign-out', 'switch', 'unverified'] as const)(
     await act(async () => {
       publish(address, { error: 'Late failure' });
       finish();
+      await Promise.resolve();
     });
     expect(result.current.results).toEqual({});
   },
@@ -160,6 +167,9 @@ test('same verified identity events restart an aborted batch without clearing re
   await waitFor(() => expect(loadWalletSummaries).toHaveBeenCalledTimes(3));
   await waitFor(() => expect(result.current.loading).toBe(false));
   expect(result.current.results[address]).toEqual({ data });
-  await act(async () => finish());
+  await act(async () => {
+    finish();
+    await Promise.resolve();
+  });
   expect(result.current.results[address]).toEqual({ data });
 });

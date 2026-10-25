@@ -12,8 +12,17 @@ import { looksLikeSolanaAddress } from '../data/solana';
 import ValueSkeleton from './ValueSkeleton';
 import ResourceFeedback from './ResourceFeedback';
 
-/** Render the requested discovery catalog without mixing catalog identities. */
-export default function Catalog({ kind }: { kind: 'assets' | 'wallets' }) {
+/** Public discovery surface selected by the route. */
+interface CatalogProps {
+  kind: 'assets' | 'wallets';
+}
+
+/** Render the requested discovery catalog without mixing catalog identities.
+ * @param props - Asset-catalog or public-wallet-lookup route selection.
+ * @returns The selected discovery surface with independent loading and failure feedback.
+ */
+export default function Catalog(props: CatalogProps) {
+  const { kind } = props;
   const { assets, loading, refreshing, error, refetch } = useCatalog();
   const [address, setAddress] = useState('');
   const navigate = useNavigate();
@@ -108,7 +117,7 @@ export default function Catalog({ kind }: { kind: 'assets' | 'wallets' }) {
                 className="iris-retry"
                 disabled={!validAddress}
                 onClick={() =>
-                  navigate(`/wallet/${encodeURIComponent(trimmedAddress)}`)
+                  void navigate(`/wallet/${encodeURIComponent(trimmedAddress)}`)
                 }
               >
                 View wallet

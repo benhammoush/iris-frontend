@@ -123,6 +123,8 @@ export function useWorkerResource<T, M>(
   return {
     ...state,
     /** Request a fresh load from the resource owner. */
-    refetch: () => setReload((value) => value + 1),
+    refetch: () => {
+      setReload((value) => value + 1);
+    },
   };
 }

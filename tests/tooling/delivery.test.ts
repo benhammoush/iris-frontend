@@ -7,6 +7,8 @@
 /** Consumer contracts; executable release-rejection tests live with the pinned shared guards. */
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import config from '../../.github/ci-cd.json';
+import packageJson from '../../package.json';
 
 const workflow = readFileSync(
   new URL('../../.github/workflows/ci.yml', import.meta.url),
@@ -16,12 +18,7 @@ const production = readFileSync(
   new URL('../../.github/workflows/deploy-production.yml', import.meta.url),
   'utf8',
 );
-const config = JSON.parse(
-  readFileSync(new URL('../../.github/ci-cd.json', import.meta.url), 'utf8'),
-);
-const scripts = JSON.parse(
-  readFileSync(new URL('../../package.json', import.meta.url), 'utf8'),
-).scripts;
+const { scripts } = packageJson;
 const browsers = readFileSync(
   new URL('../../playwright.config.ts', import.meta.url),
   'utf8',
@@ -78,7 +75,7 @@ describe('versioned delivery consumer', () => {
     expect(workflow).not.toMatch(/legacy_\d+:/);
     expect(config.workerRepository).toBe('benhammoush/iris-backend');
     expect(config.workerSha).toBe('568d38a8acbfa42689c59f7162b975c41cea98b0');
-    for (const target of ['dev', 'production']) {
+    for (const target of ['dev', 'production'] as const) {
       const values = config.buildEnvironment[target];
       expect(values.VITE_API_BASE).toBe(
         `https://iris-backend-${target}.benhxm.workers.dev`,

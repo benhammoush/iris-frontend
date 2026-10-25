@@ -16,9 +16,15 @@ const columns: VirtualTableColumn<(typeof data)[number]>[] = [
     id: 'name',
     label: 'Name',
     width: 150,
-    /** Extract the row value used for sorting and filtering. */
+    /** Extract the row value used for sorting and filtering.
+     * @param row - Controlled table row.
+     * @returns The row name used as the column's scalar value.
+     */
     value: (row) => row.name,
-    /** Render the table cell while preserving the row value used by actions and links. */
+    /** Render the table cell while preserving the row value used by actions and links.
+     * @param row - Controlled table row.
+     * @returns Its visible name.
+     */
     cell: (row) => row.name,
   },
 ];

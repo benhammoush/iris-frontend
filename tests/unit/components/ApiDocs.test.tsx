@@ -11,13 +11,19 @@ import ApiDocs, {
   openApiUrl,
 } from '../../../src/components/ApiDocs';
 
+/** Minimal reference renderer input used by this fixture. */
+interface ReferenceProps {
+  configuration: Pick<typeof apiDocsConfiguration, 'url'>;
+}
+
 vi.mock('@scalar/api-reference-react', () => ({
-  /** Render the configured API URL instead of loading the external reference UI in the unit test. */
-  ApiReferenceReact: ({
-    configuration,
-  }: {
-    configuration: Pick<typeof apiDocsConfiguration, 'url'>;
-  }) => <div data-testid="scalar">{configuration.url}</div>,
+  /** Render the configured API URL without the external reference UI.
+   * @param props - Reference configuration containing the public schema URL.
+   * @returns The URL as observable fixture content.
+   */
+  ApiReferenceReact: (props: ReferenceProps) => (
+    <div data-testid="scalar">{props.configuration.url}</div>
+  ),
 }));
 
 afterEach(() => {

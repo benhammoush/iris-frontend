@@ -24,8 +24,17 @@ const CatalogContext = createContext<CatalogState>({
   loading: true,
 });
 
-/** Own shared catalog resources for descendant consumers. */
-export function CatalogProvider({ children }: { children: ReactNode }) {
+/** Descendants sharing a catalog resource owner. */
+interface ProviderProps {
+  children: ReactNode;
+}
+
+/** Own shared catalog resources for descendant consumers.
+ * @param props - Descendants sharing catalog loading, data and refresh state.
+ * @returns The catalog provider around those descendants.
+ */
+export function CatalogProvider(props: ProviderProps) {
+  const { children } = props;
   const assets = useWorkerResource(workerApi.assets, []);
   return (
     <CatalogContext.Provider
@@ -43,5 +52,7 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
   );
 }
 
-/** Read catalog state; outside a provider the default is an empty, loading catalog. */
+/** Read catalog state; outside a provider the default is an empty, loading catalog.
+ * @returns Normalized asset data and its independent resource feedback.
+ */
 export const useCatalog = () => useContext(CatalogContext);

@@ -12,7 +12,9 @@ import Asset from '../../../src/components/Asset';
 import { workerApi } from '../../../src/api/worker';
 
 vi.mock('../../../src/components/Navbar', () => ({
-  /** Render the minimal navigation substitute used to isolate this component test. */
+  /** Render the minimal navigation substitute used to isolate this component test.
+   * @returns An empty navigation landmark.
+   */
   default: () => <nav />,
 }));
 vi.mock('../../../src/design-system', async (importOriginal) => {
@@ -20,17 +22,18 @@ vi.mock('../../../src/design-system', async (importOriginal) => {
     await importOriginal<typeof import('../../../src/design-system')>();
   return {
     ...actual,
-    /** Own the candlestick chart and its optional earlier-history loading interaction. */
-    CandlestickChart: ({
-      candles,
-      onLoadEarlier,
-      canLoadEarlier,
-    }: ComponentProps<typeof actual.CandlestickChart>) => (
+    /** Expose chart data and history controls without rendering a canvas.
+     * @param props - Real chart props supplied by the asset view.
+     * @returns Observable candle count and the controlled history action.
+     */
+    CandlestickChart: (
+      props: ComponentProps<typeof actual.CandlestickChart>,
+    ) => (
       <div>
-        <output aria-label="Candle count">{candles.length}</output>
+        <output aria-label="Candle count">{props.candles.length}</output>
         <button
-          disabled={!canLoadEarlier}
-          onClick={() => void onLoadEarlier?.()}
+          disabled={!props.canLoadEarlier}
+          onClick={() => void props.onLoadEarlier?.()}
         >
           Load earlier test candles
         </button>
@@ -42,7 +45,10 @@ vi.mock('../../../src/design-system', async (importOriginal) => {
 const mint = 'So11111111111111111111111111111111111111112';
 const asset = { mint, symbol: 'SOL', name: 'Solana', priceUsd: 150 };
 const meta = { requestId: 'asset-test' };
-/** Build a deterministic candle fixture with the requested observation time. */
+/** Build a deterministic candle fixture with the requested observation time.
+ * @param timestamp - Observation timestamp for the fixture candle.
+ * @returns Controlled OHLC values and volume at that timestamp.
+ */
 const candle = (timestamp: string) => ({
   timestamp,
   openUsd: 149,
@@ -54,7 +60,9 @@ const candle = (timestamp: string) => ({
 const currentCandle = candle('2026-10-08T10:00:00.000Z');
 const olderCandle = candle('2026-10-08T09:00:00.000Z');
 
-/** Render the asset route with controlled resource responses. */
+/** Render the asset route with controlled resource responses.
+ * @returns Testing-library controls for the routed asset view.
+ */
 function renderAsset() {
   return render(
     <MemoryRouter initialEntries={[`/asset/${mint}`]}>
@@ -117,9 +125,10 @@ test('uses roving keyboard focus and labelled panels for intelligence tabs', asy
 
 test('retains the chart after an earlier-history failure and supports an explicit retry', async () => {
   vi.mocked(workerApi.assetCandles).mockImplementation(
-    async (_mint, _timeframe, _options, before) => {
-      if (before) throw new Error('Earlier history unavailable');
-      return { data: { candles: [currentCandle] }, meta };
+    (_mint, _timeframe, _options, before) => {
+      if (before)
+        return Promise.reject(new Error('Earlier history unavailable'));
+      return Promise.resolve({ data: { candles: [currentCandle] }, meta });
     },
   );
   renderAsset();
@@ -155,12 +164,12 @@ test('aborts earlier-history work and ignores its late result after a timeframe 
     finish = resolve;
   });
   vi.mocked(workerApi.assetCandles).mockImplementation(
-    async (_mint, _timeframe, options, before) => {
+    (_mint, _timeframe, options, before) => {
       if (before) {
         signal = options?.signal;
         return pending;
       }
-      return { data: { candles: [currentCandle] }, meta };
+      return Promise.resolve({ data: { candles: [currentCandle] }, meta });
     },
   );
   renderAsset();
@@ -170,6 +179,9 @@ test('aborts earlier-history work and ignores its late result after a timeframe 
   );
   await userEvent.click(screen.getByRole('button', { name: '30m' }));
   expect(signal?.aborted).toBe(true);
-  await act(async () => finish?.({ data: { candles: [olderCandle] }, meta }));
+  await act(async () => {
+    finish?.({ data: { candles: [olderCandle] }, meta });
+    await Promise.resolve();
+  });
   expect(screen.getByLabelText('Candle count')).toHaveTextContent('1');
 });

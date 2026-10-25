@@ -12,7 +12,7 @@ const providerHosts =
   /(?:jupiter|helius|birdeye|defillama|iris\.test|solana\.com)/i;
 const unexpectedRequests = new WeakMap<Page, string[]>();
 
-test.beforeEach(async ({ page }) => {
+test.beforeEach(({ page }) => {
   const unexpected: string[] = [];
   page.on('request', (request) => {
     const url = new URL(request.url());

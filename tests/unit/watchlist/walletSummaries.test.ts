@@ -7,7 +7,10 @@ import { expect, test, vi, afterEach } from 'vitest';
 import { workerApi } from '../../../src/api/worker';
 import { AccountSession } from '../../../src/auth/session';
 import { alice, fakeDriver } from '../auth/testSupport';
-import { loadWalletSummaries } from '../../../src/watchlist/walletSummaries';
+import {
+  loadWalletSummaries,
+  type WalletSummaryResult,
+} from '../../../src/watchlist/walletSummaries';
 
 vi.mock('../../../src/api/worker', () => ({ workerApi: { wallet: vi.fn() } }));
 const request = vi.mocked(workerApi.wallet);
@@ -16,7 +19,10 @@ const addresses = Array.from(
   { length: 9 },
   (_, index) => '1'.repeat(31) + '23456789A'[index],
 );
-/** Build the controlled wallet JSON envelope containing data and response metadata. */
+/** Build the controlled wallet JSON envelope containing data and response metadata.
+ * @param address - Wallet identity echoed in the controlled response.
+ * @returns An unpriced holding preserving its exact source quantity and freshness metadata.
+ */
 const response = (address: string) => ({
   data: {
     address,
@@ -39,7 +45,9 @@ const response = (address: string) => ({
     },
   },
 });
-/** Create isolated dependencies and controlled session state for this test. */
+/** Create isolated dependencies and controlled session state for this test.
+ * @returns The owned account session and controlled authentication driver.
+ */
 function setup() {
   const session = new AccountSession(true);
   const fake = fakeDriver(alice);
@@ -58,17 +66,18 @@ test('snapshot freshness reads the real Worker metadata envelope, never a body t
         wallet: { ...fixture.meta.wallet, asOf, stale: true },
       },
     });
-    const publish = vi.fn();
+    const publish =
+      vi.fn<(address: string, result: WalletSummaryResult) => void>();
     await loadWalletSummaries(
       session,
       [addresses[0]],
       new AbortController().signal,
       publish,
     );
-    expect(publish.mock.calls[0][1].data.asOf).toBe(
+    expect(publish.mock.calls[0][1].data?.asOf).toBe(
       asOf === 'not-a-date' ? null : asOf,
     );
-    expect(publish.mock.calls[0][1].data.stale).toBe(true);
+    expect(publish.mock.calls[0][1].data?.stale).toBe(true);
   }
 });
 test('automatic summaries bound concurrency to four, use public calls and preserve exact quantities', async () => {
@@ -85,7 +94,8 @@ test('automatic summaries bound concurrency to four, use public calls and preser
       active--;
     });
   });
-  const publish = vi.fn();
+  const publish =
+    vi.fn<(address: string, result: WalletSummaryResult) => void>();
   const pending = loadWalletSummaries(
     session,
     addresses,
@@ -100,11 +110,12 @@ test('automatic summaries bound concurrency to four, use public calls and preser
   await pending;
   expect(peak).toBe(4);
   expect(publish).toHaveBeenCalledTimes(9);
-  expect(publish.mock.calls[0][1].data.wallet.assets[0].amount).toBe(
+  expect(publish.mock.calls[0][1].data?.wallet.assets[0].amount).toBe(
     '9007199254740993.123456789',
   );
   expect(driver.token).not.toHaveBeenCalled();
-  expect(request.mock.calls[0][1]).toEqual({ signal: expect.any(AbortSignal) });
+  expect(request.mock.calls[0][1]?.signal).toBeInstanceOf(AbortSignal);
+  expect(Object.keys(request.mock.calls[0][1] ?? {})).toEqual(['signal']);
 });
 test('identity changes abort active requests, discard late responses and stop queued work', async () => {
   const { session, emit } = setup();
@@ -117,7 +128,8 @@ test('identity changes abort active requests, discard late responses and stop qu
     await completion;
     return response(address);
   });
-  const publish = vi.fn();
+  const publish =
+    vi.fn<(address: string, result: WalletSummaryResult) => void>();
   const pending = loadWalletSummaries(
     session,
     addresses,
@@ -135,7 +147,8 @@ test('identity changes abort active requests, discard late responses and stop qu
 test('rate limits stop the remaining queue rather than retrying or flooding the Worker', async () => {
   const { session } = setup();
   request.mockRejectedValue({ status: 429 });
-  const publish = vi.fn();
+  const publish =
+    vi.fn<(address: string, result: WalletSummaryResult) => void>();
   await loadWalletSummaries(
     session,
     addresses,
@@ -146,7 +159,7 @@ test('rate limits stop the remaining queue rather than retrying or flooding the 
   expect(publish).toHaveBeenCalledTimes(9);
   expect(
     publish.mock.calls.every(([, result]) =>
-      result.error.includes('temporarily unavailable'),
+      result.error?.includes('temporarily unavailable'),
     ),
   ).toBe(true);
 });
@@ -155,7 +168,8 @@ test('malformed/wrong-wallet data fails per row without poisoning healthy summar
   request
     .mockResolvedValueOnce(response(addresses[1]))
     .mockResolvedValueOnce(response(addresses[1]));
-  const publish = vi.fn();
+  const publish =
+    vi.fn<(address: string, result: WalletSummaryResult) => void>();
   await loadWalletSummaries(
     session,
     addresses.slice(0, 2),
@@ -167,7 +181,7 @@ test('malformed/wrong-wallet data fails per row without poisoning healthy summar
   ).toContain('could not be loaded');
   expect(
     publish.mock.calls.find(([address]) => address === addresses[1])?.[1].data
-      .wallet.address,
+      ?.wallet.address,
   ).toBe(addresses[1]);
 });
 test('unverified sessions and pre-aborted batches send no requests', async () => {

@@ -22,11 +22,17 @@ export interface AreaChartPoint {
 interface Props {
   points: AreaChartPoint[];
   height?: number;
-  /** Format an available chart value for the visible price axis. */
+  /** Format an available chart value for the visible price axis.
+   * @param value - Available numeric series value.
+   * @returns Display text for the chart's visible price axis.
+   */
   valueFormatter?: (value: number) => string;
 }
 
-/** Convert supported history points to the chart time and value representation. */
+/** Convert supported history points to the chart time and value representation.
+ * @param points - Observed timestamps and numeric values.
+ * @returns Finite chart points with Unix-second timestamps, discarding unusable entries.
+ */
 function asChartPoints(points: AreaChartPoint[]) {
   return points.flatMap(({ date, value }) => {
     const timestamp = new Date(date).getTime();
@@ -36,12 +42,12 @@ function asChartPoints(points: AreaChartPoint[]) {
   });
 }
 
-/** Own the chart instance, data updates and cleanup for an area-series view. */
-export default function AreaChart({
-  points,
-  height = 360,
-  valueFormatter,
-}: Props) {
+/** Own the chart instance, data updates and cleanup for an area-series view.
+ * @param props - Observed points, display height and optional axis formatter.
+ * @returns The chart-owned container whose renderer is disposed on cleanup.
+ */
+export default function AreaChart(props: Props) {
+  const { points, height = 360, valueFormatter } = props;
   const containerRef = useRef<HTMLDivElement>(null);
   const { mode } = useTheme();
 
@@ -50,7 +56,10 @@ export default function AreaChart({
     if (!container) return undefined;
 
     const style = getComputedStyle(document.documentElement);
-    /** Read a chart color from the current theme with the supported fallback. */
+    /** Read a chart color from the current theme with the supported fallback.
+     * @param name - CSS custom-property name for the chart color.
+     * @returns The trimmed theme token text.
+     */
     const color = (name: string) => style.getPropertyValue(name).trim();
     const chart = createChart(container, {
       autoSize: true,

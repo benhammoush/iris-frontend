@@ -11,10 +11,18 @@ import {
   validatePolicy,
 } from './merge-policy.mjs';
 
-/** Read-only GitHub adapter. Fixed host, no redirects, writes or retry loops. */
+/** Read-only GitHub adapter. Fixed host, no redirects, writes or retry loops.
+ * @param token - GitHub read credential kept only in request headers.
+ * @param fetcher - Injectable fixed-host transport.
+ * @returns Repository-read and review-thread adapters, never mutation operations.
+ */
 export function githubReader(token, fetcher = fetch) {
   if (!token) throw new Error('GITHUB_TOKEN is required');
-  /** Perform the boundary request and translate unsuccessful responses into the caller-facing error contract. */
+  /** Perform the boundary request and translate unsuccessful responses into the caller-facing error contract.
+   * @param path - Fixed GitHub REST or GraphQL read endpoint.
+   * @param query - Optional GraphQL read query and variables.
+   * @returns Parsed evidence, rejecting HTTP and GraphQL failures.
+   */
   const request = async (path, query) => {
     const response = await fetcher(`https://api.github.com${path}`, {
       method: query ? 'POST' : 'GET',
@@ -35,13 +43,20 @@ export function githubReader(token, fetcher = fetch) {
     return value;
   };
   return {
-    /** Read an authenticated GitHub REST endpoint restricted to repository paths. */
+    /** Read an authenticated GitHub REST endpoint restricted to repository paths.
+     * @param path - Repository-scoped REST evidence path.
+     * @returns Parsed repository evidence.
+     */
     get: (path) => {
       if (!path.startsWith('/repos/'))
         throw new Error('Unsupported read endpoint');
       return request(path);
     },
-    /** Resolve review-thread evidence for the merge-policy decision. */
+    /** Resolve review-thread evidence for the merge-policy decision.
+     * @param repository - Exact owner/repository identity selected by policy.
+     * @param number - Pull-request number to inspect.
+     * @returns Bounded current-head, conversation and review-publication evidence.
+     */
     threads: async (repository, number) => {
       const [owner, name] = repository.split('/');
       const value = await request('/graphql', {
@@ -69,7 +84,12 @@ export function githubReader(token, fetcher = fetch) {
   };
 }
 
-/** Paginate bounded evidence; never interpret truncation as a successful gate. */
+/** Paginate bounded evidence; never interpret truncation as a successful gate.
+ * @param client - Read-only GitHub evidence adapter.
+ * @param path - Repository-scoped evidence collection path.
+ * @param key - Optional envelope field containing the page's records.
+ * @returns Complete records within the pagination bound; truncation rejects.
+ */
 async function list(client, path, key) {
   const result = [];
   for (let page = 1; page <= 30; page++) {
@@ -84,7 +104,13 @@ async function list(client, path, key) {
   throw new Error('Evidence pagination limit exceeded');
 }
 
-/** Read regular blobs by immutable commit/tree/blob identities, never checkout PR code. */
+/** Read regular blobs by immutable commit/tree/blob identities, never checkout PR code.
+ * @param client - Read-only GitHub evidence adapter.
+ * @param root - Exact repository REST path prefix.
+ * @param sha - Immutable revision whose blobs must be inspected.
+ * @param files - Changed-file identities to resolve from that revision.
+ * @returns Bounded ordinary text blobs, omitting unsupported modes and sizes.
+ */
 async function readBlobs(client, root, sha, files) {
   const commit = await client.get(`${root}/git/commits/${sha}`);
   const tree = await client.get(
@@ -113,7 +139,13 @@ async function readBlobs(client, root, sha, files) {
   return result;
 }
 
-/** Sample all mutable gates together, including the exact CI run attempt. */
+/** Sample all mutable gates together, including the exact CI run attempt.
+ * @param client - Read-only GitHub evidence adapter.
+ * @param root - Exact repository REST path prefix.
+ * @param pr - Pull-request identity and current candidate SHA.
+ * @param policy - Trusted repository, CI and review-context expectations.
+ * @returns A snapshot of current CI, reviews, status and native conversation evidence.
+ */
 async function mutableEvidence(client, root, pr, policy) {
   const [runs, reviews, statuses, native] = await Promise.all([
     list(
@@ -152,7 +184,13 @@ async function mutableEvidence(client, root, pr, policy) {
   };
 }
 
-/** Collect relevant immutable blobs; require stable mutable evidence and candidate identities. */
+/** Collect relevant immutable blobs; require stable mutable evidence and candidate identities.
+ * @param client - Read-only GitHub evidence adapter.
+ * @param number - Pull-request number to observe.
+ * @param policy - Trusted classification and review policy.
+ * @param policySha - Immutable revision identifying that policy.
+ * @returns An evidence-only eligibility report, never merge authorization.
+ */
 export async function observePullRequest(client, number, policy, policySha) {
   validatePolicy(policy);
   if (!Number.isSafeInteger(number) || number < 1)
@@ -196,7 +234,12 @@ export async function observePullRequest(client, number, policy, policySha) {
   return evaluateSnapshot(snapshot, policy);
 }
 
-/** Resolve event numbers from trusted workflow metadata, not PR titles/bodies/labels. */
+/** Resolve event numbers from trusted workflow metadata, not PR titles/bodies/labels.
+ * @param event - Trusted workflow event metadata.
+ * @param client - Read-only GitHub adapter for resolving open candidate PRs.
+ * @param policy - Exact repository scope.
+ * @returns Relevant pull-request numbers, rejecting unknown candidate identities.
+ */
 export async function eventNumbers(event, client, policy) {
   if (event.pull_request) return [event.pull_request.number];
   if (event.inputs?.pr) {

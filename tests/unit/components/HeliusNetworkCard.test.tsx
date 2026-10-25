@@ -19,7 +19,9 @@ test('keeps row and animation classes separate for new and existing signatures',
   const { rerender } = render(
     <HeliusNetworkCard {...props} transactions={[previous]} />,
   );
-  /** Build the prior transaction row used to verify retained-data behaviour. */
+  /** Build the prior transaction row used to verify retained-data behaviour.
+   * @returns The retained transaction row identified by accessible text.
+   */
   const previousRow = () => screen.getByRole('row', { name: /previous/ });
   expect(previousRow()).toHaveClass('iris-recent-transaction-row');
   expect(previousRow()).not.toHaveClass('is-new');
