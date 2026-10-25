@@ -1,0 +1,20 @@
+/* Global defaults only. Product layouts belong in index.css or feature CSS. */
+* {
+  box-sizing: border-box;
+}
+html,
+body,
+#root {
+  min-height: 100%;
+}
+body {
+  margin: 0;
+  background: var(--app-bg, #f5f7fb);
+  color: var(--app-fg, #17212f);
+  font-family: var(--iris-font-sans, system-ui, sans-serif);
+  -webkit-font-smoothing: antialiased;
+}
+button,
+input {
+  font: inherit;
+}

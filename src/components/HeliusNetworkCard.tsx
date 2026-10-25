@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useMemo, useRef } from 'react';
-import ValueSkeleton from './ValueSkeleton';
+import { ValueSkeleton } from '../design-system';
 import { isRecord } from '../data/record';
 import ResourceFeedback from './ResourceFeedback';
 

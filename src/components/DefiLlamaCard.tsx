@@ -4,7 +4,7 @@
  */
 
 import AssetIcon from './AssetIcon';
-import ValueSkeleton from './ValueSkeleton';
+import { ValueSkeleton } from '../design-system';
 import ResourceFeedback from './ResourceFeedback';
 
 /** Normalized exchange-volume dashboard metrics. */

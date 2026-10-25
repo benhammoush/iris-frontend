@@ -32,7 +32,7 @@ import {
   type VirtualTableColumn,
 } from '../design-system';
 import { solanaExplorerUrl } from '../data/solana';
-import ValueSkeleton from './ValueSkeleton';
+import { ValueSkeleton } from '../design-system';
 import { JupiterLogo } from './Home';
 import ResourceFeedback from './ResourceFeedback';
 

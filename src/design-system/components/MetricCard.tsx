@@ -21,7 +21,7 @@ export default function MetricCard(props: Props) {
   const { label, value, detail, tone = 'default' } = props;
   return (
     <section className="iris-metric-card">
-      <p className="iris-eyebrow">{label}</p>
+      <p className="iris-metric-label">{label}</p>
       <p className={`iris-metric-value iris-metric-value--${tone}`}>{value}</p>
       {detail && <p className="iris-metric-detail">{detail}</p>}
     </section>

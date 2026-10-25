@@ -1,0 +1,25 @@
+.iris-value-skeleton {
+  display: inline-block;
+  max-width: 100%;
+  height: 0.85em;
+  border-radius: var(--iris-radius-control);
+  background: linear-gradient(
+    90deg,
+    var(--iris-hover) 20%,
+    var(--iris-border) 45%,
+    var(--iris-hover) 70%
+  );
+  background-size: 280% 100%;
+  animation: iris-skeleton-pulse 1.5s ease-in-out infinite;
+  vertical-align: middle;
+}
+@keyframes iris-skeleton-pulse {
+  to {
+    background-position: -280% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .iris-value-skeleton {
+    animation: none;
+  }
+}

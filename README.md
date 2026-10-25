@@ -28,6 +28,9 @@ remain separate from the public dashboard.
 
 ## Boundaries and integration
 
+Shared visual tokens, theme controls and reusable UI are documented in the
+[Iris design system](src/design-system/README.md).
+
 The browser gets market and wallet data from the
 [Iris API](https://github.com/benhammoush/iris-backend), not directly from chain
 or pricing providers. The backend owns provider credentials, upstream requests,

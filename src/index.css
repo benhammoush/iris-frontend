@@ -2,6 +2,7 @@
 @import 'tailwindcss' source(none);
 @source './';
 @config '../tailwind.config.js';
+@import './design-system/styles.css';
 
 /* Retain Tailwind 3 defaults where v4 changes the generated appearance. */
 @layer base {
@@ -16,26 +17,6 @@
   [role='button']:not(:disabled) {
     cursor: pointer;
   }
-}
-
-* {
-  box-sizing: border-box;
-}
-html,
-body,
-#root {
-  min-height: 100%;
-}
-body {
-  margin: 0;
-  background: var(--app-bg, #f5f7fb);
-  color: var(--app-fg, #17212f);
-  font-family: system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
-}
-button,
-input {
-  font: inherit;
 }
 
 .iris-shell {
@@ -358,21 +339,6 @@ input {
   background-size: 280% 100%;
   animation: iris-skeleton-pulse 1.5s ease-in-out infinite;
 }
-.iris-value-skeleton {
-  display: inline-block;
-  max-width: 100%;
-  height: 0.85em;
-  border-radius: 4px;
-  background: linear-gradient(
-    90deg,
-    var(--iris-hover) 20%,
-    var(--iris-border) 45%,
-    var(--iris-hover) 70%
-  );
-  background-size: 280% 100%;
-  animation: iris-skeleton-pulse 1.5s ease-in-out infinite;
-  vertical-align: middle;
-}
 .iris-value-skeleton--icon {
   width: 30px;
   height: 30px;
@@ -382,11 +348,6 @@ input {
   width: 46px;
   height: 46px;
   border-radius: 9px;
-}
-@keyframes iris-skeleton-pulse {
-  to {
-    background-position: -280% 0;
-  }
 }
 .iris-page-heading,
 .iris-panel-heading {
@@ -438,7 +399,6 @@ input {
   gap: 12px;
   margin-bottom: 14px;
 }
-.iris-metric-card,
 .iris-panel,
 .iris-section {
   border: 1px solid var(--iris-border);
@@ -446,27 +406,12 @@ input {
   background: var(--app-surface);
   box-shadow: 0 2px 12px rgba(15, 23, 42, 0.06);
 }
-.iris-metric-card {
-  min-height: 112px;
-  padding: 15px;
-}
-.iris-metric-value {
-  margin: 8px 0 3px;
-  color: var(--iris-text);
-  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
-  font-size: 21px;
-  font-weight: 700;
-  letter-spacing: -0.5px;
-}
-.iris-metric-value--positive,
 .iris-positive {
   color: var(--iris-green);
 }
-.iris-metric-value--negative,
 .iris-negative {
   color: var(--iris-red, #dc2626);
 }
-.iris-metric-detail,
 .iris-asset-cell small,
 .iris-wallet-card small,
 .iris-activity-row small {
@@ -587,13 +532,6 @@ input {
   object-fit: contain;
   object-position: left;
 }
-.iris-empty {
-  margin: 0;
-  padding: 40px 20px;
-  color: var(--iris-muted);
-  text-align: center;
-  font-size: 12px;
-}
 .iris-chart-empty {
   display: grid;
   min-height: 290px;
@@ -644,122 +582,6 @@ input {
 .iris-section {
   margin-top: 14px;
   overflow: hidden;
-}
-.iris-table-card {
-  overflow: hidden;
-}
-.iris-table-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 9px 14px;
-  border-bottom: 1px solid var(--iris-border);
-  background: var(--iris-secondary);
-}
-.iris-table-toolbar input {
-  width: min(320px, 100%);
-  border: 1px solid var(--iris-border);
-  border-radius: 4px;
-  outline: none;
-  background: var(--iris-input);
-  color: var(--iris-text);
-  padding: 5px 8px;
-  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
-  font-size: 11px;
-}
-.iris-table-toolbar span {
-  margin-left: auto;
-  color: var(--iris-muted);
-  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
-  font-size: 10px;
-}
-.iris-table-head {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  display: flex;
-  min-width: max(100%, max-content);
-  border-bottom: 1px solid var(--iris-border);
-  background: var(--iris-secondary);
-}
-.iris-table-head button {
-  flex: 0 0 auto;
-  border: 0;
-  border-right: 1px solid var(--iris-border);
-  background: transparent;
-  color: var(--iris-muted);
-  cursor: pointer;
-  padding: 9px 10px;
-  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
-}
-.iris-table-head button:hover {
-  color: var(--iris-text);
-  background: var(--iris-hover);
-}
-.iris-table-scroll {
-  overflow: auto;
-}
-.iris-table-row {
-  position: absolute;
-  display: flex;
-  min-width: max-content;
-  width: 100%;
-  border-bottom: 1px solid var(--iris-border);
-  background: var(--app-surface);
-}
-.iris-table-row:nth-child(even) {
-  background: var(--iris-secondary);
-}
-.iris-table-row--clickable {
-  cursor: pointer;
-}
-.iris-table-row--clickable:hover {
-  background: var(--iris-hover);
-}
-.iris-table-cell {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  overflow: hidden;
-  padding: 0 10px;
-  color: var(--iris-text);
-  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
-  font-size: 11px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.iris-table-cell--right {
-  justify-content: flex-end;
-  text-align: right;
-}
-.iris-pagination {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
-  padding: 9px 14px;
-  border-top: 1px solid var(--iris-border);
-  background: var(--iris-secondary);
-  color: var(--iris-muted);
-  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
-  font-size: 10px;
-}
-.iris-pagination button {
-  border: 1px solid var(--iris-border);
-  border-radius: 3px;
-  background: var(--iris-input);
-  color: var(--iris-text);
-  cursor: pointer;
-  padding: 4px 7px;
-  font: inherit;
-}
-.iris-pagination button:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
 }
 .iris-asset-cell {
   display: grid;
@@ -3243,9 +3065,6 @@ html[data-theme='light'] .iris-wallet-activity .iris-table-toolbar input {
     margin-top: 0;
     margin-left: auto;
   }
-  .iris-metric-card {
-    min-height: 96px;
-  }
   .iris-jupiter-metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -3373,8 +3192,7 @@ html[data-theme='light'] .iris-wallet-activity .iris-table-toolbar input {
   .iris-recent-transaction-row.is-new {
     animation: none;
   }
-  .iris-skeleton,
-  .iris-value-skeleton {
+  .iris-skeleton {
     animation: none;
   }
 }
@@ -3425,22 +3243,9 @@ html[data-theme='light'] .iris-wallet-activity .iris-table-toolbar input {
   opacity: 0.6;
 }
 .iris-resource-feedback:focus,
-.iris-table-toolbar input:focus-visible,
 .iris-search input:focus-visible {
   outline: 2px solid var(--iris-muted);
   outline-offset: 2px;
-}
-.iris-table-row-action {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  border: 0;
-  padding: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  text-align: inherit;
-  cursor: pointer;
 }
 .iris-intelligence-tabs h2 {
   margin: 0;

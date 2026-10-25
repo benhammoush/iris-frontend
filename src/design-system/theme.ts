@@ -1,133 +1,33 @@
 /**
- * Shared UI tokens and persisted light/dark theme selection.
+ * Theme selection and the CSS bridge for the canonical visual tokens.
  * @packageDocumentation
  */
 
-/** Supported light and dark interface modes. */
-export type UiThemeMode = 'dark' | 'light';
+import { themes, type ThemeTokens, type UiThemeMode } from './tokens';
 
-const baseTheme = {
-  fonts: {
-    serif: "'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif",
-    sans: 'system-ui, sans-serif',
-    mono: "ui-monospace, 'Cascadia Code', 'SFMono-Regular', Consolas, monospace",
-  },
-  radii: { sm: 3, md: 5, lg: 7, xl: 11, full: 9999 },
-  spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 28 },
-} as const;
+export type { ThemeTokens, UiThemeMode } from './tokens';
 
-const darkTheme = {
-  ...baseTheme,
-  colors: {
-    bg: {
-      primary: '#050607',
-      secondary: '#090b0e',
-      card: '#0d1016',
-      input: '#050607',
-      hover: '#13161c',
-      deep: '#0b0e14',
-      surface: '#141920',
-    },
-    border: {
-      default: '#1a2030',
-      strong: '#252d3d',
-      subtle: '#0d1016',
-      muted: '#2c3548',
-      grid: '#1e2535',
-    },
-    text: {
-      primary: '#dde4ee',
-      secondary: '#8e9eb5',
-      muted: '#5c6a7e',
-      dimmer: '#424e60',
-      link: '#4d9fff',
-      bright: '#edf2f8',
-    },
-    accent: {
-      primary: '#ffffff',
-      blue: '#22d3ee',
-      green: '#24d166',
-      red: '#f05454',
-      yellow: '#f0b429',
-      purple: '#a78bfa',
-      orange: '#f97316',
-    },
-  },
-  shadows: {
-    card: '0 2px 12px rgba(0,0,0,0.5)',
-    dropdown: '0 8px 28px rgba(0,0,0,0.7)',
-  },
-} as const;
-
-const lightTheme = {
-  ...baseTheme,
-  colors: {
-    bg: {
-      primary: '#f5f7fb',
-      secondary: '#eef3f8',
-      card: '#ffffff',
-      input: '#ffffff',
-      hover: '#e7eef7',
-      deep: '#edf2f7',
-      surface: '#e3ebf5',
-    },
-    border: {
-      default: '#ccd7e5',
-      strong: '#aebdd1',
-      subtle: '#dfe7f1',
-      muted: '#96a8c0',
-      grid: '#d7e0eb',
-    },
-    text: {
-      primary: '#17212f',
-      secondary: '#405269',
-      muted: '#66788f',
-      dimmer: '#7d8ea3',
-      link: '#2563eb',
-      bright: '#0b1220',
-    },
-    accent: {
-      primary: '#0b1220',
-      blue: '#0891b2',
-      green: '#16934a',
-      red: '#dc2626',
-      yellow: '#c68a00',
-      purple: '#7c3aed',
-      orange: '#ea580c',
-    },
-  },
-  shadows: {
-    card: '0 8px 24px rgba(15,23,42,0.08)',
-    dropdown: '0 14px 36px rgba(15,23,42,0.16)',
-  },
-} as const;
-
-const themes = { dark: darkTheme, light: lightTheme } as const;
-
-/** Shared interface colors, dimensions and typography used by the theme boundary. */
-export type ThemeTokens = typeof darkTheme | typeof lightTheme;
-
-export let theme: ThemeTokens = lightTheme;
+export let theme: ThemeTokens = themes.light;
 let currentThemeMode: UiThemeMode = 'light';
 
-/** Resolve the token set for the supported theme mode.
- * @param mode - Supported mode, defaulting to the current in-memory selection.
- * @returns The matching theme tokens without changing the active mode.
+/** Resolve tokens without changing the active theme.
+ * @param mode - Requested mode, defaulting to the current selection.
+ * @returns The canonical token set for that mode.
  */
 export function getTheme(mode: UiThemeMode = currentThemeMode): ThemeTokens {
   return themes[mode];
 }
 
-/** Return the current in-memory theme mode without reading persistence or system preferences.
- * @returns The current in-memory selection.
+/** Read the in-memory theme selection without accessing persistence.
+ * @returns The active theme mode.
  */
 export function getThemeMode(): UiThemeMode {
   return currentThemeMode;
 }
 
-/** Apply the selected theme tokens to the document boundary.
- * @param mode - Supported theme mode to make active.
- * @returns The applied token set.
+/** Apply canonical tokens to the document; persistence belongs to ThemeProvider.
+ * @param mode - Supported theme mode to select.
+ * @returns The applied token set, also available to TypeScript consumers.
  */
 export function applyThemeMode(mode: UiThemeMode): ThemeTokens {
   currentThemeMode = mode;
@@ -137,25 +37,41 @@ export function applyThemeMode(mode: UiThemeMode): ThemeTokens {
     const root = document.documentElement;
     root.dataset.theme = mode;
     root.style.colorScheme = mode;
-    root.style.setProperty('--app-bg', theme.colors.bg.primary);
-    root.style.setProperty('--app-fg', theme.colors.text.primary);
-    root.style.setProperty('--app-surface', theme.colors.bg.card);
-    root.style.setProperty('--app-border', theme.colors.border.default);
-    root.style.setProperty('--iris-secondary', theme.colors.bg.secondary);
-    root.style.setProperty('--iris-surface', theme.colors.bg.surface);
-    root.style.setProperty('--iris-input', theme.colors.bg.input);
-    root.style.setProperty('--iris-hover', theme.colors.bg.hover);
-    root.style.setProperty('--iris-border', theme.colors.border.default);
-    root.style.setProperty('--iris-border-strong', theme.colors.border.strong);
-    root.style.setProperty('--iris-text', theme.colors.text.primary);
-    root.style.setProperty(
-      '--iris-secondary-text',
-      theme.colors.text.secondary,
-    );
-    root.style.setProperty('--iris-muted', theme.colors.text.muted);
-    root.style.setProperty('--iris-green', theme.colors.accent.green);
-    root.style.setProperty('--iris-red', theme.colors.accent.red);
-    root.style.setProperty('--iris-dropdown-shadow', theme.shadows.dropdown);
+    const variables = {
+      '--app-bg': theme.colors.bg.primary,
+      '--app-fg': theme.colors.text.primary,
+      '--app-surface': theme.colors.bg.card,
+      '--app-border': theme.colors.border.default,
+      '--iris-secondary': theme.colors.bg.secondary,
+      '--iris-surface': theme.colors.bg.surface,
+      '--iris-input': theme.colors.bg.input,
+      '--iris-hover': theme.colors.bg.hover,
+      '--iris-border': theme.colors.border.default,
+      '--iris-border-strong': theme.colors.border.strong,
+      '--iris-text': theme.colors.text.primary,
+      '--iris-secondary-text': theme.colors.text.secondary,
+      '--iris-muted': theme.colors.text.muted,
+      '--iris-green': theme.colors.accent.green,
+      '--iris-red': theme.colors.accent.red,
+      '--iris-dropdown-shadow': theme.shadows.dropdown,
+      '--iris-font-sans': theme.fonts.sans,
+      '--iris-font-heading': theme.fonts.serif,
+      '--iris-font-mono': theme.fonts.uiMono,
+      '--iris-font-size-caption': `${theme.fontSizes.caption}px`,
+      '--iris-font-size-small': `${theme.fontSizes.small}px`,
+      '--iris-font-size-body': `${theme.fontSizes.body}px`,
+      '--iris-font-size-metric': `${theme.fontSizes.metric}px`,
+      '--iris-surface-shadow': theme.surfaces.shadow,
+    };
+    for (const [name, value] of Object.entries(variables)) {
+      root.style.setProperty(name, value);
+    }
+    for (const [name, value] of Object.entries(theme.spacing)) {
+      root.style.setProperty(`--iris-space-${name}`, `${value}px`);
+    }
+    for (const [name, value] of Object.entries(theme.radii)) {
+      root.style.setProperty(`--iris-radius-${name}`, `${value}px`);
+    }
   }
 
   return theme;
