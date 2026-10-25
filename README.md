@@ -38,3 +38,6 @@ information as zero. The dashboard does not trade, sign transactions or move fun
 
 See [the backend API contract](https://github.com/benhammoush/iris-backend/blob/main/openapi.yaml)
 for data formats and endpoints.
+
+The [account](docs/spec/accounts.md) and [watchlist](docs/spec/watchlists.md)
+specifications describe the optional private features.

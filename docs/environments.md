@@ -145,6 +145,6 @@ Staging is not an active workflow or Worker configuration target. This source bo
 
 Keep new application SHAs, versions, deployment IDs and acceptance evidence in release notes, not as permanent claims in this runbook. Old repository SHAs, settings and provider deployments do not establish acceptance of the new pipeline.
 
-See [RELEASE-NOTES.md](./RELEASE-NOTES.md) for dated dev rehearsal, production acceptance and recovery evidence. Those observations are not a live inventory or authorization to restore a deployment.
+See [release evidence](release-notes.md) for dated dev rehearsal, production acceptance and recovery evidence. Those observations are not a live inventory or authorization to restore a deployment.
 
 Check live bindings, environment-scoped secret names, native gates, stable aliases and the exact compatible Worker/OpenAPI pins before a release. A checked-in configuration or historical successful run does not establish current provider state. Do not change remote settings or refresh data as part of a local check.

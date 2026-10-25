@@ -2,7 +2,7 @@
 
 Dated deployment, acceptance and recovery observations; not a live inventory or
 permission to perform operations. Reverify artifacts and configuration before any
-release or restoration. See [the environment runbook](./ENVIRONMENTS.md) for policy.
+release or restoration. See [the environment runbook](environments.md) for policy.
 
 ## 2026-10-16 — Dev application-artifact rollback rehearsal
 
@@ -86,7 +86,7 @@ requests can still perform on-traffic provider reads and cache writes.
   product/API flows remained functional; this is not a clean-console claim.
 - At the time of the rehearsal, no previous accepted production pair existed. The
   approved
-  [first-production policy](./ENVIRONMENTS.md#approved-first-production-policy)
+  [first-production policy](environments.md#approved-first-production-policy)
   requires explicit maintainer acceptance of that limitation before activation.
 - A later read-only readiness check found both production `DEPLOY_ENABLED` flags
   false, required native reviewer gates with administrator bypass disabled, and
