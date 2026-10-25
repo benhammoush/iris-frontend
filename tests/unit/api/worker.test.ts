@@ -1,3 +1,8 @@
+/**
+ * Regression coverage and controlled fixtures for worker.
+ * @packageDocumentation
+ */
+
 import { afterEach, describe, expect, test, vi } from 'vitest';
 
 describe('worker fixture behavior', () => {
@@ -14,6 +19,7 @@ describe('worker fixture behavior', () => {
         Promise.resolve({
           ok: false,
           status: 503,
+          /** Return the controlled JSON payload for this provider-response fixture. */
           json: () => Promise.resolve({ error: { message: 'Unavailable' } }),
         }),
       ),
@@ -34,6 +40,7 @@ describe('worker fixture behavior', () => {
         Promise.resolve({
           ok: false,
           status: 503,
+          /** Return the controlled JSON payload for this provider-response fixture. */
           json: () => Promise.resolve({}),
         }),
       ),
@@ -52,6 +59,7 @@ describe('worker fixture behavior', () => {
       vi.fn(() =>
         Promise.resolve({
           ok: true,
+          /** Return the controlled JSON payload for this provider-response fixture. */
           json: () => Promise.resolve({ data: {} }),
         }),
       ),

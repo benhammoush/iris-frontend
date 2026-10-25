@@ -1,3 +1,8 @@
+/**
+ * Regression coverage and controlled fixtures for virtual table.
+ * @packageDocumentation
+ */
+
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { expect, test, vi } from 'vitest';
@@ -11,7 +16,9 @@ const columns: VirtualTableColumn<(typeof data)[number]>[] = [
     id: 'name',
     label: 'Name',
     width: 150,
+    /** Extract the row value used for sorting and filtering. */
     value: (row) => row.name,
+    /** Render the table cell while preserving the row value used by actions and links. */
     cell: (row) => row.name,
   },
 ];

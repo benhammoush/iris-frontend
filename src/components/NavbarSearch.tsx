@@ -1,3 +1,8 @@
+/**
+ * Ranked asset search with keyboard control and responsive overlay ownership.
+ * @packageDocumentation
+ */
+
 import {
   useDeferredValue,
   useEffect,
@@ -9,6 +14,7 @@ import {
 } from 'react';
 import { looksLikeSolanaAddress } from '../data/solana';
 
+/** Asset identity and searchable display fields used by navigation search. */
 interface SearchAsset {
   mint: string;
   symbol?: string | null;
@@ -16,6 +22,7 @@ interface SearchAsset {
   priceUsd?: number | null;
 }
 
+/** Navigation target and identity associated with a selected search result. */
 interface SearchAction {
   id: string;
   label: string;
@@ -23,6 +30,7 @@ interface SearchAction {
   meta: string;
 }
 
+/** Rank an asset match using the query and its normalized form. */
 function matchRank(asset: SearchAsset, query: string, normalized: string) {
   const symbol = asset.symbol?.toUpperCase() || '';
   const name = asset.name?.toUpperCase() || '';
@@ -38,6 +46,7 @@ function matchRank(asset: SearchAsset, query: string, normalized: string) {
   return 2;
 }
 
+/** Return ranked supported asset matches for the current search text. */
 export function searchAssets<T extends SearchAsset>(
   assets: T[],
   query: string,
@@ -64,6 +73,7 @@ export function searchAssets<T extends SearchAsset>(
     .map(({ asset }) => asset);
 }
 
+/** Format available search-result pricing without inventing missing values. */
 function formatPrice(value: unknown) {
   return value === null ||
     value === undefined ||
@@ -72,10 +82,12 @@ function formatPrice(value: unknown) {
     : `$${Number(value).toFixed(5)}`;
 }
 
+/** Shorten an address for display while retaining its full action identity. */
 function shortAddress(value: string) {
   return `${value.slice(0, 6)}...${value.slice(-6)}`;
 }
 
+/** Render keyboard-accessible asset search across desktop and mobile navigation. */
 export default function NavbarSearch({
   assets,
   loading,
@@ -88,9 +100,12 @@ export default function NavbarSearch({
   assets: SearchAsset[];
   loading: boolean;
   error?: unknown;
+  /** Navigate to the supplied application route. */
   navigate: (path: string) => void;
   mobileOpen: boolean;
+  /** Update whether the mobile search surface is open. */
   setMobileOpen: (open: boolean) => void;
+  /** Notify the owner that the transient search surface was dismissed. */
   onDismiss?: () => void;
 }) {
   const [query, setQuery] = useState('');
@@ -159,6 +174,7 @@ export default function NavbarSearch({
   }, [mobileOpen]);
 
   useEffect(() => {
+    /** Dismiss the active transient UI when the outside interaction permits it. */
     function dismiss(event: PointerEvent) {
       if (
         !(event.target instanceof Node) ||
@@ -174,6 +190,7 @@ export default function NavbarSearch({
     return () => document.removeEventListener('pointerdown', dismiss);
   }, [setMobileOpen]);
 
+  /** Apply the selected search action and close the transient search UI. */
   function select(action: SearchAction) {
     navigate(action.path);
     setQuery('');
@@ -182,6 +199,7 @@ export default function NavbarSearch({
     setMobileOpen(false);
   }
 
+  /** Close mobile search and release state owned by that overlay. */
   function closeMobileSearch() {
     setMobileOpen(false);
     setOpen(false);
@@ -190,6 +208,7 @@ export default function NavbarSearch({
     if (mobileOpen) onDismiss?.();
   }
 
+  /** Handle the supported keyboard interaction without triggering competing browser actions. */
   function onKeyDown(event: KeyboardEvent<HTMLInputElement>) {
     if (event.key === 'ArrowDown') {
       event.preventDefault();

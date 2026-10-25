@@ -1,3 +1,8 @@
+/**
+ * Regression coverage and controlled fixtures for asset icon.
+ * @packageDocumentation
+ */
+
 import { fireEvent, render, screen } from '@testing-library/react';
 import AssetIcon from '../../../src/components/AssetIcon';
 

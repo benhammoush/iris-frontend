@@ -1,3 +1,8 @@
+/**
+ * Regression coverage and controlled fixtures for app.
+ * @packageDocumentation
+ */
+
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../../src/App';
@@ -259,6 +264,7 @@ test('renders the DefiLlama dashboard after Helius and before Jupiter with safe 
   expect(
     container.querySelectorAll('.iris-defillama-lists .iris-catalog-list'),
   ).toHaveLength(2);
+  /** Require the expected test element instead of continuing with a missing fixture node. */
   function required(selector: string): Element {
     const element = container.querySelector(selector);
     if (!element) throw new Error(`Missing element: ${selector}`);

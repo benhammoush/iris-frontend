@@ -1,3 +1,8 @@
+/**
+ * Regression coverage and controlled fixtures for data status.
+ * @packageDocumentation
+ */
+
 import { render, screen } from '@testing-library/react';
 import DataStatus from '../../../src/components/DataStatus';
 

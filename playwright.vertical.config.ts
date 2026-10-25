@@ -1,3 +1,8 @@
+/**
+ * Isolated frontend/Worker vertical integration with owned local test servers.
+ * @packageDocumentation
+ */
+
 import { defineConfig, devices } from '@playwright/test';
 
 const workerRoot = process.env.IRIS_WORKER_ROOT || '../iris-backend';

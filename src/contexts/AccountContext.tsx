@@ -1,3 +1,8 @@
+/**
+ * React ownership and subscription boundary for the account-session lifecycle.
+ * @packageDocumentation
+ */
+
 import {
   createContext,
   useContext,
@@ -12,6 +17,7 @@ import { AccountSession } from '../auth/session';
 const disabled = new AccountSession(false);
 const AccountContext = createContext(disabled);
 
+/** Own the account-session subscription for descendant consumers. */
 export function AccountProvider({ children }: { children: ReactNode }) {
   const [session] = useState(() => new AccountSession(accountsEnabled));
   useEffect(() => {
@@ -43,6 +49,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   );
 }
 
+/** Subscribe to the provided account session, or the disabled default session outside a provider. */
 export function useAccount() {
   const session = useContext(AccountContext);
   const state = useSyncExternalStore(session.subscribe, session.snapshot);

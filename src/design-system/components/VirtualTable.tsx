@@ -1,27 +1,38 @@
+/**
+ * Virtualized data rows with filtering, sorting and optional client-side pagination.
+ * @packageDocumentation
+ */
+
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 
+/** Stable column identity with independent sorting value and rendered cell contracts. */
 export interface VirtualTableColumn<T> {
   id: string;
   label: string;
   width: number;
+  /** Extract the row value used for sorting and filtering. */
   value: (row: T) => string | number;
+  /** Render the table cell while preserving the row value used by actions and links. */
   cell: (row: T) => ReactNode;
   align?: 'left' | 'right';
   grow?: number;
 }
 
+/** Inputs and owner callbacks accepted by VirtualTable. */
 interface Props<T> {
   columns: VirtualTableColumn<T>[];
   data: T[];
   emptyLabel: string;
   filterPlaceholder: string;
+  /** Notify the owner that the identified table row was activated. */
   onRowClick?: (row: T) => void;
   rowHeight?: number;
   pageSize?: number;
   loading?: boolean;
 }
 
+/** Render a bounded visible row window with controlled sorting, filtering and optional pagination. */
 export default function VirtualTable<T>({
   columns,
   data,
@@ -75,7 +86,9 @@ export default function VirtualTable<T>({
   }, [page, totalPages]);
   const virtualizer = useVirtualizer({
     count: displayedRows.length,
+    /** Resolve the owned scrolling element used by row virtualization. */
     getScrollElement: () => scrollRef.current,
+    /** Return the configured row-height estimate used by virtualization. */
     estimateSize: () => rowHeight,
     overscan: 12,
   });
@@ -88,6 +101,7 @@ export default function VirtualTable<T>({
         start: index * rowHeight,
       }));
 
+  /** Toggle the selected column sort direction while preserving column identity. */
   function toggleSort(id: string) {
     setSort((current) =>
       current?.id === id

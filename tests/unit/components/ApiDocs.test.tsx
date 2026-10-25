@@ -1,3 +1,8 @@
+/**
+ * Regression coverage and controlled fixtures for api docs.
+ * @packageDocumentation
+ */
+
 import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { afterEach, expect, test, vi } from 'vitest';
@@ -7,6 +12,7 @@ import ApiDocs, {
 } from '../../../src/components/ApiDocs';
 
 vi.mock('@scalar/api-reference-react', () => ({
+  /** Render the configured API URL instead of loading the external reference UI in the unit test. */
   ApiReferenceReact: ({
     configuration,
   }: {

@@ -1,3 +1,8 @@
+/**
+ * Regression coverage and controlled fixtures for asset.
+ * @packageDocumentation
+ */
+
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -6,12 +11,16 @@ import { afterEach, beforeEach, vi } from 'vitest';
 import Asset from '../../../src/components/Asset';
 import { workerApi } from '../../../src/api/worker';
 
-vi.mock('../../../src/components/Navbar', () => ({ default: () => <nav /> }));
+vi.mock('../../../src/components/Navbar', () => ({
+  /** Render the minimal navigation substitute used to isolate this component test. */
+  default: () => <nav />,
+}));
 vi.mock('../../../src/design-system', async (importOriginal) => {
   const actual =
     await importOriginal<typeof import('../../../src/design-system')>();
   return {
     ...actual,
+    /** Own the candlestick chart and its optional earlier-history loading interaction. */
     CandlestickChart: ({
       candles,
       onLoadEarlier,
@@ -33,6 +42,7 @@ vi.mock('../../../src/design-system', async (importOriginal) => {
 const mint = 'So11111111111111111111111111111111111111112';
 const asset = { mint, symbol: 'SOL', name: 'Solana', priceUsd: 150 };
 const meta = { requestId: 'asset-test' };
+/** Build a deterministic candle fixture with the requested observation time. */
 const candle = (timestamp: string) => ({
   timestamp,
   openUsd: 149,
@@ -44,6 +54,7 @@ const candle = (timestamp: string) => ({
 const currentCandle = candle('2026-10-08T10:00:00.000Z');
 const olderCandle = candle('2026-10-08T09:00:00.000Z');
 
+/** Render the asset route with controlled resource responses. */
 function renderAsset() {
   return render(
     <MemoryRouter initialEntries={[`/asset/${mint}`]}>

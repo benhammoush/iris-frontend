@@ -1,3 +1,8 @@
+/**
+ * Three-engine release verification against the prepared frontend artifact.
+ * @packageDocumentation
+ */
+
 /** Run core journeys against the exact deployable build, retaining separate account-enabled fixtures. */
 import { defineConfig } from '@playwright/test';
 import base from './playwright.config';

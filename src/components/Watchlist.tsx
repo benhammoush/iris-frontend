@@ -1,3 +1,8 @@
+/**
+ * Account-scoped saved assets and wallets with removal and resource feedback.
+ * @packageDocumentation
+ */
+
 import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { accountsEnabled } from '../auth/config';
@@ -14,6 +19,7 @@ import { useWalletSummaries } from '../hooks/useWalletSummaries';
 import WatchlistWalletSummary from './WatchlistWalletSummary';
 import './Watchlist.css';
 
+/** Render the watchlist route under its account and feature boundaries. */
 export default function Watchlist() {
   const { status, user } = useAccount();
   useEffect(() => {
@@ -65,6 +71,7 @@ export default function Watchlist() {
     </div>
   );
 }
+/** Render account-scoped saved assets and wallets with mutation feedback. */
 function ReadyWatchlist() {
   const list = useWatchlist();
   const { assets } = useCatalog();
@@ -74,6 +81,7 @@ function ReadyWatchlist() {
   const headings = useRef<
     Partial<Record<WatchlistKind, HTMLHeadingElement | null>>
   >({});
+  /** Remove the identified saved resource from the current account watchlist. */
   async function remove(kind: WatchlistKind, address: string) {
     if (await list.mutate(kind, address, true))
       headings.current[kind]?.focus({ preventScroll: true });
@@ -271,6 +279,7 @@ function ReadyWatchlist() {
   );
 }
 
+/** Format a known monetary value for display and preserve the unavailable-data fallback. */
 const currency = (value: number | null | undefined, compact = false) =>
   value == null || !Number.isFinite(value)
     ? '—'

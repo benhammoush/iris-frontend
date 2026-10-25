@@ -1,3 +1,8 @@
+/**
+ * Regression coverage and controlled fixtures for store.
+ * @packageDocumentation
+ */
+
 import { afterEach, expect, test, vi } from 'vitest';
 import { AccountSession } from '../../../src/auth/session';
 import { alice, fakeDriver } from '../auth/testSupport';
@@ -12,6 +17,7 @@ const request = vi.mocked(authenticatedRequest);
 const address = 'So11111111111111111111111111111111111111112';
 const savedAt = '2026-10-22T08:00:00.000Z';
 const item = { address, savedAt };
+/** Build the controlled response envelope expected by this test. */
 const envelope = (data: unknown) => ({ data, meta: { requestId: 'test' } });
 const cleanups: (() => void)[] = [];
 afterEach(() => {
@@ -21,6 +27,7 @@ afterEach(() => {
     .forEach((cleanup) => cleanup());
   vi.resetAllMocks();
 });
+/** Create isolated dependencies and controlled session state for this test. */
 async function setup(data: Watchlist = { assets: [], wallets: [] }) {
   request.mockResolvedValue(envelope(data));
   const account = new AccountSession(true);
@@ -45,6 +52,7 @@ test('entry/focus refresh is deduplicated, stops when inactive and remains memor
 });
 test('mutation uses only fixed private routes, confirms before updating and refreshes afterward', async () => {
   const { store } = await setup();
+  /** Complete queued fixture work before checking the final state. */
   let finish: (
     value: Awaited<ReturnType<typeof authenticatedRequest>>,
   ) => void = () => {};
@@ -116,6 +124,7 @@ test.each(['read', 'write'] as const)(
   'late %s cannot publish after identity change; private state clears synchronously',
   async (mode) => {
     const { store, emit } = await setup({ assets: [item], wallets: [] });
+    /** Complete queued fixture work before checking the final state. */
     let finish: (
       value: Awaited<ReturnType<typeof authenticatedRequest>>,
     ) => void = () => {};

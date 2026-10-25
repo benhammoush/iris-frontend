@@ -1,3 +1,8 @@
+/**
+ * Regression coverage and controlled fixtures for worker mock.
+ * @packageDocumentation
+ */
+
 import type { Page } from '@playwright/test';
 
 export const sol = {
@@ -13,18 +18,24 @@ export const sol = {
 
 export const walletAddress = '7Yk4L5M6N7P8Q9R2tB6dF8gH1jK4L5M6N7P8Q9R2tB6d';
 
+/** Controlled Worker failure fields used by browser request interception. */
 type WorkerError = { code: string; message: string };
+/** Controlled Worker response body and status for browser tests. */
 type MockResponse = {
   data?: unknown;
   error?: WorkerError;
   status?: number;
   meta?: Record<string, unknown>;
 };
+/** Browser-fixture response operation for one intercepted Worker request. */
 type Handler = (url: URL) => MockResponse | undefined;
 
+/** Browser interception controls and unexpected-request assertions. */
 export type WorkerMock = {
   requests: URL[];
+  /** Replace the controlled response handler for the requested fixture path. */
   setHandler: (handler: Handler) => void;
+  /** Fail the browser test when an unrecognized Worker request was observed. */
   assertNoUnexpectedRequests: () => void;
 };
 
@@ -62,6 +73,7 @@ const wallet = {
   ],
 };
 
+/** Build a deterministic transaction fixture for the exercised contract. */
 const transaction = (id: string, amount: string) => ({
   id,
   timestamp: '2026-10-08T10:00:00.000Z',
@@ -71,6 +83,7 @@ const transaction = (id: string, amount: string) => ({
   ],
 });
 
+/** Resolve the deterministic Worker response for an intercepted browser request. */
 function defaultResponse(url: URL): MockResponse | undefined {
   const { pathname } = url;
   if (pathname === '/v3/assets') return { data: { assets: [sol] } };
@@ -153,6 +166,7 @@ function defaultResponse(url: URL): MockResponse | undefined {
   return undefined;
 }
 
+/** Intercept Worker requests and reject unexpected external calls in browser tests. */
 export async function installWorkerMock(page: Page): Promise<WorkerMock> {
   const requests: URL[] = [];
   const unexpected: string[] = [];
@@ -214,9 +228,11 @@ export async function installWorkerMock(page: Page): Promise<WorkerMock> {
 
   return {
     requests,
+    /** Replace the controlled response handler for the requested fixture path. */
     setHandler(next) {
       handler = next;
     },
+    /** Fail the browser test when an unrecognized Worker request was observed. */
     assertNoUnexpectedRequests() {
       if (unexpected.length)
         throw new Error(`Unexpected Worker requests: ${unexpected.join(', ')}`);

@@ -1,3 +1,8 @@
+/**
+ * Regression coverage and controlled fixtures for wallet summaries.
+ * @packageDocumentation
+ */
+
 import { expect, test, vi, afterEach } from 'vitest';
 import { workerApi } from '../../../src/api/worker';
 import { AccountSession } from '../../../src/auth/session';
@@ -11,6 +16,7 @@ const addresses = Array.from(
   { length: 9 },
   (_, index) => '1'.repeat(31) + '23456789A'[index],
 );
+/** Build the controlled wallet JSON envelope containing data and response metadata. */
 const response = (address: string) => ({
   data: {
     address,
@@ -33,6 +39,7 @@ const response = (address: string) => ({
     },
   },
 });
+/** Create isolated dependencies and controlled session state for this test. */
 function setup() {
   const session = new AccountSession(true);
   const fake = fakeDriver(alice);
@@ -101,6 +108,7 @@ test('automatic summaries bound concurrency to four, use public calls and preser
 });
 test('identity changes abort active requests, discard late responses and stop queued work', async () => {
   const { session, emit } = setup();
+  /** Complete queued fixture work before checking the final state. */
   let finish: () => void = () => {};
   const completion = new Promise<void>((resolve) => {
     finish = resolve;

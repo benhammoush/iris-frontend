@@ -1,3 +1,8 @@
+/**
+ * Regression coverage and controlled fixtures for api docs.
+ * @packageDocumentation
+ */
+
 import { expect, test } from './support/test';
 import { apiOrigin, openapiUrl } from './support/origins';
 

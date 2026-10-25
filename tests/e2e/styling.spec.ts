@@ -1,3 +1,8 @@
+/**
+ * Regression coverage and controlled fixtures for styling.
+ * @packageDocumentation
+ */
+
 import { expect, test } from './support/test';
 import { sol } from './support/workerMock';
 import { openapiUrl } from './support/origins';
@@ -106,6 +111,7 @@ for (const width of [1440, 390]) {
     await expect(
       page.getByRole('button', { name: /SOL Solana/ }).first(),
     ).toBeVisible();
+    /** Read rendered style values for the browser assertion. */
     const styles = () =>
       page.locator('.iris-header').evaluate((element) => {
         const style = getComputedStyle(element);

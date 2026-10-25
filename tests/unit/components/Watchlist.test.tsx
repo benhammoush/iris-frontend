@@ -1,3 +1,8 @@
+/**
+ * Regression coverage and controlled fixtures for watchlist.
+ * @packageDocumentation
+ */
+
 import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
@@ -24,9 +29,11 @@ vi.mock('../../../src/api/authenticated', () => ({
 }));
 vi.mock('../../../src/api/worker', () => ({ workerApi: { wallet: vi.fn() } }));
 vi.mock('../../../src/components/Navbar', () => ({
+  /** Render the minimal navigation substitute used to isolate this component test. */
   default: () => <nav>Public navigation</nav>,
 }));
 vi.mock('../../../src/contexts/CatalogContext', () => ({
+  /** Read catalog state and reject use outside its provider. */
   useCatalog: () => ({
     assets: assetsFrom([
       {
@@ -43,6 +50,7 @@ vi.mock('../../../src/contexts/CatalogContext', () => ({
 const address = 'So11111111111111111111111111111111111111112';
 const unknown = '11111111111111111111111111111111';
 const item = { address, savedAt: '2026-10-22T08:00:00.000Z' };
+/** Build the controlled resource result used by this test. */
 const result = (data: unknown) => ({ data, meta: { requestId: 'test' } });
 let fake = fakeDriver();
 const request = vi.mocked(authenticatedRequest);
@@ -72,6 +80,7 @@ beforeEach(() => {
   );
 });
 afterEach(() => vi.resetAllMocks());
+/** Open the controlled account or watchlist view for the UI test. */
 async function open(control = false) {
   render(
     <MemoryRouter>

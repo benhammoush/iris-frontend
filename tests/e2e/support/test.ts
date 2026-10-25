@@ -1,3 +1,8 @@
+/**
+ * Regression coverage and controlled fixtures for test.
+ * @packageDocumentation
+ */
+
 import { test as base, expect } from '@playwright/test';
 import { installWorkerMock, type WorkerMock } from './workerMock';
 

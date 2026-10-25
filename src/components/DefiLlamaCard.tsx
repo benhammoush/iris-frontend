@@ -1,7 +1,13 @@
+/**
+ * External exchange and protocol metrics with explicit unavailable and refresh states.
+ * @packageDocumentation
+ */
+
 import AssetIcon from './AssetIcon';
 import ValueSkeleton from './ValueSkeleton';
 import ResourceFeedback from './ResourceFeedback';
 
+/** Normalized exchange-volume dashboard metrics. */
 type Dex = {
   name: string;
   slug: string | null;
@@ -10,6 +16,7 @@ type Dex = {
   total7dUsd: number | null;
   change1dPct: number | null;
 };
+/** Normalized protocol dashboard metrics. */
 type Protocol = {
   name: string;
   slug: string | null;
@@ -19,6 +26,7 @@ type Protocol = {
   change1dPct: number | null;
   change7dPct: number | null;
 };
+/** External dashboard collections and their observation metadata. */
 type Dashboard = {
   dexes: {
     total24hUsd: number | null;
@@ -28,6 +36,7 @@ type Dashboard = {
   protocols: { total: number | null; items: Protocol[] };
 };
 
+/** Format a known monetary value for display and preserve the unavailable-data fallback. */
 const currency = (value: number | null | undefined) =>
   value === null || value === undefined || !Number.isFinite(value)
     ? '—'
@@ -37,6 +46,7 @@ const currency = (value: number | null | undefined) =>
         notation: 'compact',
         maximumFractionDigits: 2,
       }).format(value);
+/** Format an available count while retaining an unavailable fallback. */
 const count = (value: number | null | undefined) =>
   value === null || value === undefined || !Number.isFinite(value)
     ? '—'
@@ -45,6 +55,7 @@ const preloadImage = {
   fetchpriority: 'high',
 };
 
+/** Render a signed percentage change with an explicit unavailable fallback. */
 function Change({ value }: { value: number | null }) {
   if (value === null || !Number.isFinite(value))
     return <span className="iris-muted">—</span>;
@@ -56,6 +67,7 @@ function Change({ value }: { value: number | null }) {
   );
 }
 
+/** Link the supported dashboard entity to its external reference. */
 function DefiLlamaLink({
   slug,
   children,
@@ -76,6 +88,7 @@ function DefiLlamaLink({
   );
 }
 
+/** Render independently available dashboard metrics and their refresh or failure state. */
 export default function DefiLlamaCard({
   dashboard,
   loading,
@@ -87,6 +100,7 @@ export default function DefiLlamaCard({
   loading: boolean;
   error: unknown;
   refreshing?: boolean;
+  /** Ask the resource owner to retry its failed load. */
   onRetry?: () => void;
 }) {
   const pending = loading && !dashboard;
@@ -230,6 +244,7 @@ export default function DefiLlamaCard({
   );
 }
 
+/** Reserve dashboard row layout while metrics are loading. */
 function PlaceholderRows() {
   return (
     <div className="iris-catalog-list-rows">

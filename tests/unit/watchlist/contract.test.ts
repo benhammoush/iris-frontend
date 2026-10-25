@@ -1,3 +1,8 @@
+/**
+ * Regression coverage and controlled fixtures for contract.
+ * @packageDocumentation
+ */
+
 import { expect, test } from 'vitest';
 import { isSolanaAddress } from '../../../src/data/solana';
 import {

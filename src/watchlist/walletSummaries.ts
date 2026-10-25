@@ -1,14 +1,21 @@
+/**
+ * Bounded saved-wallet summary requests guarded by captured account identity.
+ * @packageDocumentation
+ */
+
 import { workerApi } from '../api/worker';
 import type { AccountSession } from '../auth/session';
 import { walletFrom } from '../data/normalizers';
 import { isRecord } from '../data/record';
 import { isSolanaAddress } from '../data/solana';
 
+/** Available wallet balances and valuation, preserving unavailable metrics as null. */
 export interface WalletSummary {
   wallet: NonNullable<ReturnType<typeof walletFrom>>;
   asOf: string | null;
   stale: boolean;
 }
+/** Per-wallet summary outcome so one failure does not hide independent results. */
 export type WalletSummaryResult =
   { data: WalletSummary; error?: string } | { error: string; data?: never };
 
@@ -21,14 +28,17 @@ export async function loadWalletSummaries(
 ) {
   const identity = session.capture();
   const controller = new AbortController();
+  /** Cancel the request owned by this operation without cancelling unrelated work. */
   const abort = () => controller.abort();
   signal.addEventListener('abort', abort, { once: true });
   identity.signal.addEventListener('abort', abort, { once: true });
   if (signal.aborted || identity.signal.aborted) abort();
+  /** Check that delayed work still belongs to the captured account generation. */
   const current = () => !controller.signal.aborted && identity.isCurrent();
   const queue = [...new Set(addresses)].filter(isSolanaAddress).slice(0, 100);
   let index = 0;
   let unavailable = false;
+  /** Process the next queued wallet without exceeding the bounded request concurrency. */
   async function next() {
     while (index < queue.length && current()) {
       const address = queue[index++];

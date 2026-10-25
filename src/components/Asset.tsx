@@ -1,3 +1,8 @@
+/**
+ * Asset detail resources, historical pagination and accessible intelligence tabs.
+ * @packageDocumentation
+ */
+
 import {
   useEffect,
   useId,
@@ -31,14 +36,17 @@ import ValueSkeleton from './ValueSkeleton';
 import { JupiterLogo } from './Home';
 import ResourceFeedback from './ResourceFeedback';
 
+/** Format a known monetary value for display and preserve the unavailable-data fallback. */
 const currency = (value: number | null | undefined, digits = 5) =>
   value === null || value === undefined || !Number.isFinite(Number(value))
     ? '—'
     : `$${Number(value).toLocaleString('en-US', { maximumFractionDigits: digits })}`;
+/** Format a known asset price without presenting missing pricing as zero. */
 const price = (value: number | null | undefined) =>
   value === null || value === undefined || !Number.isFinite(Number(value))
     ? '—'
     : `$${Number(value).toLocaleString('en-US', { maximumSignificantDigits: 5 })}`;
+/** Format a monetary metric using compact display notation. */
 const compactCurrency = (value: number | null | undefined) =>
   value === null || value === undefined || !Number.isFinite(Number(value))
     ? '—'
@@ -48,6 +56,7 @@ const compactCurrency = (value: number | null | undefined) =>
         notation: 'compact',
         maximumFractionDigits: 2,
       }).format(Number(value));
+/** Format a display quantity without changing its underlying exact representation. */
 const compactQuantity = (value: number | null | undefined) =>
   value === null || value === undefined || !Number.isFinite(Number(value))
     ? '—'
@@ -62,6 +71,7 @@ const primaryTimeframes: [string, CandleTimeframe][] = [
   ['1d', '1D'],
   ['1mn', '1M'],
 ];
+/** Normalized asset transaction identity and display fields. */
 type MintTransaction = {
   signature: string;
   timestamp: string | null;
@@ -73,6 +83,7 @@ type MintTransaction = {
   recipient: string | null;
   amount: string | null;
 };
+/** Account identity and quantity fields used by asset-distribution rows. */
 type DistributionAccount = {
   rank: number;
   tokenAccount: string;
@@ -81,10 +92,12 @@ type DistributionAccount = {
   supplyPercent: string | null;
   frozen: boolean | null;
 };
+/** Format an available observation timestamp for the user. */
 const dateTime = (value: string | null) =>
   value && Number.isFinite(Date.parse(value))
     ? new Date(value).toLocaleString('en-US')
     : 'Unknown time';
+/** Compute a display USD value only when both quantity and current price are usable. */
 const currentUsdValue = (amount: string | null, priceUsd: number | null) =>
   amount === null ||
   priceUsd === null ||
@@ -92,6 +105,7 @@ const currentUsdValue = (amount: string | null, priceUsd: number | null) =>
   !Number.isFinite(priceUsd)
     ? '—'
     : currency(Number(amount) * priceUsd, 2);
+/** Define transaction table columns using the current display price. */
 const transactionColumns = (
   priceUsd: number | null,
 ): VirtualTableColumn<MintTransaction>[] => [
@@ -100,7 +114,9 @@ const transactionColumns = (
     label: 'Time',
     width: 150,
     grow: 1,
+    /** Extract the row value used for sorting and filtering. */
     value: (transaction) => transaction.timestamp || '',
+    /** Render the table cell while preserving the row value used by actions and links. */
     cell: (transaction) => dateTime(transaction.timestamp),
   },
   {
@@ -108,7 +124,9 @@ const transactionColumns = (
     label: 'Action',
     width: 115,
     grow: 1,
+    /** Extract the row value used for sorting and filtering. */
     value: (transaction) => transaction.action || 'Unknown',
+    /** Render the table cell while preserving the row value used by actions and links. */
     cell: (transaction) => transaction.action || 'Unknown',
   },
   {
@@ -116,7 +134,9 @@ const transactionColumns = (
     label: 'Sender',
     width: 150,
     grow: 2,
+    /** Extract the row value used for sorting and filtering. */
     value: (transaction) => transaction.sender || '',
+    /** Render the table cell while preserving the row value used by actions and links. */
     cell: (transaction) =>
       transaction.sender ? (
         <a
@@ -134,7 +154,9 @@ const transactionColumns = (
     label: 'Recipient',
     width: 150,
     grow: 2,
+    /** Extract the row value used for sorting and filtering. */
     value: (transaction) => transaction.recipient || '',
+    /** Render the table cell while preserving the row value used by actions and links. */
     cell: (transaction) =>
       transaction.recipient ? (
         <a
@@ -152,7 +174,9 @@ const transactionColumns = (
     label: 'Amount',
     width: 140,
     grow: 1,
+    /** Extract the row value used for sorting and filtering. */
     value: (transaction) => transaction.amount || '',
+    /** Render the table cell while preserving the row value used by actions and links. */
     cell: (transaction) => transaction.amount || '—',
     align: 'right',
   },
@@ -161,7 +185,9 @@ const transactionColumns = (
     label: 'Value',
     width: 140,
     grow: 1.3,
+    /** Extract the row value used for sorting and filtering. */
     value: (transaction) => currentUsdValue(transaction.amount, priceUsd),
+    /** Render the table cell while preserving the row value used by actions and links. */
     cell: (transaction) => currentUsdValue(transaction.amount, priceUsd),
     align: 'right',
   },
@@ -170,7 +196,9 @@ const transactionColumns = (
     label: 'Transaction',
     width: 170,
     grow: 1.5,
+    /** Extract the row value used for sorting and filtering. */
     value: (transaction) => transaction.signature,
+    /** Render the table cell while preserving the row value used by actions and links. */
     cell: (transaction) => {
       const url = solanaExplorerUrl('tx', transaction.signature);
       return url ? (
@@ -188,6 +216,7 @@ const transactionColumns = (
     },
   },
 ];
+/** Define account-distribution table columns using the current display price. */
 const distributionColumns = (
   priceUsd: number | null,
 ): VirtualTableColumn<DistributionAccount>[] => [
@@ -196,7 +225,9 @@ const distributionColumns = (
     label: 'Rank',
     width: 70,
     grow: 0.5,
+    /** Extract the row value used for sorting and filtering. */
     value: (account) => account.rank,
+    /** Render the table cell while preserving the row value used by actions and links. */
     cell: (account) => `#${account.rank}`,
   },
   {
@@ -204,7 +235,9 @@ const distributionColumns = (
     label: 'Wallet',
     width: 260,
     grow: 2,
+    /** Extract the row value used for sorting and filtering. */
     value: (account) => account.owner || account.tokenAccount,
+    /** Render the table cell while preserving the row value used by actions and links. */
     cell: (account) =>
       account.owner ? (
         <a
@@ -222,7 +255,9 @@ const distributionColumns = (
     label: 'Amount',
     width: 220,
     grow: 2,
+    /** Extract the row value used for sorting and filtering. */
     value: (account) => account.amount,
+    /** Render the table cell while preserving the row value used by actions and links. */
     cell: (account) => account.amount,
     align: 'right',
   },
@@ -231,7 +266,9 @@ const distributionColumns = (
     label: 'Value',
     width: 220,
     grow: 2,
+    /** Extract the row value used for sorting and filtering. */
     value: (account) => currentUsdValue(account.amount, priceUsd),
+    /** Render the table cell while preserving the row value used by actions and links. */
     cell: (account) => currentUsdValue(account.amount, priceUsd),
     align: 'right',
   },
@@ -240,13 +277,16 @@ const distributionColumns = (
     label: 'Supply share',
     width: 160,
     grow: 1.3,
+    /** Extract the row value used for sorting and filtering. */
     value: (account) => account.supplyPercent || '',
+    /** Render the table cell while preserving the row value used by actions and links. */
     cell: (account) =>
       account.supplyPercent === null ? '—' : `${account.supplyPercent}%`,
     align: 'right',
   },
 ];
 
+/** Render asset data with independent loading, unavailable and historical-pagination states. */
 export default function Asset() {
   const { mint = '' } = useParams();
   const [timeframe, setTimeframe] = useState<CandleTimeframe>('1H');
@@ -636,6 +676,7 @@ export default function Asset() {
   );
 }
 
+/** Render a signed percentage change with an explicit unavailable fallback. */
 function Change({ value }: { value: number }) {
   const positive = value >= 0;
   return (
@@ -647,6 +688,7 @@ function Change({ value }: { value: number }) {
     </span>
   );
 }
+/** Render one labeled metric and its optional supporting detail. */
 function Metric({
   label,
   value,
@@ -664,9 +706,11 @@ function Metric({
     </section>
   );
 }
+/** Shorten a display identifier without changing the full value used by requests or links. */
 function short(value: string | null) {
   return value ? `${value.slice(0, 5)}...${value.slice(-5)}` : 'None';
 }
+/** Render accessible transaction and distribution tabs with independent resource feedback. */
 function IntelligencePanel({
   tab,
   onTabChange,
@@ -681,20 +725,24 @@ function IntelligencePanel({
   retryDistribution,
 }: {
   tab: 'transactions' | 'distribution';
+  /** Notify the owner that the selected intelligence tab changed. */
   onTabChange: (tab: 'transactions' | 'distribution') => void;
   priceUsd: number | null;
   transactions: MintTransaction[];
   transactionLoading: boolean;
   transactionError: unknown;
+  /** Ask the owner to retry the failed transaction resource. */
   retryTransactions: () => void;
   distribution: DistributionAccount[];
   distributionLoading: boolean;
   distributionError: unknown;
+  /** Ask the owner to retry the failed distribution resource. */
   retryDistribution: () => void;
 }) {
   const id = useId();
   const transactionsTab = useRef<HTMLButtonElement>(null);
   const distributionTab = useRef<HTMLButtonElement>(null);
+  /** Apply keyboard tab navigation while keeping focus and selection synchronized. */
   function onTabKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     const next =
       event.key === 'Home'
@@ -788,6 +836,7 @@ function IntelligencePanel({
     </section>
   );
 }
+/** Render transaction rows or explicit loading, empty and failed states. */
 function TransactionList({
   transactions,
   loading,
@@ -799,6 +848,7 @@ function TransactionList({
   loading: boolean;
   error: unknown;
   priceUsd: number | null;
+  /** Ask the resource owner to retry its failed load. */
   onRetry: () => void;
 }) {
   return (
@@ -824,6 +874,7 @@ function TransactionList({
     </>
   );
 }
+/** Render account-distribution rows or explicit loading, empty and failed states. */
 function DistributionList({
   accounts,
   loading,
@@ -835,6 +886,7 @@ function DistributionList({
   loading: boolean;
   error: unknown;
   priceUsd: number | null;
+  /** Ask the resource owner to retry its failed load. */
   onRetry: () => void;
 }) {
   return (

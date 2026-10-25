@@ -1,3 +1,8 @@
+/**
+ * Account-scoped saved-wallet loading and superseded-work cancellation.
+ * @packageDocumentation
+ */
+
 import { useEffect, useRef, useState } from 'react';
 import { useAccount } from '../contexts/AccountContext';
 import {
@@ -5,6 +10,7 @@ import {
   type WalletSummaryResult,
 } from '../watchlist/walletSummaries';
 
+/** Load saved-wallet summaries under the current account and cancel superseded work. */
 export function useWalletSummaries(addresses: string[]) {
   const { session } = useAccount();
   const key = addresses.join(',');
@@ -49,6 +55,7 @@ export function useWalletSummaries(addresses: string[]) {
         Object.entries(previous).filter(([address]) => all.includes(address)),
       ),
     );
+    /** Publish the new scoped state to subscribers without mutating unrelated state. */
     const publish = (address: string, result: WalletSummaryResult) => {
       if (controller.signal.aborted) return;
       setResults((previous) => {
@@ -84,6 +91,7 @@ export function useWalletSummaries(addresses: string[]) {
       busy.current = false;
     };
   }, [session, key, request]);
+  /** Refresh the currently scoped resource without accepting results from a superseded identity. */
   const refresh = (address?: string) => {
     if (busy.current) return;
     busy.current = true;
@@ -94,6 +102,7 @@ export function useWalletSummaries(addresses: string[]) {
     }));
   };
   useEffect(() => {
+    /** Refresh eligible account-scoped data when the page regains focus. */
     const focus = () => {
       if (!document.hidden && !busy.current) {
         busy.current = true;

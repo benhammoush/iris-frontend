@@ -1,3 +1,9 @@
+/**
+ * Explicit deterministic fixture data, not evidence of live-provider availability.
+ * @packageDocumentation
+ */
+
+/** Deterministic asset record used only by explicitly selected fixture mode. */
 interface FixtureAsset {
   mint: string;
   symbol: string;

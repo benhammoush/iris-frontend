@@ -1,3 +1,8 @@
+/**
+ * Regression coverage and controlled fixtures for full stack.
+ * @packageDocumentation
+ */
+
 import { expect, test, type Page } from '@playwright/test';
 
 const solMint = 'So11111111111111111111111111111111111111112';

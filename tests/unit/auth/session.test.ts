@@ -1,9 +1,17 @@
+/**
+ * Regression coverage and controlled fixtures for session.
+ * @packageDocumentation
+ */
+
 import { expect, test } from 'vitest';
 import { AccountSession } from '../../../src/auth/session';
 import { alice, fakeDriver } from './testSupport';
 
+/** Expose a promise and its controls so tests can order asynchronous completion explicitly. */
 function deferred() {
+  /** Complete the controlled deferred operation with the supplied result. */
   let resolve = () => {};
+  /** Reject the controlled deferred operation with the supplied test failure. */
   let reject = (_cause: Error) => {};
   const promise = new Promise<void>((done, fail) => {
     resolve = done;
@@ -25,6 +33,7 @@ test.each([
     const session = new AccountSession(true);
     session.connect(fake.driver);
     const completion = deferred();
+    /** Resolve the delayed account identity used to test superseded-session protection. */
     const lateIdentity = async () => {
       await completion.promise;
       fake.emit(alice);

@@ -1,3 +1,8 @@
+/**
+ * Regression coverage and controlled fixtures for navbar search.
+ * @packageDocumentation
+ */
+
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
@@ -25,6 +30,7 @@ const jupiterPerps = {
   priceUsd: 2,
 };
 
+/** Render search with controlled assets and navigation callbacks. */
 function renderSearch(
   props: Partial<ComponentProps<typeof NavbarSearch>> = {},
 ) {

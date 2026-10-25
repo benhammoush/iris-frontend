@@ -1,3 +1,8 @@
+/**
+ * Regression coverage and controlled fixtures for authenticated.
+ * @packageDocumentation
+ */
+
 import { afterEach, expect, test, vi } from 'vitest';
 import { alice, fakeDriver } from '../auth/testSupport';
 
@@ -7,6 +12,7 @@ afterEach(() => {
   vi.useRealTimers();
   vi.resetModules();
 });
+/** Create isolated dependencies and controlled session state for this test. */
 async function setup() {
   vi.stubEnv('VITE_API_BASE', 'https://iris.test');
   const { AccountSession } = await import('../../../src/auth/session');
@@ -17,6 +23,7 @@ async function setup() {
   session.connect(fake.driver);
   return { ...fake, session, request: authenticatedRequest };
 }
+/** Build the controlled response body used by this boundary test. */
 const body = () =>
   new Response(
     JSON.stringify({

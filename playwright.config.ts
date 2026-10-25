@@ -1,3 +1,8 @@
+/**
+ * Local browser-suite environments, engine coverage and fixture isolation.
+ * @packageDocumentation
+ */
+
 import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
