@@ -14,7 +14,7 @@ import CatalogPanel from './CatalogPanel';
 import Navbar from './Navbar';
 import HeliusNetworkCard from './HeliusNetworkCard';
 import DefiLlamaCard from './DefiLlamaCard';
-import ValueSkeleton from './ValueSkeleton';
+import { ValueSkeleton } from '../design-system';
 import { useHeliusDashboard } from '../contexts/HeliusDashboardContext';
 import { isRecord } from '../data/record';
 import ResourceFeedback from './ResourceFeedback';

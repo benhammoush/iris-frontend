@@ -1,0 +1,13 @@
+/* Load once before product CSS; component defaults precede feature overrides. */
+@import './base.css';
+@import './components/MetricCard.css';
+@import './components/VirtualTable.css';
+@import './components/ValueSkeleton.css';
+
+.iris-empty {
+  margin: 0;
+  padding: 40px var(--iris-space-xl);
+  color: var(--iris-muted);
+  text-align: center;
+  font-size: var(--iris-font-size-body);
+}

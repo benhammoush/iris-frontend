@@ -1,0 +1,43 @@
+/* Shared metric presentation; dashboard grid placement remains app-owned. */
+.iris-metric-card {
+  border: 1px solid var(--iris-border);
+  border-radius: var(--iris-radius-lg);
+  background: var(--app-surface);
+  box-shadow: var(--iris-surface-shadow);
+  min-height: 112px;
+  padding: 15px;
+}
+.iris-metric-label {
+  margin: 0;
+  color: var(--iris-muted);
+  font-family: var(--iris-font-mono);
+  font-size: var(--iris-font-size-caption);
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+.iris-metric-value {
+  margin: var(--iris-space-sm) 0 3px;
+  color: var(--iris-text);
+  font-family: var(--iris-font-mono);
+  font-size: var(--iris-font-size-metric);
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+.iris-metric-value--positive {
+  color: var(--iris-green);
+}
+.iris-metric-value--negative {
+  color: var(--iris-red);
+}
+.iris-metric-detail {
+  display: block;
+  margin: 0;
+  color: var(--iris-muted);
+  font-size: var(--iris-font-size-small);
+}
+@media (max-width: 720px) {
+  .iris-metric-card {
+    min-height: 96px;
+  }
+}

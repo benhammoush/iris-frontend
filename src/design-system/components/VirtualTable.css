@@ -1,0 +1,133 @@
+/* Shared table chrome. Feature-specific cell contents and overrides stay local. */
+.iris-table-card {
+  overflow: hidden;
+}
+.iris-table-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--iris-space-md);
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--iris-border);
+  background: var(--iris-secondary);
+}
+.iris-table-toolbar input {
+  width: min(320px, 100%);
+  border: 1px solid var(--iris-border);
+  border-radius: var(--iris-radius-control);
+  outline: none;
+  background: var(--iris-input);
+  color: var(--iris-text);
+  padding: 5px var(--iris-space-sm);
+  font-family: var(--iris-font-mono);
+  font-size: var(--iris-font-size-small);
+}
+.iris-table-toolbar input:focus-visible {
+  outline: 2px solid var(--iris-muted);
+  outline-offset: 2px;
+}
+.iris-table-toolbar span {
+  margin-left: auto;
+  color: var(--iris-muted);
+  font-family: var(--iris-font-mono);
+  font-size: var(--iris-font-size-caption);
+}
+.iris-table-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  min-width: max(100%, max-content);
+  border-bottom: 1px solid var(--iris-border);
+  background: var(--iris-secondary);
+}
+.iris-table-head button {
+  flex: 0 0 auto;
+  border: 0;
+  border-right: 1px solid var(--iris-border);
+  background: transparent;
+  color: var(--iris-muted);
+  cursor: pointer;
+  padding: 9px 10px;
+  font-family: var(--iris-font-mono);
+  font-size: var(--iris-font-size-caption);
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+.iris-table-head button:hover {
+  color: var(--iris-text);
+  background: var(--iris-hover);
+}
+.iris-table-scroll {
+  overflow: auto;
+}
+.iris-table-row {
+  position: absolute;
+  display: flex;
+  min-width: max-content;
+  width: 100%;
+  border-bottom: 1px solid var(--iris-border);
+  background: var(--app-surface);
+}
+.iris-table-row:nth-child(even) {
+  background: var(--iris-secondary);
+}
+.iris-table-row--clickable {
+  cursor: pointer;
+}
+.iris-table-row--clickable:hover {
+  background: var(--iris-hover);
+}
+.iris-table-cell {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  padding: 0 10px;
+  color: var(--iris-text);
+  font-family: var(--iris-font-mono);
+  font-size: var(--iris-font-size-small);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.iris-table-cell--right {
+  justify-content: flex-end;
+  text-align: right;
+}
+.iris-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 9px 14px;
+  border-top: 1px solid var(--iris-border);
+  background: var(--iris-secondary);
+  color: var(--iris-muted);
+  font-family: var(--iris-font-mono);
+  font-size: var(--iris-font-size-caption);
+}
+.iris-pagination button {
+  border: 1px solid var(--iris-border);
+  border-radius: var(--iris-radius-sm);
+  background: var(--iris-input);
+  color: var(--iris-text);
+  cursor: pointer;
+  padding: var(--iris-space-xs) 7px;
+  font: inherit;
+}
+.iris-pagination button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+.iris-table-row-action {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  cursor: pointer;
+}

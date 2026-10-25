@@ -16,7 +16,7 @@ import Navbar from './Navbar';
 import AssetIcon from './AssetIcon';
 import { VirtualTable, type VirtualTableColumn } from '../design-system';
 import { solanaExplorerUrl } from '../data/solana';
-import ValueSkeleton from './ValueSkeleton';
+import { ValueSkeleton } from '../design-system';
 import ResourceFeedback from './ResourceFeedback';
 
 /** Wallet holding identity, exact quantity and nullable valuation fields. */

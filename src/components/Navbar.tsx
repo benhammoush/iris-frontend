@@ -9,7 +9,7 @@ import { useCatalog } from '../contexts/CatalogContext';
 import { APP_DISPLAY_VERSION } from '../appVersion';
 import { useTheme } from '../design-system';
 import { useHeliusDashboard } from '../contexts/HeliusDashboardContext';
-import ValueSkeleton from './ValueSkeleton';
+import { ValueSkeleton } from '../design-system';
 import NavbarSearch from './NavbarSearch';
 import { accountsEnabled } from '../auth/config';
 

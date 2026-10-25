@@ -1,5 +1,5 @@
 /**
- * Accessible loading placeholders that preserve metric layout.
+ * Decorative loading placeholders that preserve value layout.
  * @packageDocumentation
  */
 

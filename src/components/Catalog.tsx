@@ -9,7 +9,7 @@ import { useCatalog } from '../contexts/CatalogContext';
 import Navbar from './Navbar';
 import AssetIcon from './AssetIcon';
 import { looksLikeSolanaAddress } from '../data/solana';
-import ValueSkeleton from './ValueSkeleton';
+import { ValueSkeleton } from '../design-system';
 import ResourceFeedback from './ResourceFeedback';
 
 /** Public discovery surface selected by the route. */
