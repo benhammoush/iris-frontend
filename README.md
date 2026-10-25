@@ -6,12 +6,12 @@ connection or transaction signing.
 
 ## Tech stack
 
-| Layer                 | Technology                                    |
-| --------------------- | --------------------------------------------- |
-| Interface and routing | React, TypeScript, React Router, Tailwind CSS |
-| Charts                | Lightweight Charts                            |
-| API documentation     | Scalar                                        |
-| Build and testing     | Vite, Vitest, Testing Library, Playwright     |
+| Layer                 | Technology                                  |
+| --------------------- | ------------------------------------------- |
+| Interface and routing | React, TypeScript, React Router, custom CSS |
+| Charts                | Lightweight Charts                          |
+| API documentation     | Scalar                                      |
+| Build and testing     | Vite, Vitest, Testing Library, Playwright   |
 
 ## Features
 

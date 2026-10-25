@@ -34,24 +34,17 @@ export const apiDocsConfiguration = {
  */
 function ApiDocs() {
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-6 text-slate-900 sm:px-6">
-      <div className="mx-auto mb-6 flex max-w-[1460px] items-center justify-between gap-4">
+    <main className="iris-api-docs">
+      <div className="iris-api-docs-header">
         <div>
-          <p className="text-xs font-semibold tracking-[0.2em] text-slate-500">
-            IRIS API
-          </p>
-          <h1 className="text-2xl font-semibold">
-            Interactive API documentation
-          </h1>
+          <p className="iris-api-docs-eyebrow">IRIS API</p>
+          <h1>Interactive API documentation</h1>
         </div>
-        <Link
-          className="rounded-sm border border-slate-300 px-3 py-2 text-sm font-medium hover:bg-slate-100"
-          to="/"
-        >
+        <Link className="iris-api-docs-back" to="/">
           Back to Iris
         </Link>
       </div>
-      <div className="mx-auto max-w-[1460px] rounded-sm bg-white p-3 shadow-xs sm:p-6">
+      <div className="iris-api-docs-reference">
         {apiConfigurationError ? (
           <p role="alert">
             Interactive API documentation is unavailable:{' '}

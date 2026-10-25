@@ -1,2 +1,69 @@
 /* Keep renderer defaults below Iris's unlayered dashboard styles. */
 @import '@scalar/api-reference-react/style.css' layer(scalar);
+
+.iris-api-docs {
+  min-height: 100vh;
+  padding: 1.5rem 1rem;
+  background: oklch(98.4% 0.003 247.858);
+  color: oklch(20.8% 0.042 265.755);
+}
+
+.iris-api-docs-header,
+.iris-api-docs-reference {
+  max-width: 1460px;
+  margin-inline: auto;
+}
+
+.iris-api-docs-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.iris-api-docs-eyebrow {
+  color: oklch(55.4% 0.046 257.417);
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+}
+
+.iris-api-docs-header h1 {
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-weight: 600;
+}
+
+.iris-api-docs-back {
+  border: 1px solid oklch(86.9% 0.022 252.894);
+  border-radius: 0.25rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 500;
+}
+
+@media (hover: hover) {
+  .iris-api-docs-back:hover {
+    background: oklch(96.8% 0.007 247.896);
+  }
+}
+
+.iris-api-docs-reference {
+  border-radius: 0.25rem;
+  padding: 0.75rem;
+  background: #fff;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+@media (min-width: 40rem) {
+  .iris-api-docs {
+    padding-inline: 1.5rem;
+  }
+
+  .iris-api-docs-reference {
+    padding: 1.5rem;
+  }
+}

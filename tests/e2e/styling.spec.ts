@@ -1,5 +1,5 @@
 /**
- * Regression coverage and controlled fixtures for styling.
+ * Browser coverage for page styling and shared element defaults.
  * @packageDocumentation
  */
 
@@ -176,3 +176,65 @@ for (const width of [1440, 390]) {
     });
   });
 }
+
+test('keeps API documentation spacing, typography and responsive gutters', async ({
+  page,
+}) => {
+  await page.route(openapiUrl, (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        openapi: '3.0.3',
+        info: { title: 'Styling fixture', version: '1.0.0' },
+        paths: {},
+      }),
+    }),
+  );
+  await page.goto('/api-docs');
+  const main = page.getByRole('main').first();
+  const heading = page.getByRole('heading', {
+    name: 'Interactive API documentation',
+  });
+  const back = page.getByRole('link', { name: 'Back to Iris' });
+  await expect(main).toHaveCSS('padding-left', '24px');
+  await expect(main).toHaveCSS('padding-top', '24px');
+  await expect(heading).toHaveCSS('font-size', '24px');
+  await expect(heading).toHaveCSS('line-height', '32px');
+  await expect(heading).toHaveCSS('font-weight', '600');
+  await expect(heading).toHaveCSS('margin-top', '0px');
+  await expect(back).toHaveCSS('border-top-width', '1px');
+  await expect(back).toHaveCSS('padding-left', '12px');
+  await expect(back).toHaveCSS('text-decoration-line', 'none');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(main).toHaveCSS('padding-left', '16px');
+  await expect(main).toHaveCSS('padding-right', '16px');
+});
+
+test('keeps unmatched-route layout and shared browser defaults in both themes', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('color-theme', 'light');
+  });
+  await page.goto('/missing-route');
+  const main = page.getByRole('main');
+  await expect(main).toHaveCSS('display', 'flex');
+  await expect(main).toHaveCSS('align-items', 'center');
+  await expect(main).toHaveCSS('justify-content', 'center');
+  await expect(main.locator('..')).toHaveCSS(
+    'background-color',
+    'rgb(255, 255, 255)',
+  );
+  await expect(main.locator('..')).toHaveCSS('font-family', 'Poppins');
+  await expect(page.locator('body')).toHaveCSS('margin-top', '0px');
+  const brand = page.getByRole('link', { name: /IRIS/ }).first();
+  await expect(brand).toHaveCSS('text-decoration-line', 'none');
+  await expect(brand.locator('img')).toHaveCSS('display', 'block');
+  await page.getByRole('button', { name: /theme/i }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  // The legacy route background is independent of the dashboard theme tokens.
+  await expect(main.locator('..')).toHaveCSS(
+    'background-color',
+    'rgb(255, 255, 255)',
+  );
+});
