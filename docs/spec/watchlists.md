@@ -10,8 +10,8 @@ owns the owner-approved public-summary requirements; its coordinated
 before this frontend PR. The implemented OpenAPI owns the private contract:
 `GET /v3/me/watchlist` still fetches references only, never provider data. Summaries
 use separate anonymous `GET /v3/wallets/{address}` requests.
-See [ACCOUNTS.md](./ACCOUNTS.md) for authentication boundaries and
-[ENVIRONMENTS.md](./ENVIRONMENTS.md) for setup/release policy.
+See [the account specification](accounts.md) for authentication boundaries and
+[the environment runbook](../environments.md) for setup/release policy.
 
 ## Behavior
 

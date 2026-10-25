@@ -2,7 +2,7 @@
 
 Frontend 1.24.0 introduced the account page at `/account` and an authenticated
 Worker transport. Accounts are **disabled by default**. Public browsing does not
-require sign-in. Frontend 1.25.0 adds the [private watchlist UI](./WATCHLISTS.md).
+require sign-in. Frontend 1.25.0 adds the [private watchlist UI](watchlists.md).
 Account deletion and hosted-auth acceptance remain WL-4–5/WL-O1 work.
 
 The accepted requirements and private API belong to the
@@ -83,7 +83,7 @@ sign-in and mobile dark layout. It creates no real accounts or emails.
 Mocked SDK and REST tests do not prove hosted OAuth, email delivery, Firebase
 project configuration, IAM, real revocation, cross-device sync or deletion.
 Those remain acceptance gates; no frontend feature flag enables the backend or
-bypasses its authentication checks. See [ENVIRONMENTS.md](./ENVIRONMENTS.md) for
+bypasses its authentication checks. See [the environment runbook](../environments.md) for
 release policy and the owning backend specification for lifecycle requirements.
 
 Official documentation checked during WL-2 (Context7 quota was exhausted):
