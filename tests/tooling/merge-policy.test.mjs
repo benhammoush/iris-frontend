@@ -728,7 +728,20 @@ test('retired merge observer has no workflow entry point', () => {
   const packageScripts = JSON.parse(
     readFileSync(new URL('../../package.json', import.meta.url), 'utf8'),
   ).scripts;
-  assert.ok(packageScripts['ci:quality'].includes('npm run verify:fast'));
+  assert.equal(packageScripts['ci:quality'], 'npm run check');
+  assert.ok(packageScripts.check.includes('npm run verify:fast'));
+  assert.ok(packageScripts['verify:fast'].includes('npm run typecheck'));
+  assert.ok(!packageScripts['verify:fast'].includes('npm run check'));
+  assert.equal(packageScripts.dev, packageScripts.start);
+  assert.equal(packageScripts.typecheck, 'tsc --noEmit');
+  assert.equal(
+    packageScripts['check:version'],
+    packageScripts['check:versions'],
+  );
+  assert.equal(
+    packageScripts.verify,
+    'npm run check && npm run ci:integration',
+  );
   assert.ok(
     packageScripts['verify:fast'].includes('npm run test:merge-policy'),
   );
