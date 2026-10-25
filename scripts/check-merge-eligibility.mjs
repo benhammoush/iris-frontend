@@ -150,7 +150,7 @@ async function mutableEvidence(client, root, pr, policy) {
   const [runs, reviews, statuses, native] = await Promise.all([
     list(
       client,
-      `${root}/actions/workflows/ci.yml/runs?event=pull_request&head_sha=${pr.head.sha}`,
+      `${root}/actions/workflows/verify-pr.yml/runs?event=pull_request&head_sha=${pr.head.sha}`,
       'workflow_runs',
     ),
     list(client, `${root}/pulls/${pr.number}/reviews`),

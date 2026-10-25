@@ -11,14 +11,21 @@ import config from '../../.github/ci-cd.json';
 import packageJson from '../../package.json';
 
 const workflow = readFileSync(
-  new URL('../../.github/workflows/ci.yml', import.meta.url),
+  new URL('../../.github/workflows/verify-and-deploy-dev.yml', import.meta.url),
   'utf8',
 );
 const production = readFileSync(
-  new URL('../../.github/workflows/deploy-production.yml', import.meta.url),
+  new URL(
+    '../../.github/workflows/verify-and-deploy-prod.yml',
+    import.meta.url,
+  ),
   'utf8',
 );
 const { scripts } = packageJson;
+const pr = readFileSync(
+  new URL('../../.github/workflows/verify-pr.yml', import.meta.url),
+  'utf8',
+);
 const browsers = readFileSync(
   new URL('../../playwright.config.ts', import.meta.url),
   'utf8',
@@ -35,7 +42,9 @@ describe('versioned delivery consumer', () => {
   });
   it('keeps automatic dev main-only and production separate, manual and dependent on release verification', () => {
     expect(config.deploymentVariables).not.toContain('DEPLOY_ENABLED');
-    expect(workflow).toContain('pull_request:');
+    expect(pr).toContain('pull_request:');
+    expect(pr).not.toContain('secrets.');
+    expect(workflow).not.toContain('pull_request:');
     expect(workflow).toMatch(/branches:\s+- main/);
     expect(workflow).toContain("github.ref == 'refs/heads/main'");
     expect(workflow).toContain('needs: verify');
@@ -68,11 +77,11 @@ describe('versioned delivery consumer', () => {
   });
   it('uses the canonical Verify gate without changing selected Worker/OpenAPI compatibility pins', () => {
     expect(config.legacyChecks).toEqual([]);
-    expect(workflow).toMatch(
-      /verify_result:\s+name: Verify\s+needs: verify\s+if: always\(\)/,
+    expect(pr).toMatch(
+      /verify_result:\s+(?:#[^\n]*\s+)?name: Verify\s+needs: verify\s+if: always\(\)/,
     );
-    expect(workflow).toContain('test "$VERIFY_RESULT" = success');
-    expect(workflow).toContain('VERIFY_RESULT: ${{ needs.verify.result }}');
+    expect(pr).toContain('test "$VERIFY_RESULT" = success');
+    expect(pr).toContain('VERIFY_RESULT: ${{ needs.verify.result }}');
     expect(workflow).not.toMatch(/legacy_\d+:/);
     expect(config.workerRepository).toBe('benhammoush/iris-backend');
     expect(config.workerSha).toBe('568d38a8acbfa42689c59f7162b975c41cea98b0');

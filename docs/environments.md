@@ -11,21 +11,29 @@ The backend similarly scopes an Undici 7.30.1 override to Miniflare, keeping the
 reviewed Worker toolchain. Remove that override when Miniflare's declared
 dependency naturally resolves to a patched compatible release.
 
-Automation 4.0 retains flag-free delivery and adds consistent job names and weekly
-vulnerability audits. The published immutable shared revision is pinned below;
+Automation 5.0 separates PR verification, dev delivery and production delivery
+with distinct job names, retaining flag-free delivery and weekly vulnerability
+audits. The published immutable shared revision is pinned below;
 source adoption does not change live settings or authorize deployment.
 
-The [shared contract](https://github.com/benhammoush/ci-cd-workflows/blob/64b5e00a3d2895a8cba05b040f0d5a0415613d9e/docs/contract.md)
-at v4.0.0 is pinned in this frontend's `.github/ci-cd.json`. Backend adoption is
+The [shared contract](https://github.com/benhammoush/ci-cd-workflows/blob/d1143395dc6a078ef284978c1daf039ed06ff7d1/docs/contract.md)
+at v5.0.0 is pinned in this frontend's `.github/ci-cd.json`. Backend adoption is
 tracked in the [backend configuration](https://github.com/benhammoush/iris-backend/blob/main/.github/ci-cd.json);
 adopt the same reviewed shared revision there too. This tooling-only
-change preserves the selected compatible Worker/OpenAPI pins. CI checks PRs/main and
-delivers successful exact main commits to dev without an opt-in switch. Separate manual
-`deploy-production.yml` selects a full merged `sha`, requires retained successful
-dev evidence, verifies the candidate and waits for native approval. CI dispatch
+change preserves the selected compatible Worker/OpenAPI pins. `verify-pr.yml`
+checks PR creation, updates and reopening without deployment jobs or secrets.
+`verify-and-deploy-dev.yml` verifies main pushes and delivers successful exact main
+commits to dev without an opt-in switch. Separate manual
+`verify-and-deploy-prod.yml` selects a full merged `sha`, requires retained successful
+dev evidence, verifies the candidate and waits for native approval. Dev-workflow dispatch
 is the exact-SHA dev recovery path; the Worker retains explicit `refresh_dev`,
 default false. These supersede older combined-workflow/target-selector invocations,
 not compatibility, native approval, acceptance, refresh or recovery requirements.
+
+Both repositories' three entry points, weekly audit and `.github/ci-cd.json` pin
+published shared revision `d1143395dc6a078ef284978c1daf039ed06ff7d1` (automation 5.0).
+The standalone PR `Verify` result preserves the existing required-check context.
+Publication does not authorize a merge, deployment or production approval.
 
 All Ubuntu jobs use `ubuntu-24.04`. The frontend retains all three-engine
 account-enabled fixtures and its Chromium vertical suite before building/testing
@@ -49,9 +57,9 @@ Repositories: `benhammoush/iris-frontend` and `benhammoush/iris-backend`, with t
 
 Both repositories retire the advisory `merge-eligibility.yml` pilot; required CI and current-head reviews still gate manual merges. The tested read-only CLI tools remain available, but have no automatic workflow entry point.
 
-Prepared job naming replaces the old verification aliases with standalone `Verify` in both repositories. The settings described below remain the live pre-migration requirements until the owner approves their coordinated replacement. Do not merge these naming changes under unchanged protections; follow the [shared check-name migration](https://github.com/benhammoush/ci-cd-workflows/blob/main/docs/contract.md#canonical-job-names-and-required-check-migration). Workflow comments are limited to two header lines; release procedures remain in this runbook and the shared contract.
+The standalone PR `Verify` result preserves the existing required-check context in both repositories; the older check-name migration below is historical. No protection change is needed for this workflow split. Workflow comments are limited to two header lines; release procedures remain in this runbook and the shared contract.
 
-The old `dependency-audit.yml` implementations are replaced by thin `weekly-vuln-audit.yml` callers pinned to the same published shared revision as release workflows. Each audit runs weekly or manually after adoption on main. See the [shared audit contract](https://github.com/benhammoush/ci-cd-workflows/blob/64b5e00a3d2895a8cba05b040f0d5a0415613d9e/docs/contract.md#weekly-vulnerability-audits). These checks supplement normal CI; they do not deploy or authorize merges.
+The old `dependency-audit.yml` implementations are replaced by thin `weekly-vuln-audit.yml` callers pinned to the same published shared revision as release workflows. Each audit runs weekly or manually after adoption on main. See the [shared audit contract](https://github.com/benhammoush/ci-cd-workflows/blob/d1143395dc6a078ef284978c1daf039ed06ff7d1/docs/contract.md#weekly-vulnerability-audits). These checks supplement normal CI; they do not deploy or authorize merges.
 
 ### Migration prerequisite
 
@@ -118,12 +126,12 @@ Both targets ignore `DEPLOY_ENABLED`; verify dev settings, storage isolation, se
 ## Daily flow
 
 - Develop locally → PR → existing checks → merge. Each repository independently deploys its tested `main` commit to **dev**.
-- For initial dev data or a later refresh, manually run **CI** (`ci.yml`) in the Worker repository from `main`, provide its exact merged SHA, and enable `refresh_dev`. This entry point targets dev only; there is no target selector. Automatic dev merges do not refresh snapshots. Inspect failures before retrying.
+- For initial dev data or a later refresh, manually run **Verify and deploy to dev** (`verify-and-deploy-dev.yml`) in the Worker repository from `main`, provide its exact merged SHA, and enable `refresh_dev`. This entry point targets dev only; there is no target selector. Automatic dev merges do not refresh snapshots. Inspect failures before retrying.
 - Select a compatible merged frontend/Worker pair for release validation in dev. Manual **dev** redeployment can select an exact SHA from `main`; run the Worker first when both change. All deployments reuse the existing CI checks, not a second test framework. Only automatic dev pushes reject superseded main commits; explicit manual candidate selection may use an older merged SHA.
 - Before acceptance, record both source SHAs/versions, provider deployment identities, any previous compatible recovery pair and relevant configuration/pins in release notes. If production has no accepted predecessor, use the explicit first-production policy below rather than inventing a recovery pair. Check the browser flow, `/health`, `/ready`, fresh `/v3/status`, browser-to-API access, CORS and the affected user flow in dev. Fixture data or basic probes do not certify live-provider behavior. Workflow summaries/logs help identify deployments; inspect provider identities rather than assuming a green run proves acceptance.
 - Recheck candidate provider identities and relevant configuration after acceptance and immediately before promotion. If another deployment or configuration change interrupted validation, repeat affected acceptance on the selected candidate. Shared dev is mutable; the source input alone is not acceptance evidence, and no custom coordinator or freeze service is introduced.
 - After a production failure, inspect both providers before retrying. Production reruns are rejected: start a new exact-SHA dispatch from main and obtain fresh native approval.
-- After the migration prerequisite above is complete, manually run **Deploy production** (`deploy-production.yml`) in each repository from `main` with that repository's full dev-accepted source SHA, Worker first when both change. The compatible pair has two independently selected source SHAs, not one SHA shared across repositories. Existing checks rerun against each selected source, and retained successful dev-delivery evidence for that exact SHA is verified automatically. As sole maintainer, explicitly approve the pair and rollback plan through each repository's native production gate. Production Worker refreshes automatically on release; dev refresh remains explicit. Human acceptance, compatibility and recovery eligibility remain operator checks. Subsequent production smoke checks are read-only.
+- After the migration prerequisite above is complete, manually run **Verify and deploy to prod** (`verify-and-deploy-prod.yml`) in each repository from `main` with that repository's full dev-accepted source SHA, Worker first when both change. The compatible pair has two independently selected source SHAs, not one SHA shared across repositories. Existing checks rerun against each selected source, and retained successful dev-delivery evidence for that exact SHA is verified automatically. As sole maintainer, explicitly approve the pair and rollback plan through each repository's native production gate. Production Worker refreshes automatically on release; dev refresh remains explicit. Human acceptance, compatibility and recovery eligibility remain operator checks. Subsequent production smoke checks are read-only.
 
 ## Rollback
 
