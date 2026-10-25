@@ -50,7 +50,8 @@ describe('versioned delivery consumer', () => {
     expect(config.integration).toBe(true);
     expect(scripts['ci:integration']).toContain('npm run test:e2e');
     expect(scripts['ci:integration']).toContain('npm run test:vertical');
-    expect(scripts['ci:quality']).toContain('npm run build');
+    expect(scripts['ci:quality']).toBe('npm run check');
+    expect(scripts.check).toContain('npm run build');
     expect(scripts['ci:browser']).toContain('playwright.release.config.ts');
     for (const engine of ['chromium', 'firefox', 'webkit'])
       expect(browsers).toContain(`name: '${engine}'`);

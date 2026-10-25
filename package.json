@@ -2,8 +2,10 @@
   "name": "iris-frontend",
   "version": "1.25.0",
   "private": true,
+  "packageManager": "npm@11.19.0",
   "engines": {
-    "node": "24.x"
+    "node": "24.x",
+    "npm": "^10.5.1 || ^11.3.0"
   },
   "dependencies": {
     "@scalar/api-reference-react": "0.9.79",
@@ -15,7 +17,7 @@
     "react-router-dom": "^7.9.4"
   },
   "scripts": {
-    "ci:quality": "npm run verify:fast && npm run format:check && npm run check:tooling && npm run audit:dependencies && npm run check:versions && npm run build",
+    "ci:quality": "npm run check",
     "ci:integration": "npm run test:e2e && npm run check:contracts && npm run test:vertical",
     "ci:browser": "playwright test --config playwright.release.config.ts",
     "lint": "eslint . --max-warnings 0",
@@ -23,11 +25,14 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "audit:dependencies": "npm audit && npm audit --omit=dev",
+    "dev": "vite --host localhost --port 5173 --strictPort",
     "start": "vite --host localhost --port 5173 --strictPort",
     "build": "tsc --noEmit && vite build",
-    "check": "tsc --noEmit",
-    "verify:fast": "npm run lint && npm run check && npm test && npm run test:merge-policy",
-    "verify": "npm run verify:fast && npm run format:check && npm run check:tooling && npm run audit:dependencies && npm run check:versions && npm run build && npm run check:contracts && npm run test:e2e && npm run test:vertical",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run verify:fast && npm run format:check && npm run check:tooling && npm run audit:dependencies && npm run check:version && npm run build",
+    "verify:fast": "npm run lint && npm run typecheck && npm test && npm run test:merge-policy",
+    "verify": "npm run check && npm run ci:integration",
+    "check:version": "node scripts/check-version.mjs",
     "check:versions": "node scripts/check-version.mjs",
     "test:merge-policy": "node --test tests/tooling/merge-policy.test.mjs",
     "generate:contracts": "node scripts/generate-contracts.mjs",
