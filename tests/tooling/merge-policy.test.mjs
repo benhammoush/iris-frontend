@@ -138,7 +138,7 @@ test('trusted policy revision is independent of PR base metadata', () => {
 
 test('sensitive/control paths and rename sources are red; application/tests/dependencies stay manual', () => {
   for (const path of [
-    '.github/workflows/ci.yml',
+    '.github/workflows/verify-pr.yml',
     '.opencode/a.md',
     'scripts/a.mjs',
     'src/api/client.ts',
@@ -532,7 +532,7 @@ function fixtureClient(options = {}) {
         };
       }
       if (path.includes('/files?')) return value.files;
-      if (path.includes('/workflows/ci.yml/runs?'))
+      if (path.includes('/workflows/verify-pr.yml/runs?'))
         return { workflow_runs: [value.run] };
       if (path.includes('/runs/12/jobs?')) return { jobs: value.jobs };
       if (path.includes('/reviews?')) {
@@ -717,10 +717,10 @@ test('retired merge observer has no workflow entry point', () => {
     { code: 'ENOENT' },
   );
   const ci = readFileSync(
-    new URL('../../.github/workflows/ci.yml', import.meta.url),
+    new URL('../../.github/workflows/verify-pr.yml', import.meta.url),
     'utf8',
   );
-  assert.match(ci, /^name: CI$/m);
+  assert.match(ci, /^name: Verify PR$/m);
   assert.match(
     ci,
     /ci-cd-workflows\/\.github\/workflows\/verify-web.yml@[a-f0-9]{40}/,

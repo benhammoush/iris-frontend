@@ -6,7 +6,7 @@
   "greenPrefix": "docs/user-guide/",
   "maxFiles": 3,
   "maxChangedLines": 80,
-  "workflow": ".github/workflows/ci.yml",
+  "workflow": ".github/workflows/verify-pr.yml",
   "jobs": ["Verify"],
   "reviewBot": "coderabbitai[bot]",
   "reviewContext": "CodeRabbit"

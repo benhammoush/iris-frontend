@@ -43,7 +43,7 @@ export function validatePolicy(policy) {
     policy.repository !== 'benhammoush/iris-frontend' ||
     policy.base !== 'main' ||
     policy.greenPrefix !== 'docs/user-guide/' ||
-    policy.workflow !== '.github/workflows/ci.yml' ||
+    policy.workflow !== '.github/workflows/verify-pr.yml' ||
     JSON.stringify(policy.jobs) !== JSON.stringify(['Verify']) ||
     policy.reviewBot !== 'coderabbitai[bot]' ||
     policy.reviewContext !== 'CodeRabbit' ||
