@@ -37,7 +37,7 @@ function App() {
       <ThemeProvider>
         <Suspense
           fallback={
-            <main className="min-h-screen p-6">
+            <main className="iris-docs-loading">
               Loading API documentation...
             </main>
           }
@@ -50,13 +50,10 @@ function App() {
 
   if (apiConfigurationError) {
     return (
-      <main
-        className="flex min-h-screen items-center justify-center p-6 text-center"
-        role="alert"
-      >
+      <main className="iris-configuration-error" role="alert">
         <div>
-          <h1 className="text-xl font-semibold">CONFIGURATION_ERROR</h1>
-          <p className="mt-2">{apiConfigurationError}</p>
+          <h1>CONFIGURATION_ERROR</h1>
+          <p>{apiConfigurationError}</p>
         </div>
       </main>
     );
@@ -68,7 +65,7 @@ function App() {
         <WatchlistProvider>
           <CatalogProvider>
             <HeliusDashboardProvider>
-              <div className="scroll-smooth">
+              <div className="iris-routes">
                 <Routes>
                   <Route path="/" element={<Home />} />
                   <Route

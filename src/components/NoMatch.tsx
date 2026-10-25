@@ -10,13 +10,9 @@ import Navbar from './Navbar';
  */
 function NoMatch() {
   return (
-    <div className="App bg-background_light font-poppins dark:bg-background_dark">
+    <div className="iris-not-found">
       <Navbar />
-      <main
-        id="iris-main"
-        tabIndex={-1}
-        className="flex h-[70vh] items-center justify-center"
-      >
+      <main id="iris-main" tabIndex={-1} className="iris-not-found-content">
         Asset or wallet address not found.
       </main>
     </div>

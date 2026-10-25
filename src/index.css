@@ -1,22 +1,47 @@
-@layer theme, base, scalar, components, utilities;
-@import 'tailwindcss' source(none);
-@source './';
-@config '../tailwind.config.js';
+@layer base, scalar;
 @import './design-system/styles.css';
 
-/* Retain Tailwind 3 defaults where v4 changes the generated appearance. */
-@layer base {
-  *,
-  ::before,
-  ::after,
-  ::backdrop,
-  ::file-selector-button {
-    border-color: var(--color-gray-200, currentColor);
-  }
-  button:not(:disabled),
-  [role='button']:not(:disabled) {
-    cursor: pointer;
-  }
+.iris-docs-loading,
+.iris-configuration-error {
+  min-height: 100vh;
+  padding: 1.5rem;
+}
+
+.iris-configuration-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.iris-configuration-error h1 {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  font-weight: 600;
+}
+
+.iris-configuration-error p {
+  margin-top: 0.5rem;
+}
+
+.iris-routes {
+  scroll-behavior: smooth;
+}
+
+.iris-not-found {
+  background: #fff;
+  font-family: Poppins;
+}
+
+.iris-not-found:where(.dark, .dark *) {
+  background: #121212;
+}
+
+.iris-not-found-content {
+  display: flex;
+  height: 70vh;
+  align-items: center;
+  justify-content: center;
 }
 
 .iris-shell {
@@ -3176,7 +3201,7 @@ html[data-theme='light'] .iris-wallet-activity .iris-table-toolbar input {
 
 @media (prefers-reduced-motion: reduce) {
   html,
-  .scroll-smooth {
+  .iris-routes {
     scroll-behavior: auto;
   }
   .iris-shell button,

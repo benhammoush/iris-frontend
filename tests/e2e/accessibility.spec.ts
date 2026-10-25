@@ -201,7 +201,7 @@ test('announces loading and respects reduced motion and skip navigation', async 
       'animation-name',
       'none',
     );
-    await expect(page.locator('.scroll-smooth')).toHaveCSS(
+    await expect(page.locator('.iris-routes')).toHaveCSS(
       'scroll-behavior',
       'auto',
     );
