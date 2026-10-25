@@ -17,7 +17,9 @@ beforeEach(() => {
   hidden = false;
   Object.defineProperty(document, 'hidden', {
     configurable: true,
-    /** Read the controlled cache or boundary value used by this assertion. */
+    /** Read fixture visibility.
+     * @returns Whether the fixture document is hidden.
+     */
     get: () => hidden,
   });
 });
@@ -43,6 +45,7 @@ test('pauses polling while hidden and refreshes once when visible', async () => 
   hidden = true;
   await act(async () => {
     document.dispatchEvent(new Event('visibilitychange'));
+    await Promise.resolve();
   });
   await act(async () => {
     await vi.advanceTimersByTimeAsync(120_000);
@@ -52,6 +55,7 @@ test('pauses polling while hidden and refreshes once when visible', async () => 
   hidden = false;
   await act(async () => {
     document.dispatchEvent(new Event('visibilitychange'));
+    await Promise.resolve();
   });
   expect(load).toHaveBeenCalledTimes(3);
 
@@ -70,7 +74,10 @@ test('retains loaded data and metadata when a refresh rejects an unknown value',
   const { result } = renderHook(() => useWorkerResource(load));
   await act(async () => {});
   expect(result.current.data).toEqual({ value: 1 });
-  await act(async () => result.current.refetch());
+  await act(async () => {
+    result.current.refetch();
+    await Promise.resolve();
+  });
   expect(result.current).toMatchObject({
     data: { value: 1 },
     meta: { stale: false },
@@ -99,7 +106,10 @@ test('aborts the previous loader and ignores its late result after dependencies 
   await act(async () => {});
   expect(initialSignal?.aborted).toBe(true);
   expect(result.current.data).toBe(2);
-  await act(async () => complete?.({ data: 1, meta: null }));
+  await act(async () => {
+    complete?.({ data: 1, meta: null });
+    await Promise.resolve();
+  });
   expect(result.current.data).toBe(2);
   const currentSignal = load.mock.calls[1]?.[0].signal;
   unmount();

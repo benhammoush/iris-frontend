@@ -19,7 +19,12 @@ export interface WalletSummary {
 export type WalletSummaryResult =
   { data: WalletSummary; error?: string } | { error: string; data?: never };
 
-/** Public wallet reads stay anonymous, but their scheduling/results belong to this identity. */
+/** Public wallet reads stay anonymous, but their scheduling/results belong to this identity.
+ * @param session - Account session owning scheduling and publication, not public API authorization.
+ * @param addresses - Saved wallet addresses to deduplicate, validate and bound.
+ * @param signal - Cancellation signal for this summary-loading lifecycle.
+ * @param publish - Callback accepting results only for the captured account generation.
+ */
 export async function loadWalletSummaries(
   session: AccountSession,
   addresses: string[],
@@ -29,11 +34,15 @@ export async function loadWalletSummaries(
   const identity = session.capture();
   const controller = new AbortController();
   /** Cancel the request owned by this operation without cancelling unrelated work. */
-  const abort = () => controller.abort();
+  const abort = () => {
+    controller.abort();
+  };
   signal.addEventListener('abort', abort, { once: true });
   identity.signal.addEventListener('abort', abort, { once: true });
   if (signal.aborted || identity.signal.aborted) abort();
-  /** Check that delayed work still belongs to the captured account generation. */
+  /** Check that delayed work still belongs to the captured account generation.
+   * @returns Whether this load may continue and publish results.
+   */
   const current = () => !controller.signal.aborted && identity.isCurrent();
   const queue = [...new Set(addresses)].filter(isSolanaAddress).slice(0, 100);
   let index = 0;

@@ -30,7 +30,10 @@ const jupiterPerps = {
   priceUsd: 2,
 };
 
-/** Render search with controlled assets and navigation callbacks. */
+/** Render search with controlled assets and navigation callbacks.
+ * @param props - Optional overrides for search data, state and callbacks.
+ * @returns The navigation spy for checking full route identities.
+ */
 function renderSearch(
   props: Partial<ComponentProps<typeof NavbarSearch>> = {},
 ) {

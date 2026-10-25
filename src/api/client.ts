@@ -37,14 +37,29 @@ interface ApiErrorOptions {
   requestId?: string;
 }
 
-/** Read supported public error fields from an untrusted response body. */
+/** Read supported public error fields from an untrusted response body.
+ * @param body - Unknown response JSON.
+ * @returns The error record, or an empty record for unsupported shapes.
+ */
 function errorFields(body: unknown): Record<string, unknown> {
   return isRecord(body) && isRecord(body.error) ? body.error : {};
 }
 
-/** Normalize the public error code without relying on provider-specific payloads. */
+/** Normalize the public error code without relying on provider-specific payloads.
+ * @param value - Unknown error-code field.
+ * @returns The string code, or undefined for unsupported types.
+ */
 function errorCode(value: unknown): string | undefined {
   return typeof value === 'string' ? value : undefined;
+}
+
+/** Keep public message text without stringifying untrusted objects.
+ * @param value - Unknown message field from a response or transport failure.
+ * @param fallback - Controlled explanation used when no nonempty string is available.
+ * @returns Displayable text without invoking object coercion.
+ */
+function errorMessage(value: unknown, fallback: string): string {
+  return typeof value === 'string' && value ? value : fallback;
 }
 
 /** Public API failure retaining supported error code, status and request correlation. */
@@ -53,12 +68,13 @@ export class ApiError extends Error {
   readonly status: number | undefined;
   readonly requestId: string | undefined;
 
-  /** Initialize this error or state owner with the supplied context. */
-  constructor(
-    message: string,
-    { code = 'REQUEST_FAILED', status, requestId }: ApiErrorOptions = {},
-  ) {
+  /** Retain public error classification and request correlation.
+   * @param message - Displayable error explanation.
+   * @param options - Optional public code, HTTP status and request identifier.
+   */
+  constructor(message: string, options: ApiErrorOptions = {}) {
     super(message);
+    const { code = 'REQUEST_FAILED', status, requestId } = options;
     this.name = 'ApiError';
     this.code = code;
     this.status = status;
@@ -66,7 +82,9 @@ export class ApiError extends Error {
   }
 }
 
-/** Create or normalize a request identifier for response and diagnostic correlation. */
+/** Create or normalize a request identifier for response and diagnostic correlation.
+ * @returns A correlation identifier; it is not an authentication token.
+ */
 function requestId() {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID();
@@ -74,14 +92,18 @@ function requestId() {
   return `iris-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-/** Validate the response envelope and preserve request correlation for failures. */
+/** Validate the response envelope and preserve request correlation for failures.
+ * @param body - Unknown response JSON.
+ * @param id - Current request correlation identifier.
+ * @returns Unknown resource data and object metadata for endpoint-specific normalization.
+ */
 function parseEnvelope(
   body: unknown,
   id: string,
 ): { data: unknown; meta: Record<string, unknown> } {
   if (isRecord(body) && body.error) {
     const fields = errorFields(body);
-    throw new ApiError(String(fields.message || 'Worker request failed'), {
+    throw new ApiError(errorMessage(fields.message, 'Worker request failed'), {
       code: errorCode(fields.code),
       requestId: id,
     });
@@ -98,11 +120,16 @@ function parseEnvelope(
   );
 }
 
-/** Fetch and validate a Worker response with cancellation, timeout and public error semantics. */
+/** Fetch and validate a Worker response with cancellation, timeout and public error semantics.
+ * @param path - Resource path beneath the configured Worker origin.
+ * @param options - Caller cancellation signal and deadline in milliseconds.
+ * @returns A validated envelope whose resource data still needs endpoint normalization.
+ */
 export async function apiGet(
   path: string,
-  { signal, timeoutMs = DEFAULT_TIMEOUT_MS }: ApiGetOptions = {},
+  options: ApiGetOptions = {},
 ): Promise<ApiResult> {
+  const { signal, timeoutMs = DEFAULT_TIMEOUT_MS } = options;
   if (apiConfigurationError) {
     throw new ApiError(apiConfigurationError, { code: 'CONFIGURATION_ERROR' });
   }
@@ -110,7 +137,9 @@ export async function apiGet(
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   /** Cancel the request owned by this operation without cancelling unrelated work. */
-  const abort = () => controller.abort();
+  const abort = () => {
+    controller.abort();
+  };
   if (signal) signal.addEventListener('abort', abort, { once: true });
 
   try {
@@ -122,7 +151,10 @@ export async function apiGet(
     if (!response.ok) {
       const fields = errorFields(body);
       throw new ApiError(
-        String(fields.message || `Worker request failed (${response.status})`),
+        errorMessage(
+          fields.message,
+          `Worker request failed (${response.status})`,
+        ),
         {
           code:
             errorCode(fields.code) ||
@@ -150,7 +182,7 @@ export async function apiGet(
     }
     if (cause instanceof ApiError) throw cause;
     const message = isRecord(cause) ? cause.message : undefined;
-    throw new ApiError(String(message || 'Unable to reach Worker'), {
+    throw new ApiError(errorMessage(message, 'Unable to reach Worker'), {
       code: 'NETWORK_ERROR',
       requestId: id,
     });

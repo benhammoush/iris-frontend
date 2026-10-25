@@ -17,8 +17,17 @@ import { AccountSession } from '../auth/session';
 const disabled = new AccountSession(false);
 const AccountContext = createContext(disabled);
 
-/** Own the account-session subscription for descendant consumers. */
-export function AccountProvider({ children }: { children: ReactNode }) {
+/** Descendants whose account subscriptions are owned by this provider. */
+interface ProviderProps {
+  children: ReactNode;
+}
+
+/** Own the account-session subscription for descendant consumers.
+ * @param props - Descendants sharing the owned account-session lifecycle.
+ * @returns The account provider around those descendants.
+ */
+export function AccountProvider(props: ProviderProps) {
+  const { children } = props;
   const [session] = useState(() => new AccountSession(accountsEnabled));
   useEffect(() => {
     if (!accountsEnabled) return;
@@ -49,7 +58,9 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   );
 }
 
-/** Subscribe to the provided account session, or the disabled default session outside a provider. */
+/** Subscribe to the provided account session, or the disabled default session outside a provider.
+ * @returns Current account state and its session owner.
+ */
 export function useAccount() {
   const session = useContext(AccountContext);
   const state = useSyncExternalStore(session.subscribe, session.snapshot);

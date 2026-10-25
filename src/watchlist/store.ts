@@ -26,7 +26,9 @@ interface State {
   mutationError: string;
   feedback: string;
 }
-/** Create a fresh empty state without sharing mutable collections between sessions. */
+/** Create a fresh empty state without sharing mutable collections between sessions.
+ * @returns An empty watchlist state with independent collections and feedback.
+ */
 const empty = (): State => ({
   data: null,
   loading: false,
@@ -35,10 +37,17 @@ const empty = (): State => ({
   mutationError: '',
   feedback: '',
 });
-/** Build watchlist item identity from both resource kind and address. */
+/** Build watchlist item identity from both resource kind and address.
+ * @param kind - Saved resource kind.
+ * @param address - Exact Solana resource identity.
+ * @returns A stable key that keeps asset and wallet entries separate.
+ */
 export const itemKey = (kind: WatchlistKind, address: string) =>
   `${kind}:${address}`;
-/** Normalize an unknown failure to the supported caller-facing message. */
+/** Normalize an unknown failure to the supported caller-facing message.
+ * @param cause - Unknown watchlist operation failure.
+ * @returns An actionable public message without raw provider diagnostics.
+ */
 function errorMessage(cause: unknown): string {
   const code = isRecord(cause) ? cause.code : undefined;
   if (code === 'WATCHLIST_LIMIT_REACHED')
@@ -53,7 +62,10 @@ function errorMessage(cause: unknown): string {
     return 'The Worker returned an invalid watchlist response. Refresh to check the current list.';
   return 'Watchlist request could not be confirmed. Refresh to check the current list before trying again.';
 }
-/** Identify private-access failures requiring account-bound state invalidation. */
+/** Identify private-access failures requiring account-bound state invalidation.
+ * @param cause - Unknown private-request failure.
+ * @returns Whether private data must be invalidated rather than retained for retry.
+ */
 function accessDenied(cause: unknown) {
   return (
     isRecord(cause) &&
@@ -71,30 +83,43 @@ export class WatchlistStore {
   private generation = 0;
   private read?: AbortController;
   private write?: AbortController;
-  /** Initialize this error or state owner with the supplied context. */
+  /** Bind this watchlist owner to its account session.
+   * @param account - Session whose identity and generation scope private work.
+   */
   constructor(private account: AccountSession) {}
-  /** Expose current watchlist state for external-store subscribers. */
+  /** Expose current watchlist state for external-store subscribers.
+   * @returns The current immutable watchlist state snapshot.
+   */
   snapshot = () => this.state;
-  /** Register a state listener and return cleanup for that subscription. */
+  /** Register a state listener and return cleanup for that subscription.
+   * @param listener - Callback notified after a watchlist state transition.
+   * @returns Cleanup removing only this listener.
+   */
   subscribe = (listener: () => void) => {
     this.listeners.add(listener);
     return () => {
       this.listeners.delete(listener);
     };
   };
-  /** Publish the new scoped state to subscribers without mutating unrelated state. */
+  /** Publish the new scoped state to subscribers without mutating unrelated state.
+   * @param patch - Fields to merge into the current watchlist state.
+   */
   private publish(patch: Partial<State>) {
     this.state = { ...this.state, ...patch };
     for (const listener of this.listeners) listener();
   }
-  /** Require the current account state to permit private watchlist operations. */
+  /** Require the current account state to permit private watchlist operations.
+   * @returns Whether a ready, eligible account may access private watchlist data.
+   */
   private allowed() {
     const state = this.account.snapshot();
     return (
       state.status === 'ready' && state.user?.verified && !state.signOutFailed
     );
   }
-  /** Subscribe to the underlying session source and own the corresponding cleanup. */
+  /** Subscribe to the underlying session source and own the corresponding cleanup.
+   * @returns Cleanup for the account subscription and its scoped watchlist work.
+   */
   connect() {
     /** Invalidate prior-account work and clear private state before optionally refreshing. */
     const reset = () => {
@@ -122,7 +147,9 @@ export class WatchlistStore {
       this.write?.abort();
     };
   }
-  /** Activate watchlist work only for the current eligible account session. */
+  /** Activate watchlist work only for the current eligible account session.
+   * @returns Cleanup releasing this consumer's activation.
+   */
   activate() {
     if (++this.active === 1) void this.refresh();
     return () => {
@@ -159,7 +186,12 @@ export class WatchlistStore {
       }
     }
   };
-  /** Apply one account-scoped save or removal while preventing concurrent writes and superseded-session publication. */
+  /** Apply one account-scoped save or removal while preventing concurrent writes and superseded-session publication.
+   * @param kind - Resource kind to save or remove.
+   * @param address - Exact Solana resource identity.
+   * @param remove - Whether this mutation removes rather than saves the item.
+   * @returns Whether the mutation succeeded for the still-current account.
+   */
   mutate = async (kind: WatchlistKind, address: string, remove: boolean) => {
     if (
       !this.allowed() ||

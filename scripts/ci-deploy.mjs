@@ -32,7 +32,9 @@ await publishWeb(env, {
       { src: '/(?!api(?:/|$)).*', dest: '/index.html' },
     ],
   },
-  /** Verify public API health and the selected frontend's CORS policy without provider mutations. */
+  /** Verify public API health and the selected frontend's CORS policy without provider mutations.
+   * @param fetcher - Bounded read-only transport supplied by the release controller.
+   */
   smoke: async (fetcher) => {
     for (const path of ['/health', '/ready']) {
       const response = await fetcher(`${env.VITE_API_BASE}${path}`, {

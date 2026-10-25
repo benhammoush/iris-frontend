@@ -17,7 +17,10 @@ const request = vi.mocked(authenticatedRequest);
 const address = 'So11111111111111111111111111111111111111112';
 const savedAt = '2026-10-22T08:00:00.000Z';
 const item = { address, savedAt };
-/** Build the controlled response envelope expected by this test. */
+/** Build the controlled response envelope expected by this test.
+ * @param data - Controlled response payload, including malformed-input fixtures.
+ * @returns The payload with fixed correlation metadata.
+ */
 const envelope = (data: unknown) => ({ data, meta: { requestId: 'test' } });
 const cleanups: (() => void)[] = [];
 afterEach(() => {
@@ -27,7 +30,10 @@ afterEach(() => {
     .forEach((cleanup) => cleanup());
   vi.resetAllMocks();
 });
-/** Create isolated dependencies and controlled session state for this test. */
+/** Create isolated dependencies and controlled session state for this test.
+ * @param data - Initial private watchlist response.
+ * @returns The activated store, account session and authentication controls after loading.
+ */
 async function setup(data: Watchlist = { assets: [], wallets: [] }) {
   request.mockResolvedValue(envelope(data));
   const account = new AccountSession(true);

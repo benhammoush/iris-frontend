@@ -13,13 +13,12 @@ interface Props {
   tone?: 'default' | 'positive' | 'negative';
 }
 
-/** Render one metric with its label, supporting detail and visual tone. */
-export default function MetricCard({
-  label,
-  value,
-  detail,
-  tone = 'default',
-}: Props) {
+/** Render one metric with its label, supporting detail and visual tone.
+ * @param props - Metric label, display value, optional detail and visual tone.
+ * @returns A labeled metric card without performing data loading or normalization.
+ */
+export default function MetricCard(props: Props) {
+  const { label, value, detail, tone = 'default' } = props;
   return (
     <section className="iris-metric-card">
       <p className="iris-eyebrow">{label}</p>

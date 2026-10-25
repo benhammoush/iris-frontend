@@ -5,7 +5,9 @@
 
 import Navbar from './Navbar';
 
-/** Render recovery navigation for an unmatched client-side route. */
+/** Render recovery navigation for an unmatched client-side route.
+ * @returns The route-not-found view with recovery navigation.
+ */
 function NoMatch() {
   return (
     <div className="App bg-background_light font-poppins dark:bg-background_dark">

@@ -12,7 +12,9 @@ afterEach(() => {
   vi.useRealTimers();
   vi.resetModules();
 });
-/** Create isolated dependencies and controlled session state for this test. */
+/** Create isolated dependencies and controlled session state for this test.
+ * @returns A private client, owned account session and controllable authentication fixture.
+ */
 async function setup() {
   vi.stubEnv('VITE_API_BASE', 'https://iris.test');
   const { AccountSession } = await import('../../../src/auth/session');
@@ -23,7 +25,9 @@ async function setup() {
   session.connect(fake.driver);
   return { ...fake, session, request: authenticatedRequest };
 }
-/** Build the controlled response body used by this boundary test. */
+/** Build the controlled response body used by this boundary test.
+ * @returns A private watchlist response with fixed request correlation.
+ */
 const body = () =>
   new Response(
     JSON.stringify({
@@ -34,7 +38,9 @@ const body = () =>
 
 test('private transport sends only an ID token to the configured Worker; public calls stay anonymous', async () => {
   const { session, request } = await setup();
-  const fetchMock = vi.fn().mockImplementation(async () => body());
+  const fetchMock = vi
+    .fn<typeof fetch>()
+    .mockImplementation(() => Promise.resolve(body()));
   vi.stubGlobal('fetch', fetchMock);
   await request(session, '/v3/me/watchlist');
   expect(fetchMock).toHaveBeenCalledWith(
@@ -43,14 +49,16 @@ test('private transport sends only an ID token to the configured Worker; public 
       credentials: 'omit',
       redirect: 'error',
       cache: 'no-store',
-      headers: expect.objectContaining({
-        Authorization: 'Bearer firebase-id-token',
-      }),
     }),
   );
+  expect(
+    new Headers(fetchMock.mock.calls[0][1]?.headers).get('Authorization'),
+  ).toBe('Bearer firebase-id-token');
   const { apiGet } = await import('../../../src/api/client');
   await apiGet('/v3/assets');
-  expect(fetchMock.mock.calls[1][1].headers.Authorization).toBeUndefined();
+  expect(
+    new Headers(fetchMock.mock.calls[1][1]?.headers).has('Authorization'),
+  ).toBe(false);
 });
 
 test('rejects arbitrary paths and unverified/signed-out requests without fetching', async () => {

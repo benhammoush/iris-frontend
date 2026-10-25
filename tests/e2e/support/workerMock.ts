@@ -33,7 +33,9 @@ type Handler = (url: URL) => MockResponse | undefined;
 /** Browser interception controls and unexpected-request assertions. */
 export type WorkerMock = {
   requests: URL[];
-  /** Replace the controlled response handler for the requested fixture path. */
+  /** Replace the controlled response handler for the requested fixture path.
+   * @param handler - Controlled response operation for intercepted Worker URLs.
+   */
   setHandler: (handler: Handler) => void;
   /** Fail the browser test when an unrecognized Worker request was observed. */
   assertNoUnexpectedRequests: () => void;
@@ -73,7 +75,11 @@ const wallet = {
   ],
 };
 
-/** Build a deterministic transaction fixture for the exercised contract. */
+/** Build a deterministic transaction fixture for the exercised contract.
+ * @param id - Controlled transaction signature.
+ * @param amount - Exact atomic quantity represented as text.
+ * @returns A controlled transfer with nine-decimal context and a fixed timestamp.
+ */
 const transaction = (id: string, amount: string) => ({
   id,
   timestamp: '2026-10-08T10:00:00.000Z',
@@ -83,7 +89,10 @@ const transaction = (id: string, amount: string) => ({
   ],
 });
 
-/** Resolve the deterministic Worker response for an intercepted browser request. */
+/** Resolve the deterministic Worker response for an intercepted browser request.
+ * @param url - Intercepted public Worker URL.
+ * @returns Its supported fixture response, or undefined for an unexpected route.
+ */
 function defaultResponse(url: URL): MockResponse | undefined {
   const { pathname } = url;
   if (pathname === '/v3/assets') return { data: { assets: [sol] } };
@@ -166,7 +175,10 @@ function defaultResponse(url: URL): MockResponse | undefined {
   return undefined;
 }
 
-/** Intercept Worker requests and reject unexpected external calls in browser tests. */
+/** Intercept Worker requests and reject unexpected external calls in browser tests.
+ * @param page - Browser page whose public Worker calls are intercepted.
+ * @returns Captured URLs, controlled response selection and an unexpected-request assertion.
+ */
 export async function installWorkerMock(page: Page): Promise<WorkerMock> {
   const requests: URL[] = [];
   const unexpected: string[] = [];
@@ -228,7 +240,9 @@ export async function installWorkerMock(page: Page): Promise<WorkerMock> {
 
   return {
     requests,
-    /** Replace the controlled response handler for the requested fixture path. */
+    /** Replace the controlled response handler for the requested fixture path.
+     * @param next - Controlled operation selecting responses for intercepted URLs.
+     */
     setHandler(next) {
       handler = next;
     },

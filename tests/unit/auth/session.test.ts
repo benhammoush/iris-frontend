@@ -7,11 +7,15 @@ import { expect, test } from 'vitest';
 import { AccountSession } from '../../../src/auth/session';
 import { alice, fakeDriver } from './testSupport';
 
-/** Expose a promise and its controls so tests can order asynchronous completion explicitly. */
+/** Expose a promise and its controls so tests can order asynchronous completion explicitly.
+ * @returns A pending operation with explicit completion and rejection controls.
+ */
 function deferred() {
   /** Complete the controlled deferred operation with the supplied result. */
   let resolve = () => {};
-  /** Reject the controlled deferred operation with the supplied test failure. */
+  /** Reject the controlled deferred operation with the supplied test failure.
+   * @param _cause - Controlled failure supplied by the test.
+   */
   let reject = (_cause: Error) => {};
   const promise = new Promise<void>((done, fail) => {
     resolve = done;

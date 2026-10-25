@@ -65,32 +65,50 @@ type TransactionRow = {
   decimals?: number;
   transferIndex: number;
 };
-/** Format a known monetary value for display and preserve the unavailable-data fallback. */
+/** Format a known monetary value for display and preserve the unavailable-data fallback.
+ * @param value - Available USD metric, or an unavailable value.
+ * @returns Formatted currency text or the unavailable placeholder.
+ */
 const currency = (value: number | undefined | null) =>
   value === null || value === undefined || !Number.isFinite(Number(value))
     ? '—'
     : `$${Number(value).toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
-/** Format a wallet holding while preserving its exact source quantity. */
+/** Format a wallet holding while preserving its exact source quantity.
+ * @param asset - Normalized wallet holding with its supported balance representations.
+ * @returns The preferred display balance without converting exact source quantities.
+ */
 const balance = (asset: Holding) => {
   const value =
     asset.displayBalance ?? asset.amount ?? asset.balance ?? asset.rawBalance;
   return value == null ? '—' : String(value);
 };
-/** Format an available observation timestamp for the user. */
+/** Format an available observation timestamp for the user.
+ * @param value - Optional observation timestamp text.
+ * @returns Local date/time text or the unavailable placeholder.
+ */
 const dateTime = (value: string | undefined) => {
   const date = value && new Date(value);
   return date && !Number.isNaN(date.valueOf())
     ? date.toLocaleString('en-US')
     : value || '-';
 };
-/** Shorten a display identifier without changing the full value used by requests or links. */
+/** Shorten a display identifier without changing the full value used by requests or links.
+ * @param value - Optional full address or transaction identifier.
+ * @returns Its shortened display label or the unavailable placeholder.
+ */
 const short = (value: string | null | undefined) =>
   value ? `${value.slice(0, 5)}...${value.slice(-5)}` : '—';
-/** Derive stable row identity from transaction activity evidence. */
+/** Derive stable row identity from transaction activity evidence.
+ * @param activity - Normalized wallet activity.
+ * @returns Its transaction identity or stable field-based fallback key.
+ */
 const activityKey = (activity: Activity) =>
   activity.id ||
   `${activity.timestamp || ''}:${activity.type || ''}:${activity.description || ''}`;
-/** Normalize activity into table rows without duplicating transaction identities. */
+/** Normalize activity into table rows without duplicating transaction identities.
+ * @param activities - Normalized activity records with optional transfer collections.
+ * @returns Display rows retaining transaction identity across expanded transfers.
+ */
 const transactionRowsFrom = (activities: Activity[]): TransactionRow[] =>
   activities.flatMap((activity) => {
     const transfers = activity.transfers?.length ? activity.transfers : [null];
@@ -112,9 +130,15 @@ const holdingsColumns: VirtualTableColumn<Holding>[] = [
     id: 'asset',
     label: 'Asset',
     width: 240,
-    /** Extract the row value used for sorting and filtering. */
+    /** Extract asset labels for sorting and filtering.
+     * @param asset - Normalized holding backing this row.
+     * @returns Its symbol and name without changing mint identity.
+     */
     value: (asset) => `${asset.symbol || ''} ${asset.name || ''}`,
-    /** Render the table cell while preserving the row value used by actions and links. */
+    /** Render the holding identity with a stable image fallback.
+     * @param asset - Normalized holding backing this row.
+     * @returns Asset artwork, symbol and available name or mint text.
+     */
     cell: (asset) => (
       <span className="iris-asset-cell">
         <AssetIcon src={asset.imageUrl} symbol={asset.symbol} />
@@ -132,9 +156,15 @@ const holdingsColumns: VirtualTableColumn<Holding>[] = [
     label: 'Price',
     width: 130,
     align: 'right',
-    /** Extract the row value used for sorting and filtering. */
+    /** Extract the existing price sort key.
+     * @param asset - Normalized holding backing this row.
+     * @returns Its available price, or the existing zero sorting fallback.
+     */
     value: (asset) => asset.price || 0,
-    /** Render the table cell while preserving the row value used by actions and links. */
+    /** Render the holding's price without presenting unavailable pricing as zero.
+     * @param asset - Normalized holding backing this row.
+     * @returns Display pricing or the unavailable placeholder.
+     */
     cell: (asset) => currency(asset.price),
   },
   {
@@ -150,18 +180,30 @@ const holdingsColumns: VirtualTableColumn<Holding>[] = [
     label: 'Value',
     width: 150,
     align: 'right',
-    /** Extract the row value used for sorting and filtering. */
+    /** Extract the existing valuation sort key.
+     * @param asset - Normalized holding backing this row.
+     * @returns Its available value, or the existing zero sorting fallback.
+     */
     value: (asset) => asset.value || 0,
-    /** Render the table cell while preserving the row value used by actions and links. */
+    /** Render available holding valuation without inventing missing values.
+     * @param asset - Normalized holding backing this row.
+     * @returns Display valuation or the unavailable placeholder.
+     */
     cell: (asset) => currency(asset.value),
   },
   {
     id: 'valuation',
     label: 'Valuation',
     width: 105,
-    /** Extract the row value used for sorting and filtering. */
+    /** Extract the holding's pricing-availability classification.
+     * @param asset - Normalized holding backing this row.
+     * @returns A priced/unpriced label based on valuation availability.
+     */
     value: (asset) => (asset.value == null ? 'Unpriced' : 'Priced'),
-    /** Render the table cell while preserving the row value used by actions and links. */
+    /** Render the holding's pricing-availability classification.
+     * @param asset - Normalized holding backing this row.
+     * @returns A styled priced/unpriced label, independently of its numeric balance.
+     */
     cell: (asset) => (
       <span
         className={
@@ -181,9 +223,15 @@ const activityColumns: VirtualTableColumn<TransactionRow>[] = [
     label: 'Time',
     width: 150,
     grow: 1,
-    /** Extract the row value used for sorting and filtering. */
+    /** Extract the observation timestamp for sorting and filtering.
+     * @param transaction - Normalized activity row.
+     * @returns Timestamp text or an empty sorting value.
+     */
     value: (transaction) => transaction.timestamp || '',
-    /** Render the table cell while preserving the row value used by actions and links. */
+    /** Render the observation timestamp.
+     * @param transaction - Normalized activity row.
+     * @returns Local date/time text or the unavailable placeholder.
+     */
     cell: (transaction) => dateTime(transaction.timestamp),
   },
   {
@@ -191,9 +239,15 @@ const activityColumns: VirtualTableColumn<TransactionRow>[] = [
     label: 'Action',
     width: 115,
     grow: 1,
-    /** Extract the row value used for sorting and filtering. */
+    /** Extract the activity action for sorting and filtering.
+     * @param transaction - Normalized activity row.
+     * @returns The action or its unknown-action fallback.
+     */
     value: (transaction) => transaction.action || 'Unknown',
-    /** Render the table cell while preserving the row value used by actions and links. */
+    /** Render the activity action.
+     * @param transaction - Normalized activity row.
+     * @returns The action or its unknown-action fallback.
+     */
     cell: (transaction) => transaction.action || 'Unknown',
   },
   {
@@ -201,9 +255,15 @@ const activityColumns: VirtualTableColumn<TransactionRow>[] = [
     label: 'Sender',
     width: 150,
     grow: 2,
-    /** Extract the row value used for sorting and filtering. */
+    /** Extract the full sender identity for sorting and filtering.
+     * @param transaction - Normalized activity row.
+     * @returns The full sender address, or an empty sorting value.
+     */
     value: (transaction) => transaction.sender || '',
-    /** Render the table cell while preserving the row value used by actions and links. */
+    /** Render the sender without shortening its navigation target.
+     * @param transaction - Normalized activity row.
+     * @returns A wallet link or the unavailable placeholder.
+     */
     cell: (transaction) =>
       transaction.sender ? (
         <a
@@ -221,9 +281,15 @@ const activityColumns: VirtualTableColumn<TransactionRow>[] = [
     label: 'Recipient',
     width: 150,
     grow: 2,
-    /** Extract the row value used for sorting and filtering. */
+    /** Extract the full recipient identity for sorting and filtering.
+     * @param transaction - Normalized activity row.
+     * @returns The full recipient address, or an empty sorting value.
+     */
     value: (transaction) => transaction.recipient || '',
-    /** Render the table cell while preserving the row value used by actions and links. */
+    /** Render the recipient without shortening its navigation target.
+     * @param transaction - Normalized activity row.
+     * @returns A wallet link or the unavailable placeholder.
+     */
     cell: (transaction) =>
       transaction.recipient ? (
         <a
@@ -241,9 +307,15 @@ const activityColumns: VirtualTableColumn<TransactionRow>[] = [
     label: 'Amount',
     width: 140,
     grow: 1,
-    /** Extract the row value used for sorting and filtering. */
+    /** Extract the exact source amount for sorting and filtering.
+     * @param transaction - Normalized activity row.
+     * @returns Exact amount text, or an empty sorting value.
+     */
     value: (transaction) => transaction.amount || '',
-    /** Render the table cell while preserving the row value used by actions and links. */
+    /** Render exact atomic quantities with their decimal context.
+     * @param transaction - Normalized activity row.
+     * @returns Atomic-unit text and available decimals, or the unavailable placeholder.
+     */
     cell: (transaction) =>
       transaction.amount === null
         ? '—'
@@ -255,9 +327,15 @@ const activityColumns: VirtualTableColumn<TransactionRow>[] = [
     label: 'Transaction',
     width: 170,
     grow: 1.5,
-    /** Extract the row value used for sorting and filtering. */
+    /** Extract full transaction identity for sorting and filtering.
+     * @param transaction - Normalized activity row.
+     * @returns The full transaction identifier, not its shortened display label.
+     */
     value: (transaction) => transaction.id,
-    /** Render the table cell while preserving the row value used by actions and links. */
+    /** Render an allowlisted explorer link for the full transaction identity.
+     * @param transaction - Normalized activity row.
+     * @returns A safe explorer link or an unlinked shortened identifier.
+     */
     cell: (transaction) => {
       const url = solanaExplorerUrl('tx', transaction.id);
       return url ? (
@@ -276,7 +354,9 @@ const activityColumns: VirtualTableColumn<TransactionRow>[] = [
   },
 ];
 
-/** Render wallet holdings, valuation and cursor-paginated transaction activity. */
+/** Render wallet holdings, valuation and cursor-paginated transaction activity.
+ * @returns Wallet resource panels with independent loading and pagination feedback.
+ */
 export default function Wallet() {
   const { address = '' } = useParams();
   const navigate = useNavigate();
@@ -474,10 +554,10 @@ export default function Wallet() {
                 loading={summary.loading && !wallet}
                 emptyLabel="No assets are available for this public wallet."
                 filterPlaceholder="Filter holdings"
-                onRowClick={(asset) =>
-                  asset.mint &&
-                  navigate(`/asset/${encodeURIComponent(asset.mint)}`)
-                }
+                onRowClick={(asset) => {
+                  if (asset.mint)
+                    void navigate(`/asset/${encodeURIComponent(asset.mint)}`);
+                }}
               />
             </section>
             <section className="iris-section iris-holder-panel iris-onchain-intelligence iris-helius-card">
@@ -522,7 +602,7 @@ export default function Wallet() {
                     <div className="iris-load-more">
                       <button
                         className="iris-retry"
-                        onClick={loadMore}
+                        onClick={() => void loadMore()}
                         disabled={loadingMore}
                       >
                         {loadingMore ? 'Loading...' : 'Load more'}
@@ -538,8 +618,18 @@ export default function Wallet() {
     </div>
   );
 }
-/** Render the wallet-specific unavailable state with its address context. */
-function Unavailable({ address, text }: { address: string; text: string }) {
+/** Wallet identity and controlled explanation for an unavailable resource. */
+interface UnavailableProps {
+  address: string;
+  text: string;
+}
+
+/** Render the wallet-specific unavailable state with its address context.
+ * @param props - Full wallet address and controlled resource explanation.
+ * @returns An accessible unavailable-state notice retaining the requested wallet identity.
+ */
+function Unavailable(props: UnavailableProps) {
+  const { address, text } = props;
   return (
     <div className="iris-loading" role="status">
       <div>

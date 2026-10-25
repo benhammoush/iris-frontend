@@ -14,10 +14,15 @@ test('email account flows use the Firebase SDK without touching live services', 
   let verified = false;
   const operations: string[] = [];
   const unexpected: string[] = [];
-  /** Build the browser-test identity token for the isolated authentication fixture. */
+  /** Build the browser-test identity token for the isolated authentication fixture.
+   * @returns A synthetic token accepted only by intercepted provider responses.
+   */
   const idToken = () => {
     const now = Math.floor(Date.now() / 1000);
-    /** Encode one controlled token segment for the authentication fixture. */
+    /** Encode one controlled token segment for the authentication fixture.
+     * @param value - Controlled header or claims object.
+     * @returns Its base64url-encoded JSON representation.
+     */
     const part = (value: unknown) =>
       Buffer.from(JSON.stringify(value)).toString('base64url');
     return `${part({ alg: 'RS256', kid: 'e2e-only' })}.${part({ sub: 'e2e-user', user_id: 'e2e-user', aud: 'iris-e2e', iss: 'https://securetoken.google.com/iris-e2e', email: 'test@example.test', email_verified: verified, iat: now, auth_time: now, exp: now + 3600 })}.test-signature`;
@@ -234,7 +239,9 @@ test('email account flows use the Firebase SDK without touching live services', 
     savedAt: '2026-10-23T08:00:00.000Z',
   });
   saved.wallets.push({ address: walletAddress, savedAt });
-  /** Collect wallet requests observed by the browser fixture. */
+  /** Collect wallet requests observed by the browser fixture.
+   * @returns The number of public wallet-resource requests observed so far.
+   */
   const walletCalls = () =>
     api.requests.filter((url) => url.pathname.startsWith('/v3/wallets/'))
       .length;

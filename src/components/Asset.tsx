@@ -36,17 +36,27 @@ import ValueSkeleton from './ValueSkeleton';
 import { JupiterLogo } from './Home';
 import ResourceFeedback from './ResourceFeedback';
 
-/** Format a known monetary value for display and preserve the unavailable-data fallback. */
+/** Format a known monetary value for display and preserve the unavailable-data fallback.
+ * @param value - Available USD metric, or an unavailable value.
+ * @param digits - Maximum displayed fractional digits.
+ * @returns Formatted currency text or the unavailable placeholder.
+ */
 const currency = (value: number | null | undefined, digits = 5) =>
   value === null || value === undefined || !Number.isFinite(Number(value))
     ? '—'
     : `$${Number(value).toLocaleString('en-US', { maximumFractionDigits: digits })}`;
-/** Format a known asset price without presenting missing pricing as zero. */
+/** Format a known asset price without presenting missing pricing as zero.
+ * @param value - Available USD price, or an unavailable value.
+ * @returns USD price text with the existing significant-digit limit, or a placeholder.
+ */
 const price = (value: number | null | undefined) =>
   value === null || value === undefined || !Number.isFinite(Number(value))
     ? '—'
     : `$${Number(value).toLocaleString('en-US', { maximumSignificantDigits: 5 })}`;
-/** Format a monetary metric using compact display notation. */
+/** Format a monetary metric using compact display notation.
+ * @param value - Available USD metric, or an unavailable value.
+ * @returns Compact currency text or the unavailable placeholder.
+ */
 const compactCurrency = (value: number | null | undefined) =>
   value === null || value === undefined || !Number.isFinite(Number(value))
     ? '—'
@@ -56,7 +66,10 @@ const compactCurrency = (value: number | null | undefined) =>
         notation: 'compact',
         maximumFractionDigits: 2,
       }).format(Number(value));
-/** Format a display quantity without changing its underlying exact representation. */
+/** Format a display quantity without changing its underlying exact representation.
+ * @param value - Available numeric display quantity, or an unavailable value.
+ * @returns Compact display text; exact source quantities remain unchanged.
+ */
 const compactQuantity = (value: number | null | undefined) =>
   value === null || value === undefined || !Number.isFinite(Number(value))
     ? '—'
@@ -92,12 +105,19 @@ type DistributionAccount = {
   supplyPercent: string | null;
   frozen: boolean | null;
 };
-/** Format an available observation timestamp for the user. */
+/** Format an available observation timestamp for the user.
+ * @param value - Optional observation timestamp text.
+ * @returns Local date/time text or the unknown-time label.
+ */
 const dateTime = (value: string | null) =>
   value && Number.isFinite(Date.parse(value))
     ? new Date(value).toLocaleString('en-US')
     : 'Unknown time';
-/** Compute a display USD value only when both quantity and current price are usable. */
+/** Compute a display USD value only when both quantity and current price are usable.
+ * @param amount - Exact source quantity represented as decimal text, or null.
+ * @param priceUsd - Current USD price, or null when unavailable.
+ * @returns Display-only USD valuation or the unavailable placeholder.
+ */
 const currentUsdValue = (amount: string | null, priceUsd: number | null) =>
   amount === null ||
   priceUsd === null ||
@@ -105,7 +125,10 @@ const currentUsdValue = (amount: string | null, priceUsd: number | null) =>
   !Number.isFinite(priceUsd)
     ? '—'
     : currency(Number(amount) * priceUsd, 2);
-/** Define transaction table columns using the current display price. */
+/** Define transaction table columns using the current display price.
+ * @param priceUsd - Current USD price used only for the display valuation column.
+ * @returns Column contracts retaining full transaction identities and exact source amounts.
+ */
 const transactionColumns = (
   priceUsd: number | null,
 ): VirtualTableColumn<MintTransaction>[] => [
@@ -114,9 +137,15 @@ const transactionColumns = (
     label: 'Time',
     width: 150,
     grow: 1,
-    /** Extract the row value used for sorting and filtering. */
+    /** Extract the observation timestamp for sorting and filtering.
+     * @param transaction - Normalized transaction backing this row.
+     * @returns Its timestamp text, or an empty sorting value.
+     */
     value: (transaction) => transaction.timestamp || '',
-    /** Render the table cell while preserving the row value used by actions and links. */
+    /** Render the observation timestamp.
+     * @param transaction - Normalized transaction backing this row.
+     * @returns Local date/time text or the unknown-time label.
+     */
     cell: (transaction) => dateTime(transaction.timestamp),
   },
   {
@@ -124,9 +153,15 @@ const transactionColumns = (
     label: 'Action',
     width: 115,
     grow: 1,
-    /** Extract the row value used for sorting and filtering. */
+    /** Extract the transaction action for sorting and filtering.
+     * @param transaction - Normalized transaction backing this row.
+     * @returns The action label or its unknown-action fallback.
+     */
     value: (transaction) => transaction.action || 'Unknown',
-    /** Render the table cell while preserving the row value used by actions and links. */
+    /** Render the transaction action.
+     * @param transaction - Normalized transaction backing this row.
+     * @returns The action label or its unknown-action fallback.
+     */
     cell: (transaction) => transaction.action || 'Unknown',
   },
   {
@@ -134,9 +169,15 @@ const transactionColumns = (
     label: 'Sender',
     width: 150,
     grow: 2,
-    /** Extract the row value used for sorting and filtering. */
+    /** Extract the sender identity for sorting and filtering.
+     * @param transaction - Normalized transaction backing this row.
+     * @returns The full sender address, or an empty sorting value.
+     */
     value: (transaction) => transaction.sender || '',
-    /** Render the table cell while preserving the row value used by actions and links. */
+    /** Render the sender without shortening its navigation identity.
+     * @param transaction - Normalized transaction backing this row.
+     * @returns A wallet link or the mint-origin label.
+     */
     cell: (transaction) =>
       transaction.sender ? (
         <a
@@ -154,9 +195,15 @@ const transactionColumns = (
     label: 'Recipient',
     width: 150,
     grow: 2,
-    /** Extract the row value used for sorting and filtering. */
+    /** Extract the recipient identity for sorting and filtering.
+     * @param transaction - Normalized transaction backing this row.
+     * @returns The full recipient address, or an empty sorting value.
+     */
     value: (transaction) => transaction.recipient || '',
-    /** Render the table cell while preserving the row value used by actions and links. */
+    /** Render the recipient without shortening its navigation identity.
+     * @param transaction - Normalized transaction backing this row.
+     * @returns A wallet link or the burned-transfer label.
+     */
     cell: (transaction) =>
       transaction.recipient ? (
         <a
@@ -174,9 +221,15 @@ const transactionColumns = (
     label: 'Amount',
     width: 140,
     grow: 1,
-    /** Extract the row value used for sorting and filtering. */
+    /** Extract the source amount for sorting and filtering.
+     * @param transaction - Normalized transaction backing this row.
+     * @returns Its exact amount text, or an empty sorting value.
+     */
     value: (transaction) => transaction.amount || '',
-    /** Render the table cell while preserving the row value used by actions and links. */
+    /** Render the source amount without numeric conversion.
+     * @param transaction - Normalized transaction backing this row.
+     * @returns Its exact amount text or the unavailable placeholder.
+     */
     cell: (transaction) => transaction.amount || '—',
     align: 'right',
   },
@@ -185,9 +238,15 @@ const transactionColumns = (
     label: 'Value',
     width: 140,
     grow: 1.3,
-    /** Extract the row value used for sorting and filtering. */
+    /** Extract the display USD valuation for sorting and filtering.
+     * @param transaction - Normalized transaction backing this row.
+     * @returns The display valuation or its unavailable placeholder.
+     */
     value: (transaction) => currentUsdValue(transaction.amount, priceUsd),
-    /** Render the table cell while preserving the row value used by actions and links. */
+    /** Render a display-only USD valuation without changing the source amount.
+     * @param transaction - Normalized transaction backing this row.
+     * @returns The display valuation or its unavailable placeholder.
+     */
     cell: (transaction) => currentUsdValue(transaction.amount, priceUsd),
     align: 'right',
   },
@@ -196,9 +255,15 @@ const transactionColumns = (
     label: 'Transaction',
     width: 170,
     grow: 1.5,
-    /** Extract the row value used for sorting and filtering. */
+    /** Extract the full signature for sorting and filtering.
+     * @param transaction - Normalized transaction backing this row.
+     * @returns The transaction signature, never its shortened display label.
+     */
     value: (transaction) => transaction.signature,
-    /** Render the table cell while preserving the row value used by actions and links. */
+    /** Render an allowlisted explorer link for the full transaction identity.
+     * @param transaction - Normalized transaction backing this row.
+     * @returns A safe explorer link or the shortened identifier without a link.
+     */
     cell: (transaction) => {
       const url = solanaExplorerUrl('tx', transaction.signature);
       return url ? (
@@ -216,7 +281,10 @@ const transactionColumns = (
     },
   },
 ];
-/** Define account-distribution table columns using the current display price. */
+/** Define account-distribution table columns using the current display price.
+ * @param priceUsd - Current USD price used only for display valuation.
+ * @returns Column contracts preserving exact account identities and source quantities.
+ */
 const distributionColumns = (
   priceUsd: number | null,
 ): VirtualTableColumn<DistributionAccount>[] => [
@@ -225,9 +293,15 @@ const distributionColumns = (
     label: 'Rank',
     width: 70,
     grow: 0.5,
-    /** Extract the row value used for sorting and filtering. */
+    /** Extract the source rank for sorting and filtering.
+     * @param account - Normalized distribution account backing this row.
+     * @returns Its numeric rank.
+     */
     value: (account) => account.rank,
-    /** Render the table cell while preserving the row value used by actions and links. */
+    /** Render the source rank.
+     * @param account - Normalized distribution account backing this row.
+     * @returns Its display rank prefixed with a hash.
+     */
     cell: (account) => `#${account.rank}`,
   },
   {
@@ -235,9 +309,15 @@ const distributionColumns = (
     label: 'Wallet',
     width: 260,
     grow: 2,
-    /** Extract the row value used for sorting and filtering. */
+    /** Extract the account's full display identity for sorting and filtering.
+     * @param account - Normalized distribution account backing this row.
+     * @returns Its owner address, or token-account identity when the owner is unavailable.
+     */
     value: (account) => account.owner || account.tokenAccount,
-    /** Render the table cell while preserving the row value used by actions and links. */
+    /** Render the account identity without shortening its navigation target.
+     * @param account - Normalized distribution account backing this row.
+     * @returns A wallet link or an unlinked token-account label.
+     */
     cell: (account) =>
       account.owner ? (
         <a
@@ -255,9 +335,15 @@ const distributionColumns = (
     label: 'Amount',
     width: 220,
     grow: 2,
-    /** Extract the row value used for sorting and filtering. */
+    /** Extract the exact source quantity for sorting and filtering.
+     * @param account - Normalized distribution account backing this row.
+     * @returns Its amount text without numeric conversion.
+     */
     value: (account) => account.amount,
-    /** Render the table cell while preserving the row value used by actions and links. */
+    /** Render the exact source quantity.
+     * @param account - Normalized distribution account backing this row.
+     * @returns Its amount text without numeric conversion.
+     */
     cell: (account) => account.amount,
     align: 'right',
   },
@@ -266,9 +352,15 @@ const distributionColumns = (
     label: 'Value',
     width: 220,
     grow: 2,
-    /** Extract the row value used for sorting and filtering. */
+    /** Extract the display USD valuation for sorting and filtering.
+     * @param account - Normalized distribution account backing this row.
+     * @returns A display valuation or its unavailable placeholder.
+     */
     value: (account) => currentUsdValue(account.amount, priceUsd),
-    /** Render the table cell while preserving the row value used by actions and links. */
+    /** Render a display-only valuation without changing the source amount.
+     * @param account - Normalized distribution account backing this row.
+     * @returns A display valuation or its unavailable placeholder.
+     */
     cell: (account) => currentUsdValue(account.amount, priceUsd),
     align: 'right',
   },
@@ -277,16 +369,24 @@ const distributionColumns = (
     label: 'Supply share',
     width: 160,
     grow: 1.3,
-    /** Extract the row value used for sorting and filtering. */
+    /** Extract the source supply share for sorting and filtering.
+     * @param account - Normalized distribution account backing this row.
+     * @returns Exact supply-share text, or an empty sorting value.
+     */
     value: (account) => account.supplyPercent || '',
-    /** Render the table cell while preserving the row value used by actions and links. */
+    /** Render supply share without numeric conversion.
+     * @param account - Normalized distribution account backing this row.
+     * @returns Exact percentage text or the unavailable placeholder.
+     */
     cell: (account) =>
       account.supplyPercent === null ? '—' : `${account.supplyPercent}%`,
     align: 'right',
   },
 ];
 
-/** Render asset data with independent loading, unavailable and historical-pagination states. */
+/** Render asset data with independent loading, unavailable and historical-pagination states.
+ * @returns Asset resources with independent loading, stale/failure and history-pagination feedback.
+ */
 export default function Asset() {
   const { mint = '' } = useParams();
   const [timeframe, setTimeframe] = useState<CandleTimeframe>('1H');
@@ -352,7 +452,9 @@ export default function Asset() {
       olderRequest.current = null;
     };
   }, [mint, timeframe]);
-  /** A manual retry may recover failed history without enabling automatic retries. */
+  /** A manual retry may recover failed history without enabling automatic retries.
+   * @param retry - Whether the user explicitly requested recovery after a failed history load.
+   */
   async function loadEarlierCandles(retry = false) {
     if (
       loadingOlderRef.current ||
@@ -676,8 +778,17 @@ export default function Asset() {
   );
 }
 
-/** Render a signed percentage change with an explicit unavailable fallback. */
-function Change({ value }: { value: number }) {
+/** Available percentage change for the asset heading. */
+interface ChangeProps {
+  value: number;
+}
+
+/** Render a signed percentage change with an explicit unavailable fallback.
+ * @param props - Available percentage-change metric.
+ * @returns The signed, styled 24-hour change label.
+ */
+function Change(props: ChangeProps) {
+  const { value } = props;
   const positive = value >= 0;
   return (
     <span
@@ -688,16 +799,19 @@ function Change({ value }: { value: number }) {
     </span>
   );
 }
-/** Render one labeled metric and its optional supporting detail. */
-function Metric({
-  label,
-  value,
-  detail = null,
-}: {
+/** Asset-metric label, display value and optional supporting detail. */
+interface MetricProps {
   label: string;
   value: ReactNode;
   detail?: ReactNode;
-}) {
+}
+
+/** Render one labeled metric and its optional supporting detail.
+ * @param props - Metric label, display content and optional supporting detail.
+ * @returns The labeled metric without loading or normalizing data.
+ */
+function Metric(props: MetricProps) {
+  const { label, value, detail = null } = props;
   return (
     <section className="iris-jupiter-metric">
       <span>{label}</span>
@@ -706,26 +820,19 @@ function Metric({
     </section>
   );
 }
-/** Shorten a display identifier without changing the full value used by requests or links. */
+/** Shorten a display identifier without changing the full value used by requests or links.
+ * @param value - Optional full account or transaction identifier.
+ * @returns Its shortened display label, or the absent-identity label.
+ */
 function short(value: string | null) {
   return value ? `${value.slice(0, 5)}...${value.slice(-5)}` : 'None';
 }
-/** Render accessible transaction and distribution tabs with independent resource feedback. */
-function IntelligencePanel({
-  tab,
-  onTabChange,
-  priceUsd,
-  transactions,
-  transactionLoading,
-  transactionError,
-  retryTransactions,
-  distribution,
-  distributionLoading,
-  distributionError,
-  retryDistribution,
-}: {
+/** Independent asset-transaction/distribution resources and controlled tab selection. */
+interface IntelligencePanelProps {
   tab: 'transactions' | 'distribution';
-  /** Notify the owner that the selected intelligence tab changed. */
+  /** Notify the owner that the selected intelligence tab changed.
+   * @param tab - Transactions or account-distribution panel to select.
+   */
   onTabChange: (tab: 'transactions' | 'distribution') => void;
   priceUsd: number | null;
   transactions: MintTransaction[];
@@ -738,11 +845,32 @@ function IntelligencePanel({
   distributionError: unknown;
   /** Ask the owner to retry the failed distribution resource. */
   retryDistribution: () => void;
-}) {
+}
+
+/** Render accessible transaction and distribution tabs with independent resource feedback.
+ * @param props - Controlled tab state, display price and independent resource/retry controls.
+ * @returns Keyboard-accessible intelligence panels without mixing their resource states.
+ */
+function IntelligencePanel(props: IntelligencePanelProps) {
+  const {
+    tab,
+    onTabChange,
+    priceUsd,
+    transactions,
+    transactionLoading,
+    transactionError,
+    retryTransactions,
+    distribution,
+    distributionLoading,
+    distributionError,
+    retryDistribution,
+  } = props;
   const id = useId();
   const transactionsTab = useRef<HTMLButtonElement>(null);
   const distributionTab = useRef<HTMLButtonElement>(null);
-  /** Apply keyboard tab navigation while keeping focus and selection synchronized. */
+  /** Apply keyboard tab navigation while keeping focus and selection synchronized.
+   * @param event - Keyboard interaction on the intelligence tab list.
+   */
   function onTabKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     const next =
       event.key === 'Home'
@@ -836,21 +964,22 @@ function IntelligencePanel({
     </section>
   );
 }
-/** Render transaction rows or explicit loading, empty and failed states. */
-function TransactionList({
-  transactions,
-  loading,
-  error,
-  priceUsd,
-  onRetry,
-}: {
+/** Transaction-table data, display price and independent resource feedback. */
+interface TransactionListProps {
   transactions: MintTransaction[];
   loading: boolean;
   error: unknown;
   priceUsd: number | null;
   /** Ask the resource owner to retry its failed load. */
   onRetry: () => void;
-}) {
+}
+
+/** Render transaction rows or explicit loading, empty and failed states.
+ * @param props - Transactions, display price and resource/retry state.
+ * @returns Transaction feedback and a table without hiding retained rows on failure.
+ */
+function TransactionList(props: TransactionListProps) {
+  const { transactions, loading, error, priceUsd, onRetry } = props;
   return (
     <>
       <ResourceFeedback
@@ -874,21 +1003,22 @@ function TransactionList({
     </>
   );
 }
-/** Render account-distribution rows or explicit loading, empty and failed states. */
-function DistributionList({
-  accounts,
-  loading,
-  error,
-  priceUsd,
-  onRetry,
-}: {
+/** Account-distribution data, display price and independent resource feedback. */
+interface DistributionListProps {
   accounts: DistributionAccount[];
   loading: boolean;
   error: unknown;
   priceUsd: number | null;
   /** Ask the resource owner to retry its failed load. */
   onRetry: () => void;
-}) {
+}
+
+/** Render account-distribution rows or explicit loading, empty and failed states.
+ * @param props - Distribution accounts, display price and resource/retry state.
+ * @returns Distribution feedback and a table retaining exact source quantities.
+ */
+function DistributionList(props: DistributionListProps) {
+  const { accounts, loading, error, priceUsd, onRetry } = props;
   return (
     <>
       <ResourceFeedback

@@ -29,11 +29,15 @@ vi.mock('../../../src/api/authenticated', () => ({
 }));
 vi.mock('../../../src/api/worker', () => ({ workerApi: { wallet: vi.fn() } }));
 vi.mock('../../../src/components/Navbar', () => ({
-  /** Render the minimal navigation substitute used to isolate this component test. */
+  /** Render the minimal navigation substitute used to isolate this component test.
+   * @returns A public navigation landmark.
+   */
   default: () => <nav>Public navigation</nav>,
 }));
 vi.mock('../../../src/contexts/CatalogContext', () => ({
-  /** Read catalog state and reject use outside its provider. */
+  /** Read the controlled public catalog.
+   * @returns One normalized fixture asset.
+   */
   useCatalog: () => ({
     assets: assetsFrom([
       {
@@ -50,7 +54,10 @@ vi.mock('../../../src/contexts/CatalogContext', () => ({
 const address = 'So11111111111111111111111111111111111111112';
 const unknown = '11111111111111111111111111111111';
 const item = { address, savedAt: '2026-10-22T08:00:00.000Z' };
-/** Build the controlled resource result used by this test. */
+/** Build the controlled resource result used by this test.
+ * @param data - Controlled response payload.
+ * @returns The payload with fixed request correlation.
+ */
 const result = (data: unknown) => ({ data, meta: { requestId: 'test' } });
 let fake = fakeDriver();
 const request = vi.mocked(authenticatedRequest);
@@ -58,29 +65,34 @@ beforeEach(() => {
   fake = fakeDriver();
   vi.mocked(createFirebaseDriver).mockResolvedValue(fake.driver);
   request.mockResolvedValue(result({ assets: [], wallets: [] }));
-  vi.mocked(workerApi.wallet).mockImplementation(async (address) =>
-    result({
-      wallet: {
-        address,
-        balances: [
-          {
-            mint: address,
-            symbol: 'SOL',
-            amount: '1.234567891',
-            valueUsd: null,
+  vi.mocked(workerApi.wallet).mockImplementation((address) =>
+    Promise.resolve(
+      result({
+        wallet: {
+          address,
+          balances: [
+            {
+              mint: address,
+              symbol: 'SOL',
+              amount: '1.234567891',
+              valueUsd: null,
+            },
+          ],
+          valuation: {
+            pricedSubtotalUsd: 150.25,
+            complete: false,
+            unpricedHoldingCount: 1,
           },
-        ],
-        valuation: {
-          pricedSubtotalUsd: 150.25,
-          complete: false,
-          unpricedHoldingCount: 1,
         },
-      },
-    }),
+      }),
+    ),
   );
 });
 afterEach(() => vi.resetAllMocks());
-/** Open the controlled account or watchlist view for the UI test. */
+/** Open the controlled account or watchlist view for the UI test.
+ * @param control - Whether to render an individual save control instead of the watchlist route.
+ * @returns User-event controls once signed-out account guidance is visible.
+ */
 async function open(control = false) {
   render(
     <MemoryRouter>

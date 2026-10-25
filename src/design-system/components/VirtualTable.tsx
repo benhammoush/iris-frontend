@@ -11,9 +11,15 @@ export interface VirtualTableColumn<T> {
   id: string;
   label: string;
   width: number;
-  /** Extract the row value used for sorting and filtering. */
+  /** Extract the row value used for sorting and filtering.
+   * @param row - Row backing this column's cell.
+   * @returns The column's sortable and filterable scalar value.
+   */
   value: (row: T) => string | number;
-  /** Render the table cell while preserving the row value used by actions and links. */
+  /** Render the table cell while preserving the row value used by actions and links.
+   * @param row - Row backing this column's cell.
+   * @returns Rendered cell content, independently of its sorting/filtering value.
+   */
   cell: (row: T) => ReactNode;
   align?: 'left' | 'right';
   grow?: number;
@@ -25,24 +31,30 @@ interface Props<T> {
   data: T[];
   emptyLabel: string;
   filterPlaceholder: string;
-  /** Notify the owner that the identified table row was activated. */
+  /** Notify the owner that the identified table row was activated.
+   * @param row - Exact row activated by the user.
+   */
   onRowClick?: (row: T) => void;
   rowHeight?: number;
   pageSize?: number;
   loading?: boolean;
 }
 
-/** Render a bounded visible row window with controlled sorting, filtering and optional pagination. */
-export default function VirtualTable<T>({
-  columns,
-  data,
-  emptyLabel,
-  filterPlaceholder,
-  onRowClick,
-  rowHeight = 42,
-  pageSize,
-  loading = false,
-}: Props<T>) {
+/** Render a bounded visible row window with controlled sorting, filtering and optional pagination.
+ * @param props - Column contracts, source rows, accessible labels and optional row/pagination controls.
+ * @returns A virtualized table retaining controlled filter, sort and optional page state.
+ */
+export default function VirtualTable<T>(props: Props<T>) {
+  const {
+    columns,
+    data,
+    emptyLabel,
+    filterPlaceholder,
+    onRowClick,
+    rowHeight = 42,
+    pageSize,
+    loading = false,
+  } = props;
   const [filter, setFilter] = useState('');
   const [sort, setSort] = useState<{
     id: string;
@@ -86,9 +98,13 @@ export default function VirtualTable<T>({
   }, [page, totalPages]);
   const virtualizer = useVirtualizer({
     count: displayedRows.length,
-    /** Resolve the owned scrolling element used by row virtualization. */
+    /** Resolve the owned scrolling element used by row virtualization.
+     * @returns The scrolling element, or null before its ref is attached.
+     */
     getScrollElement: () => scrollRef.current,
-    /** Return the configured row-height estimate used by virtualization. */
+    /** Return the configured row-height estimate used by virtualization.
+     * @returns The row-height estimate in CSS pixels.
+     */
     estimateSize: () => rowHeight,
     overscan: 12,
   });
@@ -101,7 +117,9 @@ export default function VirtualTable<T>({
         start: index * rowHeight,
       }));
 
-  /** Toggle the selected column sort direction while preserving column identity. */
+  /** Toggle the selected column sort direction while preserving column identity.
+   * @param id - Stable identity of the activated column.
+   */
   function toggleSort(id: string) {
     setSort((current) =>
       current?.id === id

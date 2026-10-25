@@ -8,7 +8,9 @@ import { ESLint } from 'eslint';
 import { check, resolveConfig } from 'prettier';
 import { readdir } from 'node:fs/promises';
 
-/** Reject handwritten application JavaScript outside the explicitly permitted tooling surfaces. */
+/** Reject handwritten application JavaScript outside the explicitly permitted tooling surfaces.
+ * @param directory - Application directory URL to inspect recursively.
+ */
 async function assertTypeScriptOnly(directory) {
   for (const entry of await readdir(directory, { withFileTypes: true })) {
     const path = new URL(
@@ -27,7 +29,7 @@ await assertTypeScriptOnly(new URL('../src/', import.meta.url));
 
 const strictProbe = await new ESLint().lintText(
   'export const unchecked: any = 1;',
-  { filePath: 'src/tooling-probe.ts' },
+  { filePath: 'src/api/client.ts' },
 );
 assert.ok(
   strictProbe[0].messages.some(
@@ -39,7 +41,7 @@ assert.ok(
 const eslint = new ESLint();
 const [result] = await eslint.lintText(
   "import { useEffect } from 'react'; export function Example({ flag }) { if (flag) useEffect(() => {}, []); return null; }",
-  { filePath: 'src/tooling-probe.tsx' },
+  { filePath: 'src/App.tsx' },
 );
 assert.ok(
   result.messages.some(

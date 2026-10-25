@@ -23,7 +23,9 @@ import ResourceFeedback from './ResourceFeedback';
 type Asset = ReturnType<typeof assetsFrom>[number];
 const SOL_MINT = 'So11111111111111111111111111111111111111112';
 
-/** Render the market overview and its discovery resources. */
+/** Render the market overview and its discovery resources.
+ * @returns Discovery resources with independent loading and failure feedback.
+ */
 export default function Home() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -122,7 +124,7 @@ export default function Home() {
               loading={catalogsResult.loading || catalogLoading}
               error={!assets.length && (catalogsResult.error || catalogError)}
               onSelect={(asset) =>
-                navigate(`/asset/${encodeURIComponent(asset.mint)}`)
+                void navigate(`/asset/${encodeURIComponent(asset.mint)}`)
               }
             />
             <CatalogList
@@ -132,7 +134,7 @@ export default function Home() {
               loading={catalogsResult.loading}
               error={catalogsResult.error}
               onSelect={(asset) =>
-                navigate(`/asset/${encodeURIComponent(asset.mint)}`)
+                void navigate(`/asset/${encodeURIComponent(asset.mint)}`)
               }
             />
             <CatalogList
@@ -142,7 +144,7 @@ export default function Home() {
               loading={catalogsResult.loading}
               error={catalogsResult.error}
               onSelect={(asset) =>
-                navigate(`/asset/${encodeURIComponent(asset.mint)}`)
+                void navigate(`/asset/${encodeURIComponent(asset.mint)}`)
               }
             />
           </div>
@@ -152,7 +154,9 @@ export default function Home() {
   );
 }
 
-/** Render the provider identity artwork used by the market overview. */
+/** Render the provider identity artwork used by the market overview.
+ * @returns Decorative provider artwork hidden from assistive technology.
+ */
 export function JupiterLogo() {
   return (
     <span className="iris-jupiter-mark" aria-hidden="true">
@@ -247,23 +251,25 @@ export function JupiterLogo() {
   );
 }
 
-/** Render a bounded catalog preview and its loading or failure feedback. */
-function CatalogList({
-  title,
-  tone,
-  assets,
-  loading,
-  error,
-  onSelect,
-}: {
+/** Bounded catalog-preview content and user-selected asset action. */
+interface CatalogListProps {
   title: string;
   tone: 'volume' | 'trending' | 'pools';
   assets: Asset[];
   loading: boolean;
   error?: unknown;
-  /** Notify the owner of the selected asset without owning navigation state. */
+  /** Notify the owner of the selected asset without owning navigation state.
+   * @param asset - Exact catalog item activated by the user.
+   */
   onSelect: (asset: Asset) => void;
-}) {
+}
+
+/** Render a bounded catalog preview and its loading or failure feedback.
+ * @param props - Catalog title, tone, items and independent resource feedback.
+ * @returns Preview rows with explicit loading, empty or failure states.
+ */
+function CatalogList(props: CatalogListProps) {
+  const { title, tone, assets, loading, error, onSelect } = props;
   return (
     <CatalogPanel title={title} tone={tone}>
       {loading && !assets.length ? (

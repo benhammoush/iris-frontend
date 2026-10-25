@@ -10,7 +10,10 @@ import {
   type WalletSummaryResult,
 } from '../watchlist/walletSummaries';
 
-/** Load saved-wallet summaries under the current account and cancel superseded work. */
+/** Load saved-wallet summaries under the current account and cancel superseded work.
+ * @param addresses - Saved wallet identities whose summaries are requested.
+ * @returns Account-scoped summary results and controlled refresh state/actions.
+ */
 export function useWalletSummaries(addresses: string[]) {
   const { session } = useAccount();
   const key = addresses.join(',');
@@ -55,7 +58,10 @@ export function useWalletSummaries(addresses: string[]) {
         Object.entries(previous).filter(([address]) => all.includes(address)),
       ),
     );
-    /** Publish the new scoped state to subscribers without mutating unrelated state. */
+    /** Publish the new scoped state to subscribers without mutating unrelated state.
+     * @param address - Wallet identity associated with this result.
+     * @param result - Normalized summary or controlled failure for that wallet.
+     */
     const publish = (address: string, result: WalletSummaryResult) => {
       if (controller.signal.aborted) return;
       setResults((previous) => {
@@ -91,7 +97,9 @@ export function useWalletSummaries(addresses: string[]) {
       busy.current = false;
     };
   }, [session, key, request]);
-  /** Refresh the currently scoped resource without accepting results from a superseded identity. */
+  /** Refresh the currently scoped resource without accepting results from a superseded identity.
+   * @param address - Optional wallet to refresh; omitted to refresh the current collection.
+   */
   const refresh = (address?: string) => {
     if (busy.current) return;
     busy.current = true;

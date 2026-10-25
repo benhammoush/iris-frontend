@@ -15,8 +15,18 @@ import { useAccount } from './AccountContext';
 import { WatchlistStore } from '../watchlist/store';
 
 const WatchlistContext = createContext<WatchlistStore | null>(null);
-/** Own the account-scoped watchlist subscription and its cleanup. */
-export function WatchlistProvider({ children }: { children: ReactNode }) {
+
+/** Descendants whose private watchlist state shares one account-scoped owner. */
+interface ProviderProps {
+  children: ReactNode;
+}
+
+/** Own the account-scoped watchlist subscription and its cleanup.
+ * @param props - Descendants sharing the current account's watchlist owner.
+ * @returns The watchlist provider around those descendants.
+ */
+export function WatchlistProvider(props: ProviderProps) {
+  const { children } = props;
   const { session } = useAccount();
   const [store] = useState(() => new WatchlistStore(session));
   useEffect(() => store.connect(), [store]);
@@ -26,7 +36,9 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
     </WatchlistContext.Provider>
   );
 }
-/** Read watchlist state and reject use outside its provider. */
+/** Read watchlist state and reject use outside its provider.
+ * @returns Current private watchlist state and account-scoped refresh/mutation actions.
+ */
 export function useWatchlist() {
   const store = useContext(WatchlistContext);
   if (!store) throw new Error('WatchlistProvider is required.');

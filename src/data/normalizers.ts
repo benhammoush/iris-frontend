@@ -33,32 +33,50 @@ export type AssetView = Pick<
   verification: Partial<WireAsset['verification']> & { tags: string[] };
 };
 
-/** Narrow an unknown boundary value to a record, using an empty record when it is not an object. */
+/** Narrow an unknown boundary value to a record, using an empty record when it is not an object.
+ * @param value - Unknown response value.
+ * @returns A non-array object record, or an empty record.
+ */
 function record(value: unknown): Record<string, unknown> {
   return isRecord(value) ? value : {};
 }
 
-/** Normalize an unknown collection to an array before iterating it. */
+/** Normalize an unknown collection to an array before iterating it.
+ * @param value - Unknown collection field.
+ * @returns The array with unknown elements, or an empty collection.
+ */
 function array(value: unknown): unknown[] {
   return Array.isArray(value) ? value : [];
 }
 
-/** Normalize a supported text field from untrusted response data. */
+/** Normalize a supported text field from untrusted response data.
+ * @param value - Unknown response field.
+ * @returns String text without coercion, or undefined for other types.
+ */
 function text(value: unknown): string | undefined {
   return typeof value === 'string' ? value : undefined;
 }
 
-/** Accept numeric primitives without coercion; other input types remain undefined. */
+/** Accept numeric primitives without coercion; other input types remain undefined.
+ * @param value - Unknown response field.
+ * @returns The numeric primitive, or undefined without accepting numeric strings.
+ */
 function number(value: unknown): number | undefined {
   return typeof value === 'number' ? value : undefined;
 }
 
-/** Map nonnumeric input types to null without coercing numeric strings. */
+/** Map nonnumeric input types to null without coercing numeric strings.
+ * @param value - Unknown response metric.
+ * @returns Its numeric primitive or the explicit unavailable marker.
+ */
 function nullableNumber(value: unknown): number | null {
   return number(value) ?? null;
 }
 
-/** Normalize the response asset collection into UI-safe asset records. */
+/** Normalize the response asset collection into UI-safe asset records.
+ * @param data - Unknown asset collection or response containing an assets field.
+ * @returns Mint-identified assets with unsupported metrics marked unavailable.
+ */
 export function assetsFrom(data: unknown): AssetView[] {
   const items = Array.isArray(data) ? array(data) : array(record(data).assets);
   return items
@@ -109,7 +127,10 @@ export function assetsFrom(data: unknown): AssetView[] {
     }));
 }
 
-/** Normalize wallet response data while preserving unavailable balances and valuation. */
+/** Normalize wallet response data while preserving unavailable balances and valuation.
+ * @param data - Unknown wallet payload or wallet envelope.
+ * @returns Normalized wallet fields, or null when no wallet record is present.
+ */
 export function walletFrom(data: unknown) {
   const wallet = record(data).wallet || data;
   if (!isRecord(wallet)) return null;
@@ -160,13 +181,19 @@ export function walletFrom(data: unknown) {
   };
 }
 
-/** Normalize the response transaction collection for UI consumers. */
+/** Normalize the response transaction collection for UI consumers.
+ * @param data - Unknown transaction collection, events envelope or transaction page.
+ * @returns Supported transaction records, discarding non-object entries.
+ */
 export function transactionsFrom(data: unknown) {
   const page = record(data).transactions || record(data).events || data;
   return array(page).filter(isRecord).map(transactionFrom);
 }
 
-/** Normalize recent transaction samples and their supported display fields. */
+/** Normalize recent transaction samples and their supported display fields.
+ * @param data - Unknown recent-transaction sample envelope.
+ * @returns Displayable sample records without inventing a complete transaction history.
+ */
 export function recentTransactionsFrom(data: unknown) {
   const transactions = array(record(data).transactions);
   return transactions.flatMap((transaction) => {
@@ -200,7 +227,10 @@ export function recentTransactionsFrom(data: unknown) {
   });
 }
 
-/** Normalize one transaction record from an unknown response value. */
+/** Normalize one transaction record from an unknown response value.
+ * @param transaction - Object-shaped transaction whose individual fields remain unknown.
+ * @returns Supported transaction fields and normalized transfers.
+ */
 function transactionFrom(transaction: Record<string, unknown>) {
   return {
     ...transaction,
@@ -214,7 +244,11 @@ function transactionFrom(transaction: Record<string, unknown>) {
   };
 }
 
-/** Normalize one supported transfer and its direction. */
+/** Normalize one supported transfer and its direction.
+ * @param transfer - Object-shaped transfer whose individual fields remain unknown.
+ * @param kind - Native-SOL or token transfer classification.
+ * @returns Supported transfer fields, preserving source quantities for display.
+ */
 function transferFrom(
   transfer: Record<string, unknown>,
   kind: 'native' | 'token',
@@ -238,7 +272,10 @@ function transferFrom(
   };
 }
 
-/** Normalize supported transfers without accepting malformed entries. */
+/** Normalize supported transfers without accepting malformed entries.
+ * @param transfers - Unknown transfer list or grouped transfer collection.
+ * @returns Supported native and token transfer records.
+ */
 function transfersFrom(transfers: unknown) {
   if (Array.isArray(transfers))
     return array(transfers)
@@ -262,7 +299,10 @@ function transfersFrom(transfers: unknown) {
   return [...native, ...tokens];
 }
 
-/** Normalize asset candle data into the chart contract. */
+/** Normalize asset candle data into the chart contract.
+ * @param data - Unknown candle response envelope.
+ * @returns Candle records with supported timestamps and OHLC fields.
+ */
 export function assetCandlesFrom(data: unknown) {
   const candles = array(record(data).candles);
   return candles.flatMap((candle) => {
@@ -291,7 +331,10 @@ export function assetCandlesFrom(data: unknown) {
   });
 }
 
-/** Normalize account distribution data into table records. */
+/** Normalize account distribution data into table records.
+ * @param data - Unknown distribution response envelope.
+ * @returns Object-shaped account records accepted for the distribution table.
+ */
 export function assetDistributionFrom(data: unknown) {
   const accounts = array(record(data).accounts);
   return accounts.flatMap((account) =>
@@ -330,7 +373,10 @@ export interface MintTransaction {
   amount: string | null;
 }
 
-/** Normalize asset transaction data into supported transaction rows. */
+/** Normalize asset transaction data into supported transaction rows.
+ * @param data - Unknown asset transaction response envelope.
+ * @returns Transactions satisfying the supported mint-transaction display contract.
+ */
 export function assetTransactionsFrom(data: unknown): MintTransaction[] {
   const transactions = array(record(data).transactions);
   return transactions.flatMap<MintTransaction>((transaction) => {
@@ -383,7 +429,10 @@ export function assetTransactionsFrom(data: unknown): MintTransaction[] {
   });
 }
 
-/** Normalize available network metrics without manufacturing missing measurements. */
+/** Normalize available network metrics without manufacturing missing measurements.
+ * @param data - Unknown network response payload.
+ * @returns Supported network fields with explicit unavailable metrics.
+ */
 export function networkFrom(data: unknown) {
   return isRecord(data)
     ? {
@@ -396,13 +445,23 @@ export function networkFrom(data: unknown) {
     : null;
 }
 
-/** Normalize supported external dashboard collections and metrics. */
+/** Normalize supported external dashboard collections and metrics.
+ * @param data - Unknown external-dashboard response payload.
+ * @returns Supported collections and normalized dashboard metrics.
+ */
 export function defillamaFrom(data: unknown) {
   const dashboard = record(data);
-  /** Coerce with Number and return null only for non-finite results; null and empty text coerce to zero. */
+  /** Coerce with Number and return null only for non-finite results; null and empty text coerce to zero.
+   * @param value - Unknown dashboard metric using the existing coercion contract.
+   * @returns Its finite numeric coercion, or null for non-finite results.
+   */
   const numberOrNull = (value: unknown) =>
     Number.isFinite(Number(value)) ? Number(value) : null;
-  /** Normalize collection items using the supported field allowlist. */
+  /** Normalize collection items using the supported field allowlist.
+   * @param items - Unknown dashboard collection.
+   * @param fields - Supported metric field names to normalize.
+   * @returns Object-shaped collection items with those normalized metric fields.
+   */
   const itemsFrom = (items: unknown, fields: string[]) =>
     array(items)
       .filter(isRecord)

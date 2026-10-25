@@ -12,18 +12,25 @@ export const alice: AccountUser = {
   verified: true,
   providers: ['password'],
 };
-/** Provide a controlled authentication driver without contacting a live identity service. */
+/** Provide a controlled authentication driver without contacting a live identity service.
+ * @param initial - Initial fixture identity, or null when signed out.
+ * @returns The typed driver and a synchronous identity-transition control.
+ */
 export function fakeDriver(initial: AccountUser | null = null) {
   let current = initial;
   /** Record the controlled subscription notification used by the test. */
   let listener: (user: AccountUser | null) => void = () => {};
-  /** Publish a controlled authentication state transition to fixture subscribers. */
+  /** Publish a controlled authentication state transition to fixture subscribers.
+   * @param user - Next controlled account identity, or null after sign-out.
+   */
   const emit = (user: AccountUser | null) => {
     current = user;
     listener(user);
   };
   const driver = {
-    /** Check that delayed work still belongs to the captured account generation. */
+    /** Read the current controlled identity.
+     * @returns The fixture's latest identity, or null after sign-out.
+     */
     current: () => current,
     subscribe: vi.fn((next: (user: AccountUser | null) => void) => {
       listener = next;
@@ -32,29 +39,34 @@ export function fakeDriver(initial: AccountUser | null = null) {
         listener = () => {};
       };
     }),
-    token: vi.fn(async () => 'firebase-id-token'),
-    signIn: vi.fn(async () => {
+    token: vi.fn(() => Promise.resolve('firebase-id-token')),
+    signIn: vi.fn(() => {
       emit(alice);
+      return Promise.resolve();
     }),
-    signUp: vi.fn(async () => {
+    signUp: vi.fn(() => {
       const created = { ...alice, verified: false };
       emit(created);
-      return created;
+      return Promise.resolve(created);
     }),
-    google: vi.fn(async () => {
+    google: vi.fn(() => {
       emit({ ...alice, providers: ['google.com'] });
+      return Promise.resolve();
     }),
     reset: vi.fn(async () => {}),
     verify: vi.fn(async () => {}),
-    refresh: vi.fn(async () => current),
-    linkGoogle: vi.fn(async () => {
+    refresh: vi.fn(() => Promise.resolve(current)),
+    linkGoogle: vi.fn(() => {
       if (current) emit({ ...current, providers: ['password', 'google.com'] });
+      return Promise.resolve();
     }),
-    linkPassword: vi.fn(async () => {
+    linkPassword: vi.fn(() => {
       if (current) emit({ ...current, providers: ['password', 'google.com'] });
+      return Promise.resolve();
     }),
-    signOut: vi.fn(async () => {
+    signOut: vi.fn(() => {
       emit(null);
+      return Promise.resolve();
     }),
   } satisfies AccountDriver;
   return { driver, emit };

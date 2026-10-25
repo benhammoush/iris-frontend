@@ -14,7 +14,9 @@ vi.mock('../../../src/auth/config', () => ({
   accountsConfigured: false,
 }));
 vi.mock('../../../src/components/Navbar', () => ({
-  /** Render the minimal navigation substitute used to isolate this component test. */
+  /** Render the minimal navigation substitute used to isolate this component test.
+   * @returns A public navigation landmark.
+   */
   default: () => <nav>Public navigation</nav>,
 }));
 

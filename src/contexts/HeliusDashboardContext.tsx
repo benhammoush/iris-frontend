@@ -29,8 +29,17 @@ const HeliusDashboardContext = createContext<HeliusDashboardState>({
   meta: null,
 });
 
-/** Own shared dashboard data and refresh state for descendant consumers. */
-export function HeliusDashboardProvider({ children }: { children: ReactNode }) {
+/** Descendants sharing network-dashboard resources. */
+interface ProviderProps {
+  children: ReactNode;
+}
+
+/** Own shared dashboard data and refresh state for descendant consumers.
+ * @param props - Descendants sharing dashboard resource state.
+ * @returns The dashboard provider around those descendants.
+ */
+export function HeliusDashboardProvider(props: ProviderProps) {
+  const { children } = props;
   const dashboard = useWorkerResource(workerApi.recentTransactions, [], 60_000);
   return (
     <HeliusDashboardContext.Provider
@@ -51,5 +60,7 @@ export function HeliusDashboardProvider({ children }: { children: ReactNode }) {
   );
 }
 
-/** Read dashboard state; outside a provider the default has no data and remains loading. */
+/** Read dashboard state; outside a provider the default has no data and remains loading.
+ * @returns Network metrics, transaction samples and their resource feedback.
+ */
 export const useHeliusDashboard = () => useContext(HeliusDashboardContext);

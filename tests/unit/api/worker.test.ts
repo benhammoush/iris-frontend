@@ -19,7 +19,9 @@ describe('worker fixture behavior', () => {
         Promise.resolve({
           ok: false,
           status: 503,
-          /** Return the controlled JSON payload for this provider-response fixture. */
+          /** Return the controlled failure envelope.
+           * @returns A controlled upstream-unavailable response.
+           */
           json: () => Promise.resolve({ error: { message: 'Unavailable' } }),
         }),
       ),
@@ -40,15 +42,18 @@ describe('worker fixture behavior', () => {
         Promise.resolve({
           ok: false,
           status: 503,
-          /** Return the controlled JSON payload for this provider-response fixture. */
+          /** Return the controlled empty envelope.
+           * @returns An empty fixture payload.
+           */
           json: () => Promise.resolve({}),
         }),
       ),
     );
     const { workerApi } = await import('../../../src/api/worker');
 
-    await expect(workerApi.assets()).resolves.toMatchObject({
-      data: expect.any(Array),
+    const result = await workerApi.assets();
+    expect(Array.isArray(result.data)).toBe(true);
+    expect(result).toMatchObject({
       meta: { source: 'fixture', stale: true },
     });
   });
@@ -59,7 +64,9 @@ describe('worker fixture behavior', () => {
       vi.fn(() =>
         Promise.resolve({
           ok: true,
-          /** Return the controlled JSON payload for this provider-response fixture. */
+          /** Return the controlled resource envelope.
+           * @returns A successful empty resource response.
+           */
           json: () => Promise.resolve({ data: {} }),
         }),
       ),
@@ -167,8 +174,8 @@ describe('worker fixture behavior', () => {
   test('encodes opaque identity/cursor values and forwards transport options', async () => {
     const fetchMock = vi
       .fn<typeof fetch>()
-      .mockImplementation(
-        async () => new Response(JSON.stringify({ data: {} })),
+      .mockImplementation(() =>
+        Promise.resolve(new Response(JSON.stringify({ data: {} }))),
       );
     vi.stubGlobal('fetch', fetchMock);
     const { workerApi } = await import('../../../src/api/worker');
@@ -185,7 +192,9 @@ describe('worker fixture behavior', () => {
     await workerApi.recentTransactions({ limit: 3 });
     await workerApi.assetDistribution('Mint/Case');
     await workerApi.catalogs();
-    const urls = fetchMock.mock.calls.map(([url]) => new URL(String(url)));
+    const urls = fetchMock.mock.calls.map(
+      ([url]) => new URL(url instanceof Request ? url.url : url),
+    );
     expect(urls[0]?.pathname).toBe(
       '/v3/assets/mint/Mint%2FCase%2BSensitive%3F',
     );
@@ -221,8 +230,8 @@ describe('worker fixture behavior', () => {
     expect(result.meta).toMatchObject({
       source: 'fixture',
       stale: true,
-      requestId: expect.any(String),
     });
+    expect(result.meta.requestId).toEqual(expect.any(String));
     expect(result.data).toEqual([
       expect.objectContaining({
         priceUsd: null,

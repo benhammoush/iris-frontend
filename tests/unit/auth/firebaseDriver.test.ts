@@ -10,16 +10,17 @@ const mocks = vi.hoisted(() => {
     email: 'alice@example.test',
     emailVerified: true,
     providerData: [{ providerId: 'password' }],
-    getIdToken: vi.fn(async () => 'firebase-id-token'),
+    getIdToken: vi.fn(() => Promise.resolve('firebase-id-token')),
   };
+  const auth: { currentUser: typeof user | null } = { currentUser: user };
   return {
     user,
-    auth: { currentUser: user as typeof user | null },
+    auth,
     initializeApp: vi.fn(() => ({ name: 'iris-accounts' })),
     persistence: vi.fn(async () => {}),
-    signIn: vi.fn(async () => ({ user })),
-    signUp: vi.fn(async () => ({ user })),
-    google: vi.fn(async () => ({ user })),
+    signIn: vi.fn(() => Promise.resolve({ user })),
+    signUp: vi.fn(() => Promise.resolve({ user })),
+    google: vi.fn(() => Promise.resolve({ user })),
     reset: vi.fn(async () => {}),
     verify: vi.fn(async () => {}),
     reload: vi.fn(async () => {}),
@@ -36,14 +37,20 @@ const mocks = vi.hoisted(() => {
   };
 });
 vi.mock('firebase/app', () => ({
-  /** Return the controlled Firebase app inventory for the adapter test. */
+  /** Return the controlled Firebase app inventory for the adapter test.
+   * @returns An empty inventory so initialization is exercised.
+   */
   getApps: () => [],
   initializeApp: mocks.initializeApp,
 }));
 vi.mock('firebase/auth', () => ({
-  /** Return the controlled Firebase authentication instance for the adapter test. */
+  /** Return the controlled Firebase authentication instance for the adapter test.
+   * @returns The isolated authentication fixture.
+   */
   getAuth: () => mocks.auth,
-  /** Return the controlled authentication instance without contacting Firebase. */
+  /** Return the controlled authentication instance without contacting Firebase.
+   * @returns The isolated authentication fixture.
+   */
   initializeAuth: () => mocks.auth,
   browserPopupRedirectResolver: 'popup',
   setPersistence: mocks.persistence,
@@ -118,9 +125,9 @@ test('links providers on the current UID only after reauthentication', async () 
 });
 test('refuses a token from an account that changes during SDK token retrieval', async () => {
   const driver = await createFirebaseDriver();
-  mocks.user.getIdToken.mockImplementationOnce(async () => {
+  mocks.user.getIdToken.mockImplementationOnce(() => {
     mocks.auth.currentUser = null;
-    return 'old-token';
+    return Promise.resolve('old-token');
   });
   await expect(driver.token('alice')).rejects.toThrow('AUTH_CHANGED');
   await expect(driver.token('bob')).rejects.toThrow('AUTH_CHANGED');

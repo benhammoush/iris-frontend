@@ -12,13 +12,20 @@ import {
 import type { AccountSession } from '../auth/session';
 import { isRecord } from '../data/record';
 
-/** This client never accepts arbitrary destinations, cookies or provider tokens. */
+/** This client never accepts arbitrary destinations, cookies or provider tokens.
+ * @param session - Account session whose captured identity scopes the whole request.
+ * @param path - Allowlisted private watchlist route beneath the configured Worker origin.
+ * @param method - Supported private read or mutation method.
+ * @param options - Caller cancellation signal and deadline in milliseconds.
+ * @returns A private response only while its captured account identity remains current.
+ */
 export async function authenticatedRequest(
   session: AccountSession,
   path: string,
   method: 'GET' | 'PUT' | 'DELETE' = 'GET',
-  { signal, timeoutMs = 10000 }: ApiGetOptions = {},
+  options: ApiGetOptions = {},
 ): Promise<ApiResult> {
+  const { signal, timeoutMs = 10000 } = options;
   const list = path === '/v3/me/watchlist';
   if (!['GET', 'PUT', 'DELETE'].includes(method))
     throw new ApiError('Unsupported private method.', {
@@ -63,7 +70,9 @@ export async function authenticatedRequest(
   const identity = session.capture();
   const controller = new AbortController();
   /** Cancel the request owned by this operation without cancelling unrelated work. */
-  const abort = () => controller.abort();
+  const abort = () => {
+    controller.abort();
+  };
   identity.signal.addEventListener('abort', abort, { once: true });
   signal?.addEventListener('abort', abort, { once: true });
   if (signal?.aborted || identity.signal.aborted) controller.abort();

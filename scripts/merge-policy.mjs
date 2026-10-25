@@ -18,7 +18,11 @@ const sensitiveNames = new Set([
 ]);
 const sensitivePrefixes = ['.github/', '.opencode/', 'scripts/', 'src/api/'];
 
-/** Plain prose may contain line breaks, but neither paths nor prose need controls. */
+/** Plain prose may contain line breaks, but neither paths nor prose need controls.
+ * @param text - Proposed path or prose text.
+ * @param prose - Whether ordinary prose line breaks are permitted.
+ * @returns Whether unsupported control characters are present.
+ */
 function hasControls(text, prose = false) {
   return [...text].some((character) => {
     const code = character.codePointAt(0);
@@ -29,7 +33,9 @@ function hasControls(text, prose = false) {
   });
 }
 
-/** Reject unsupported policy versions and any attempt to turn this into a merger. */
+/** Reject unsupported policy versions and any attempt to turn this into a merger.
+ * @param policy - Trusted observer policy to validate before evaluating evidence.
+ */
 export function validatePolicy(policy) {
   if (
     policy.version !== 1 ||
@@ -52,7 +58,11 @@ export function validatePolicy(policy) {
   }
 }
 
-/** Classify paths first. Small diffs, tests, labels and AI scores grant no eligibility. */
+/** Classify paths first. Small diffs, tests, labels and AI scores grant no eligibility.
+ * @param files - Changed-file metadata from the selected pull request.
+ * @param policy - Trusted path and size constraints.
+ * @returns The observed lane and rejection reasons, not merge authorization.
+ */
 export function classifyFiles(files, policy) {
   validatePolicy(policy);
   if (!Array.isArray(files) || files.length === 0) {
@@ -116,7 +126,10 @@ export function classifyFiles(files, policy) {
       };
 }
 
-/** Both revisions must be complete ordinary text blobs, not symlinks/markup/code. */
+/** Both revisions must be complete ordinary text blobs, not symlinks/markup/code.
+ * @param blob - Immutable file mode and decoded text evidence.
+ * @returns Whether the blob satisfies the observer's narrow prose contract.
+ */
 function safeProse(blob) {
   return (
     blob?.mode === '100644' &&
@@ -131,6 +144,10 @@ function safeProse(blob) {
 
 /** Recognize CodeRabbit's clean-review coverage when approval has an empty body.
  * Unknown formats, quoted markers, other authors and stale heads fail closed.
+ * @param comments - Complete bounded PR-comment evidence.
+ * @param head - Exact current candidate SHA requiring review coverage.
+ * @param bot - Trusted review-bot identity.
+ * @returns Whether a recognized machine-delimited review covers that exact head.
  */
 export function hasReviewedWalkthrough(
   comments,
@@ -176,7 +193,11 @@ export function hasReviewedWalkthrough(
   });
 }
 
-/** Evaluate one immutable snapshot. Positive output is never merge authorization. */
+/** Evaluate one immutable snapshot. Positive output is never merge authorization.
+ * @param snapshot - Candidate, blob, CI, review and native-state evidence.
+ * @param policy - Validated trusted observer policy.
+ * @returns Evidence-only eligibility and reasons; merge permission is never granted.
+ */
 export function evaluateSnapshot(snapshot, policy) {
   const classification = classifyFiles(snapshot.files, policy);
   const reasons = [...classification.reasons, ...(snapshot.errors ?? [])];

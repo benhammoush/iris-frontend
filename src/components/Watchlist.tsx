@@ -19,7 +19,9 @@ import { useWalletSummaries } from '../hooks/useWalletSummaries';
 import WatchlistWalletSummary from './WatchlistWalletSummary';
 import './Watchlist.css';
 
-/** Render the watchlist route under its account and feature boundaries. */
+/** Render the watchlist route under its account and feature boundaries.
+ * @returns The eligible private watchlist view or an account/feature notice.
+ */
 export default function Watchlist() {
   const { status, user } = useAccount();
   useEffect(() => {
@@ -71,7 +73,9 @@ export default function Watchlist() {
     </div>
   );
 }
-/** Render account-scoped saved assets and wallets with mutation feedback. */
+/** Render account-scoped saved assets and wallets with mutation feedback.
+ * @returns Saved resources and their independent mutation/load feedback.
+ */
 function ReadyWatchlist() {
   const list = useWatchlist();
   const { assets } = useCatalog();
@@ -81,7 +85,10 @@ function ReadyWatchlist() {
   const headings = useRef<
     Partial<Record<WatchlistKind, HTMLHeadingElement | null>>
   >({});
-  /** Remove the identified saved resource from the current account watchlist. */
+  /** Remove the identified saved resource from the current account watchlist.
+   * @param kind - Saved asset or wallet collection.
+   * @param address - Exact resource identity to remove.
+   */
   async function remove(kind: WatchlistKind, address: string) {
     if (await list.mutate(kind, address, true))
       headings.current[kind]?.focus({ preventScroll: true });
@@ -279,7 +286,11 @@ function ReadyWatchlist() {
   );
 }
 
-/** Format a known monetary value for display and preserve the unavailable-data fallback. */
+/** Format a known monetary value for display and preserve the unavailable-data fallback.
+ * @param value - Available USD metric, or an unavailable value.
+ * @param compact - Whether to abbreviate large display values.
+ * @returns Formatted currency text or the unavailable placeholder.
+ */
 const currency = (value: number | null | undefined, compact = false) =>
   value == null || !Number.isFinite(value)
     ? '—'
