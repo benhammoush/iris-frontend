@@ -50,6 +50,10 @@ test('unverified users can reauthenticate/delete, clear private state, and check
   expect(driver.signOut).toHaveBeenCalledOnce();
   expect(session.snapshot()).toMatchObject({ user: null, deletion: accepted });
   const init = fetchMock.mock.calls[0][1];
+  expect(new Headers(init?.headers).get('authorization')).toBe(
+    'Bearer firebase-id-token',
+  );
+  expect(driver.token).toHaveBeenCalledWith('alice');
   expect(new Headers(init?.headers).get('X-Iris-Confirm-Deletion')).toBe(
     'permanent',
   );
@@ -82,7 +86,7 @@ test('failed reauthentication and a UID change during reauthentication cannot su
   expect(session.snapshot().deletion).toBeUndefined();
 });
 test('Worker 401 never deadlocks sign-out and failed SDK cleanup retains the status receipt', async () => {
-  const { session, driver } = await setup();
+  const { session, driver, emit } = await setup();
   const fetchMock = vi
     .fn<typeof fetch>()
     .mockResolvedValueOnce(new Response('', { status: 401 }))
@@ -103,7 +107,12 @@ test('Worker 401 never deadlocks sign-out and failed SDK cleanup retains the sta
   });
   await session.signOut();
   expect(session.snapshot().signOutFailed).toBe(false);
+  driver.signIn.mockImplementationOnce(() => {
+    emit({ ...alice, uid: 'bob', email: 'bob@example.test' });
+    return Promise.resolve();
+  });
   await session.signIn('bob@example.test', 'password');
+  expect(session.snapshot().user?.uid).toBe('bob');
   expect(session.snapshot().deletion).toBeUndefined();
 });
 test('malformed deletion/status payloads never claim completion and mutations are not retried', async () => {

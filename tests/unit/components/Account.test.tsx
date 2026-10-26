@@ -96,11 +96,16 @@ test('permanent deletion requires explicit confirmation and fresh identity proof
     screen.getByLabelText('Password', { exact: true }),
     'new-password',
   );
+  fake.driver.signIn.mockImplementationOnce(() => {
+    fake.emit({ ...alice, uid: 'bob', email: 'bob@example.test' });
+    return Promise.resolve();
+  });
   await user.click(screen.getByRole('button', { name: 'Sign in with email' }));
   expect(fake.driver.signIn).toHaveBeenCalledWith(
     'bob@example.test',
     'new-password',
   );
+  expect(await screen.findByText('bob@example.test')).toBeVisible();
   expect(
     screen.queryByRole('heading', { name: 'Account deletion underway' }),
   ).not.toBeInTheDocument();
