@@ -6,7 +6,7 @@
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import { beforeEach, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { AccountProvider } from '../../../src/contexts/AccountContext';
 import { createFirebaseDriver } from '../../../src/auth/firebaseDriver';
 import { alice, fakeDriver } from '../auth/testSupport';
@@ -26,6 +26,7 @@ vi.mock('../../../src/components/Navbar', () => ({
   default: () => <nav>Public navigation</nav>,
 }));
 let fake = fakeDriver();
+afterEach(() => vi.unstubAllGlobals());
 beforeEach(() => {
   fake = fakeDriver();
   vi.mocked(createFirebaseDriver).mockImplementation(() =>
@@ -46,6 +47,69 @@ async function open() {
   await screen.findByRole('heading', { name: 'Sign in' });
   return userEvent.setup();
 }
+
+test('permanent deletion requires explicit confirmation and fresh identity proof; status survives sign-out', async () => {
+  const user = await open();
+  act(() => fake.emit({ ...alice, verified: false }));
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue(
+      Response.json({
+        data: {
+          status: 'deleting',
+          receipt: 'test-receipt',
+          expiresAt: new Date(Date.now() + 3600000).toISOString(),
+        },
+        meta: { requestId: 'test' },
+      }),
+    ),
+  );
+  await user.click(screen.getByRole('button', { name: 'Delete my account' }));
+  const confirmation = screen.getByLabelText('Type DELETE to confirm');
+  expect(confirmation).toHaveFocus();
+  const submit = screen.getByRole('button', {
+    name: 'Confirm permanent deletion',
+  });
+  expect(submit).toBeDisabled();
+  await user.type(confirmation, 'DELETE');
+  await user.type(
+    screen.getByLabelText('Password for account deletion'),
+    'current-password',
+  );
+  await user.click(submit);
+  expect(
+    await screen.findByRole('heading', { name: 'Account deletion underway' }),
+  ).toHaveFocus();
+  expect(fake.driver.reauthenticate).toHaveBeenCalledWith(
+    'password',
+    'current-password',
+  );
+  expect(screen.getByRole('status')).toHaveTextContent('not yet confirmation');
+  expect(screen.queryByText('alice@example.test')).not.toBeInTheDocument();
+  await user.click(
+    screen.getByRole('button', {
+      name: 'Return to sign in or create an account',
+    }),
+  );
+  await user.type(screen.getByLabelText('Email address'), 'bob@example.test');
+  await user.type(
+    screen.getByLabelText('Password', { exact: true }),
+    'new-password',
+  );
+  fake.driver.signIn.mockImplementationOnce(() => {
+    fake.emit({ ...alice, uid: 'bob', email: 'bob@example.test' });
+    return Promise.resolve();
+  });
+  await user.click(screen.getByRole('button', { name: 'Sign in with email' }));
+  expect(fake.driver.signIn).toHaveBeenCalledWith(
+    'bob@example.test',
+    'new-password',
+  );
+  expect(await screen.findByText('bob@example.test')).toBeVisible();
+  expect(
+    screen.queryByRole('heading', { name: 'Account deletion underway' }),
+  ).not.toBeInTheDocument();
+});
 
 test('email sign-in never saves automatically and sign-out clears the account', async () => {
   const user = await open();

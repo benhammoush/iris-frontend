@@ -78,6 +78,8 @@ test('email account flows use the Firebase SDK without touching live services', 
       return route.fulfill({
         json: {
           id_token: idToken(),
+          // The installed Web SDK consumes access_token from the STS response.
+          access_token: idToken(),
           refresh_token: 'e2e-refresh-token',
           expires_in: '3600',
           user_id: 'e2e-user',
@@ -94,13 +96,51 @@ test('email account flows use the Firebase SDK without touching live services', 
   } = { assets: [], wallets: [] };
   const privateOperations: string[] = [];
   let limitNextSave = false;
+  let deletionAccepted = false;
   await page.route('https://iris.test/v3/me/**', async (route) => {
     const request = route.request();
+    const path = new URL(request.url()).pathname;
+    if (path === '/v3/me/account/deletion') {
+      expect(request.headers().authorization).toBe(
+        'Deletion e2e-status-receipt',
+      );
+      expect(request.headers().cookie).toBeUndefined();
+      return route.fulfill({
+        json: {
+          data: { status: 'deleted' },
+          meta: { requestId: 'deletion-status-e2e' },
+        },
+      });
+    }
     expect(request.headers().authorization).toMatch(/^Bearer /);
     expect(request.headers().cookie).toBeUndefined();
     const method = request.method();
     privateOperations.push(method);
     const headers = { 'Access-Control-Allow-Origin': '*' };
+    if (path === '/v3/me/account') {
+      expect(method).toBe('DELETE');
+      expect(request.headers()['x-iris-confirm-deletion']).toBe('permanent');
+      expect(request.postData()).toBeNull();
+      expect(
+        operations.filter((operation) => operation === 'signInWithPassword')
+          .length,
+      ).toBeGreaterThan(2);
+      deletionAccepted = true;
+      saved.assets = [];
+      saved.wallets = [];
+      return route.fulfill({
+        status: 202,
+        headers,
+        json: {
+          data: {
+            status: 'deleting',
+            receipt: 'e2e-status-receipt',
+            expiresAt: new Date(Date.now() + 3600000).toISOString(),
+          },
+          meta: { requestId: 'deletion-e2e' },
+        },
+      });
+    }
     if (method === 'GET')
       return route.fulfill({
         headers,
@@ -354,5 +394,59 @@ test('email account flows use the Firebase SDK without touching live services', 
   await expect(
     page.getByRole('link', { name: unknownAddress, exact: true }),
   ).toHaveCount(0);
+  await page.getByRole('link', { name: 'Account', exact: true }).click();
+  await page.getByLabel('Email address').fill('test@example.test');
+  await page.getByLabel('Password', { exact: true }).fill('test-password123');
+  await page.getByRole('button', { name: 'Sign in with email' }).click();
+  await page.getByRole('button', { name: 'Delete my account' }).click();
+  const confirmation = page.getByLabel('Type DELETE to confirm');
+  await expect(confirmation).toBeFocused();
+  await expect(
+    page.getByRole('button', { name: 'Confirm permanent deletion' }),
+  ).toBeDisabled();
+  if ((await page.locator('html').getAttribute('data-theme')) !== 'dark')
+    await page.getByRole('button', { name: 'Toggle color theme' }).click();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({
+    path: `test-results/deletion-${browserName}-mobile-dark.png`,
+    fullPage: true,
+  });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.getByRole('button', { name: 'Toggle color theme' }).click();
+  await page.screenshot({
+    path: `test-results/deletion-${browserName}-desktop-light.png`,
+    fullPage: true,
+  });
+  await confirmation.fill('DELETE');
+  await page
+    .getByLabel('Password for account deletion')
+    .fill('test-password123');
+  await page
+    .getByRole('button', { name: 'Confirm permanent deletion' })
+    .click();
+  await expect(
+    page.getByRole('heading', { name: 'Account deletion underway' }),
+  ).toBeFocused();
+  expect(deletionAccepted).toBe(true);
+  await page.getByRole('link', { name: 'Continue public browsing' }).click();
+  await page.getByRole('link', { name: 'Account', exact: true }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Account deletion underway' }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Check deletion status' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Account deletion confirmed' }),
+  ).toBeVisible();
+  await page
+    .getByRole('button', { name: 'Return to sign in or create an account' })
+    .click();
+  await expect(
+    page.getByRole('heading', { name: 'Sign in', exact: true }),
+  ).toBeFocused();
   expect(unexpected).toEqual([]);
 });

@@ -73,6 +73,7 @@ The browser journey uses the real Firebase Web SDK
 with synthetic intercepted REST responses and an intercepted private Worker API.
 It creates no real accounts, sends no emails and proves no hosted ownership policy.
 
-Account deletion/cleanup, real OAuth and email delivery, IAM, cross-device hosted
-acceptance and activation remain separate WL-4–5/WL-O1 gates. WL-3 alone must not
-enable hosted private traffic.
+WL-4 account deletion/cleanup now has a local implementation, documented in the
+[account specification](accounts.md). Real OAuth/email delivery, IAM, cleanup
+scheduling, cross-device hosted acceptance and activation remain separate
+WL-5/WL-O1 gates. Local implementation alone must not enable hosted private traffic.

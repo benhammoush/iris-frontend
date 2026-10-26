@@ -4,6 +4,11 @@
  */
 
 import { ApiError } from '../api/client';
+import {
+  authenticatedRequest,
+  deletionStatusRequest,
+} from '../api/authenticated';
+import { isRecord } from '../data/record';
 
 /** Application-safe authenticated identity independent of provider SDK objects. */
 export interface AccountUser {
@@ -72,6 +77,15 @@ export interface AccountDriver {
    * @returns Completion without merging or switching accounts.
    */
   linkPassword(password: string): Promise<void>;
+  /** Prove the current user's identity again, without switching or merging accounts.
+   * @param method - Existing linked sign-in method selected by the user.
+   * @param password - Current password sent only to Firebase when applicable.
+   * @returns Completion of reauthentication and fresh ID-token retrieval.
+   */
+  reauthenticate(
+    method: 'password' | 'google.com',
+    password: string,
+  ): Promise<void>;
   /** End the current authentication session and invalidate identity-bound work.
    * @returns Completion of provider sign-out.
    */
@@ -84,6 +98,11 @@ interface AccountState {
   user: AccountUser | null;
   signOutFailed: boolean;
   verificationNotice?: 'requested' | 'failed';
+  deletion?: {
+    status: 'deleting' | 'deleted';
+    receipt: string;
+    expiresAt: string;
+  };
 }
 
 /** Owns only in-memory identity and cancellation; Firebase owns credentials. */
@@ -95,6 +114,8 @@ export class AccountSession {
   private locked = false;
   private authentication?: Promise<void>;
   private signingOut?: Promise<void>;
+  private identityGeneration = 0;
+  private deletionPending = false;
 
   /** Initialize account state without enabling an unavailable authentication feature.
    * @param enabled - Whether account support is explicitly configured.
@@ -126,6 +147,15 @@ export class AccountSession {
    * @param state - Next account state; publishing also invalidates captured prior work.
    */
   private publish(state: AccountState) {
+    if (state.user?.uid !== this.state.user?.uid) this.identityGeneration++;
+    if (!('deletion' in state))
+      state = {
+        ...state,
+        deletion:
+          !state.user || state.user.uid === this.state.user?.uid
+            ? this.state.deletion
+            : undefined,
+      };
     this.controller.abort();
     this.controller = new AbortController();
     this.state = state;
@@ -188,7 +218,7 @@ export class AccountSession {
   private async authenticate(operation: () => Promise<void>) {
     if (this.locked)
       throw new ApiError('Retry sign-out first.', { code: 'SIGN_OUT_FAILED' });
-    if (this.authentication)
+    if (this.authentication || this.deletionPending)
       throw new ApiError('Another account action is still pending.', {
         code: 'AUTH_BUSY',
       });
@@ -292,6 +322,79 @@ export class AccountSession {
   linkPassword(password: string) {
     return this.authenticate(() => this.signedIn().linkPassword(password));
   }
+  /** Confirm and submit permanent deletion, then clear private state and SDK persistence.
+   * @param method - Linked provider used for fresh authentication.
+   * @param password - Password consumed only by the Firebase driver.
+   */
+  async deleteAccount(method: 'password' | 'google.com', password: string) {
+    const generation = this.identityGeneration;
+    await this.authenticate(() =>
+      this.signedIn().reauthenticate(method, password),
+    );
+    if (generation !== this.identityGeneration || this.locked)
+      throw new ApiError('Account changed.', { code: 'REQUEST_CANCELLED' });
+    this.deletionPending = true;
+    try {
+      const { data } = await authenticatedRequest(
+        this,
+        '/v3/me/account',
+        'DELETE',
+      );
+      if (
+        !isRecord(data) ||
+        !['deleting', 'deleted'].includes(String(data.status)) ||
+        typeof data.receipt !== 'string' ||
+        !data.receipt ||
+        data.receipt.length > 2048 ||
+        typeof data.expiresAt !== 'string' ||
+        !Number.isFinite(Date.parse(data.expiresAt))
+      )
+        throw new ApiError('Deletion response could not be verified.', {
+          code: 'CONTRACT_ERROR',
+        });
+      this.publish({
+        ...this.state,
+        deletion: {
+          status: data.status as 'deleting' | 'deleted',
+          receipt: data.receipt,
+          expiresAt: data.expiresAt,
+        },
+      });
+      await this.signOut();
+    } finally {
+      this.deletionPending = false;
+    }
+  }
+  /** Check only the retained receipt; normal authentication is neither needed nor sent.
+   * @param signal - Cancellation owned by the visible status view.
+   */
+  async checkDeletion(signal?: AbortSignal) {
+    const deletion = this.state.deletion;
+    if (!deletion || deletion.status === 'deleted') return;
+    const { data } = await deletionStatusRequest(deletion.receipt, { signal });
+    if (
+      !isRecord(data) ||
+      !['deleting', 'deleted'].includes(String(data.status))
+    )
+      throw new ApiError('Invalid deletion status.', {
+        code: 'CONTRACT_ERROR',
+      });
+    if (this.state.deletion === deletion && !signal?.aborted)
+      this.publish({
+        ...this.state,
+        deletion: {
+          ...deletion,
+          status: data.status as 'deleting' | 'deleted',
+        },
+      });
+  }
+  /** Discard only the status capability after browser sign-out has completed.
+   * Cleanup is durable and cannot be cancelled by dismissing the view.
+   */
+  dismissDeletion() {
+    if (this.signingOut || this.state.signOutFailed || this.state.user) return;
+    this.publish({ ...this.state, deletion: undefined });
+  }
   /** Refresh the currently scoped resource without accepting results from a superseded identity. */
   async refresh() {
     const driver = this.signedIn();
@@ -332,14 +435,15 @@ export class AccountSession {
   }
 
   /** Capture account identity and generation so delayed work can reject a superseded session.
+   * @param requireVerified - False only for account deletion, which is also available to unverified users.
    * @returns Identity-bound cancellation, currency checks and token access.
    */
-  capture() {
+  capture(requireVerified = true) {
     const driver = this.ready();
     const user = this.state.user;
     if (!user || this.locked || driver.current()?.uid !== user.uid)
       throw new ApiError('Sign in to continue.', { code: 'AUTH_REQUIRED' });
-    if (!user.verified)
+    if (requireVerified && !user.verified)
       throw new ApiError('Verify your email to continue.', {
         code: 'EMAIL_VERIFICATION_REQUIRED',
       });

@@ -517,6 +517,79 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v3/me/account': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** @description Irreversibly purge saved references and commit durable Firebase cleanup. Empty body and no query parameters. Firebase identity must be current and authenticated within five minutes; unverified email is allowed. A receipt may only repeat/read an already accepted lifecycle, never start deletion or extend expiry. Requires separately approved cleanup setup. */
+    delete: operations['deletePrivateAccount'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v3/me/account/deletion': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Receipt-only status; never accepts Firebase credentials or exposes an identity. Empty body, no query parameters. Rate limited by IP and receipt. Receipt expiry does not cancel durable cleanup. */
+    get: operations['getAccountDeletionStatus'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v3/me/watchlist': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Returns only the verified user's saved references; never fetches wallet balances or market providers. No query parameters or request body accepted. */
+    get: operations['getPrivateWatchlist'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v3/me/watchlist/{kind}/{address}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Case-sensitive Base58 public key decoding to exactly 32 bytes. */
+        address: string;
+        kind: 'asset' | 'wallet';
+      };
+      cookie?: never;
+    };
+    get?: never;
+    /** @description Empty body only. Save one reference; duplicate saves preserve the original timestamp even at the 100-per-kind limit. Ownership always comes from the verified token. */
+    put: operations['savePrivateWatchlistItem'];
+    post?: never;
+    /** @description Empty body only. Permanently remove the verified user's reference; already absent is also successful. */
+    delete: operations['removePrivateWatchlistItem'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v3/network': {
     parameters: {
       query?: never;
@@ -637,6 +710,23 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
+    AccountDeletionEnvelope: {
+      data: {
+        /** Format: date-time */
+        expiresAt: string;
+        receipt: string;
+        /** @enum {string} */
+        status: 'deleting' | 'deleted';
+      };
+      meta: components['schemas']['Meta'];
+    };
+    AccountDeletionStatusEnvelope: {
+      data: {
+        /** @enum {string} */
+        status: 'deleting' | 'deleted';
+      };
+      meta: components['schemas']['Meta'];
+    };
     Asset: {
       activity: {
         buyVolume24hUsd: number | null;
@@ -1075,6 +1165,35 @@ export interface components {
       pricedSubtotalUsd?: number;
       unpricedHoldingCount?: number;
     };
+    WatchlistEnvelope: {
+      data: {
+        assets: components['schemas']['WatchlistItem'][];
+        wallets: components['schemas']['WatchlistItem'][];
+      };
+      meta: components['schemas']['Meta'];
+    };
+    WatchlistItem: {
+      address: string;
+      /** Format: date-time */
+      savedAt: string;
+    };
+    WatchlistRemoveEnvelope: {
+      data: {
+        /** @constant */
+        removed: true;
+      };
+      meta: components['schemas']['Meta'];
+    };
+    WatchlistSaveEnvelope: {
+      data: {
+        address: string;
+        /** @enum {string} */
+        kind: 'asset' | 'wallet';
+        /** Format: date-time */
+        savedAt: string;
+      };
+      meta: components['schemas']['Meta'];
+    };
   };
   responses: {
     /** @description Canonical asset with optional compatibility history. */
@@ -1230,6 +1349,17 @@ export interface components {
       };
       content: {
         'application/json': components['schemas']['OnchainAssetEnvelope'];
+      };
+    };
+    /** @description Sanitized error. AUTH_REQUIRED/AUTH_INVALID (401), EMAIL_VERIFICATION_REQUIRED/ACCOUNT_DELETING (403), INVALID_WATCHLIST_ITEM (400), WATCHLIST_LIMIT_REACHED (409), RATE_LIMITED (429), AUTH_UNAVAILABLE/WATCHLIST_UNAVAILABLE (503). Private responses are never cached. */
+    PrivateFailure: {
+      headers: {
+        /** @description Present for rate-limit errors, in seconds. */
+        'Retry-After'?: number;
+        [name: string]: unknown;
+      };
+      content: {
+        'application/json': components['schemas']['ErrorEnvelope'];
       };
     };
     /** @description Upstream provider data is unavailable. */
@@ -1840,6 +1970,151 @@ export interface operations {
     requestBody?: never;
     responses: {
       200: components['responses']['DefiLlama'];
+    };
+  };
+  deletePrivateAccount: {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Required with Firebase authentication to explicitly confirm permanent deletion; no undo. */
+        'X-Iris-Confirm-Deletion'?: 'permanent';
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Current lifecycle for an accepted receipt. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AccountDeletionStatusEnvelope'];
+        };
+      };
+      /** @description Purge and cleanup intent committed, not a claim that Firebase deletion completed. Receipt expires one hour after acceptance and is memory-only. */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AccountDeletionEnvelope'];
+        };
+      };
+      400: components['responses']['PrivateFailure'];
+      401: components['responses']['PrivateFailure'];
+      403: components['responses']['PrivateFailure'];
+      429: components['responses']['PrivateFailure'];
+      503: components['responses']['PrivateFailure'];
+    };
+  };
+  getAccountDeletionStatus: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Current deletion status. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AccountDeletionStatusEnvelope'];
+        };
+      };
+      400: components['responses']['PrivateFailure'];
+      401: components['responses']['PrivateFailure'];
+      429: components['responses']['PrivateFailure'];
+      503: components['responses']['PrivateFailure'];
+    };
+  };
+  getPrivateWatchlist: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Private saved references, newest first within each section. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['WatchlistEnvelope'];
+        };
+      };
+      400: components['responses']['PrivateFailure'];
+      401: components['responses']['PrivateFailure'];
+      403: components['responses']['PrivateFailure'];
+      429: components['responses']['PrivateFailure'];
+      503: components['responses']['PrivateFailure'];
+    };
+  };
+  savePrivateWatchlistItem: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Case-sensitive Base58 public key decoding to exactly 32 bytes. */
+        address: string;
+        kind: 'asset' | 'wallet';
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Newly saved or previously saved reference. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['WatchlistSaveEnvelope'];
+        };
+      };
+      400: components['responses']['PrivateFailure'];
+      401: components['responses']['PrivateFailure'];
+      403: components['responses']['PrivateFailure'];
+      409: components['responses']['PrivateFailure'];
+      429: components['responses']['PrivateFailure'];
+      503: components['responses']['PrivateFailure'];
+    };
+  };
+  removePrivateWatchlistItem: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Case-sensitive Base58 public key decoding to exactly 32 bytes. */
+        address: string;
+        kind: 'asset' | 'wallet';
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Reference is absent. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['WatchlistRemoveEnvelope'];
+        };
+      };
+      400: components['responses']['PrivateFailure'];
+      401: components['responses']['PrivateFailure'];
+      403: components['responses']['PrivateFailure'];
+      429: components['responses']['PrivateFailure'];
+      503: components['responses']['PrivateFailure'];
     };
   };
   getV3Network: {

@@ -56,6 +56,9 @@ export function fakeDriver(initial: AccountUser | null = null) {
     reset: vi.fn(async () => {}),
     verify: vi.fn(async () => {}),
     refresh: vi.fn(() => Promise.resolve(current)),
+    reauthenticate: vi.fn(
+      async (_method: 'password' | 'google.com', _password: string) => {},
+    ),
     linkGoogle: vi.fn(() => {
       if (current) emit({ ...current, providers: ['password', 'google.com'] });
       return Promise.resolve();

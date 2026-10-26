@@ -25,13 +25,59 @@ export async function authenticatedRequest(
   method: 'GET' | 'PUT' | 'DELETE' = 'GET',
   options: ApiGetOptions = {},
 ): Promise<ApiResult> {
+  return privateRequest(session, path, method, options);
+}
+
+/** Read deletion status without Firebase authentication; never retry a mutation.
+ * @param receipt - In-memory status-only capability returned by this Worker.
+ * @param options - Cancellation and bounded request deadline.
+ * @returns Validated private envelope for the scoped deletion lifecycle.
+ */
+export async function deletionStatusRequest(
+  receipt: string,
+  options: ApiGetOptions = {},
+) {
+  return privateRequest(
+    null,
+    '/v3/me/account/deletion',
+    'GET',
+    options,
+    receipt,
+  );
+}
+
+/** Share strict Worker transport rules for identity-bound calls and status-only receipts.
+ * @param session - Current identity owner, absent only for receipt status.
+ * @param path - Allowlisted private endpoint.
+ * @param method - Allowlisted private operation.
+ * @param options - Caller cancellation and deadline.
+ * @param receipt - Optional status-only capability, never accepted for another route.
+ * @returns A current private response envelope.
+ */
+async function privateRequest(
+  session: AccountSession | null,
+  path: string,
+  method: 'GET' | 'PUT' | 'DELETE',
+  options: ApiGetOptions,
+  receipt?: string,
+): Promise<ApiResult> {
   const { signal, timeoutMs = 10000 } = options;
   const list = path === '/v3/me/watchlist';
+  const deleting =
+    path === '/v3/me/account' && method === 'DELETE' && !!session;
+  const polling =
+    path === '/v3/me/account/deletion' &&
+    method === 'GET' &&
+    !session &&
+    !!receipt &&
+    receipt.length <= 2048;
   if (!['GET', 'PUT', 'DELETE'].includes(method))
     throw new ApiError('Unsupported private method.', {
       code: 'INVALID_PRIVATE_ROUTE',
     });
   if (
+    !deleting &&
+    !polling &&
     (!list || method !== 'GET') &&
     !(
       method !== 'GET' &&
@@ -67,7 +113,19 @@ export async function authenticatedRequest(
     throw new ApiError('Private API origin is invalid.', {
       code: 'CONFIGURATION_ERROR',
     });
-  const identity = session.capture();
+  const identity = session
+    ? session.capture(!deleting)
+    : {
+        signal: new AbortController().signal,
+        /** Receipt status is independent of Firebase sign-out; caller cancellation still applies.
+         * @returns True while the caller owns this request.
+         */
+        isCurrent: () => true,
+        /** Supply only the in-memory receipt to the fixed status endpoint.
+         * @returns The receipt capability, never a Firebase token.
+         */
+        token: () => Promise.resolve(receipt ?? ''),
+      };
   const controller = new AbortController();
   /** Cancel the request owned by this operation without cancelling unrelated work. */
   const abort = () => {
@@ -99,8 +157,9 @@ export async function authenticatedRequest(
       method,
       headers: {
         Accept: 'application/json',
-        Authorization: `Bearer ${token}`,
+        Authorization: `${polling ? 'Deletion' : 'Bearer'} ${token}`,
         'X-Request-Id': crypto.randomUUID(),
+        ...(deleting ? { 'X-Iris-Confirm-Deletion': 'permanent' } : {}),
       },
       credentials: 'omit',
       redirect: 'error',
@@ -110,8 +169,13 @@ export async function authenticatedRequest(
     if (!identity.isCurrent() || controller.signal.aborted)
       throw new ApiError('Account changed.', { code: 'REQUEST_CANCELLED' });
     if (response.status === 401) {
+      if (polling)
+        throw new ApiError('Deletion receipt is invalid or expired.', {
+          code: 'DELETION_RECEIPT_INVALID',
+          status: 401,
+        });
       // A proxy/edge can return an empty 401; invalidation cannot depend on JSON.
-      await session.signOut().catch(() => {});
+      await session?.signOut().catch(() => {});
       throw new ApiError('Private request could not be completed.', {
         code: 'AUTH_INVALID',
         status: 401,
@@ -157,7 +221,7 @@ export async function authenticatedRequest(
         'auth/user-not-found',
       ].includes(String(cause.code))
     ) {
-      await session.signOut().catch(() => {});
+      await session?.signOut().catch(() => {});
       throw new ApiError('Sign in again to continue.', {
         code: 'AUTH_INVALID',
         status: 401,

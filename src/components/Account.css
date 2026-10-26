@@ -27,7 +27,8 @@
   gap: 16px;
   margin: 20px 0;
 }
-.iris-account-card input {
+.iris-account-card input,
+.iris-account-card select {
   min-width: 0;
   width: 100%;
   min-height: 44px;
@@ -72,4 +73,8 @@
 }
 .iris-account-email {
   overflow-wrap: anywhere;
+}
+.iris-account-deletion {
+  margin-top: var(--iris-space-xl);
+  border-top: 1px solid var(--iris-border);
 }

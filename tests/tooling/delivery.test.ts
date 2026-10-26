@@ -75,7 +75,7 @@ describe('versioned delivery consumer', () => {
     expect(adapter).toContain('publishWeb');
     expect(adapter).toContain('access-control-allow-origin');
   });
-  it('uses the canonical Verify gate without changing selected Worker/OpenAPI compatibility pins', () => {
+  it('uses the canonical Verify gate with the approved Worker/OpenAPI compatibility pins', () => {
     expect(config.legacyChecks).toEqual([]);
     expect(pr).toMatch(
       /verify_result:\s+(?:#[^\n]*\s+)?name: Verify\s+needs: verify\s+if: always\(\)/,
@@ -84,7 +84,7 @@ describe('versioned delivery consumer', () => {
     expect(pr).toContain('VERIFY_RESULT: ${{ needs.verify.result }}');
     expect(workflow).not.toMatch(/legacy_\d+:/);
     expect(config.workerRepository).toBe('benhammoush/iris-backend');
-    expect(config.workerSha).toBe('568d38a8acbfa42689c59f7162b975c41cea98b0');
+    expect(config.workerSha).toBe('5ac2566be45de93a5869a2154c89de8c91583a90');
     for (const target of ['dev', 'production'] as const) {
       const values = config.buildEnvironment[target];
       expect(values.VITE_API_BASE).toBe(
