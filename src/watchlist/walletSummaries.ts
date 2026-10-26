@@ -47,7 +47,7 @@ export async function loadWalletSummaries(
   const queue = [...new Set(addresses)].filter(isSolanaAddress).slice(0, 100);
   let index = 0;
   let unavailable = false;
-  /** Process the next queued wallet without exceeding the bounded request concurrency. */
+  /** Finish each wallet before starting the next; provider failures stop remaining reads. */
   async function next() {
     while (index < queue.length && current()) {
       const address = queue[index++];
@@ -61,6 +61,18 @@ export async function loadWalletSummaries(
         const result = await workerApi.wallet(address, {
           signal: controller.signal,
         });
+        const stop = result.meta?.providerStop;
+        if (stop !== undefined) {
+          unavailable = true;
+          if (
+            !isRecord(stop) ||
+            (stop.provider !== 'helius' && stop.provider !== 'jupiter') ||
+            (stop.reason !== 'throttled' &&
+              stop.reason !== 'unavailable' &&
+              stop.reason !== 'budget-exhausted')
+          )
+            throw new Error('Invalid provider stop signal');
+        }
         const raw = isRecord(result.data)
           ? (result.data.wallet ?? result.data)
           : null;
@@ -112,9 +124,7 @@ export async function loadWalletSummaries(
     }
   }
   try {
-    await Promise.all(
-      Array.from({ length: Math.min(4, queue.length) }, () => next()),
-    );
+    await next();
   } finally {
     signal.removeEventListener('abort', abort);
     identity.signal.removeEventListener('abort', abort);

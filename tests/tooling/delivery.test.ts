@@ -84,7 +84,7 @@ describe('versioned delivery consumer', () => {
     expect(pr).toContain('VERIFY_RESULT: ${{ needs.verify.result }}');
     expect(workflow).not.toMatch(/legacy_\d+:/);
     expect(config.workerRepository).toBe('benhammoush/iris-backend');
-    expect(config.workerSha).toBe('5ac2566be45de93a5869a2154c89de8c91583a90');
+    expect(config.workerSha).toBe('ca0c8ad681c859661635883656838d3c3f539c53');
     for (const target of ['dev', 'production'] as const) {
       const values = config.buildEnvironment[target];
       expect(values.VITE_API_BASE).toBe(

@@ -925,6 +925,7 @@ export interface components {
       };
     };
     Meta: {
+      providerStop?: components['schemas']['ProviderStop'];
       requestId: string;
     };
     NetworkData: {
@@ -1027,6 +1028,13 @@ export interface components {
         };
         tokenProgram?: string | null;
       };
+    };
+    /** @description Stop queued provider work even when the response retains usable partial wallet balances. Absence does not guarantee all holdings are priced. Budget exhaustion is reserved for separately approved budget enforcement. */
+    ProviderStop: {
+      /** @enum {string} */
+      provider: 'helius' | 'jupiter';
+      /** @enum {string} */
+      reason: 'throttled' | 'unavailable' | 'budget-exhausted';
     };
     ReadyEnvelope: components['schemas']['Envelope'] & {
       data: {
