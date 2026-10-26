@@ -40,6 +40,16 @@ function friendlyError(cause: unknown): string {
     return 'Sign-out could not complete. Your private view is cleared; retry sign-out before leaving a shared device.';
   if (code === 'AUTH_BUSY')
     return 'Another account action is still pending. Finish or close its sign-in window before trying again.';
+  if (code === 'REAUTHENTICATION_REQUIRED')
+    return 'Please confirm your identity again; deletion requires authentication within five minutes.';
+  if (
+    ['CONTRACT_ERROR', 'PRIVATE_REQUEST_FAILED', 'REQUEST_CANCELLED'].includes(
+      String(code),
+    )
+  )
+    return 'Deletion could not be confirmed. The request may have been accepted and cleanup may still be running. Do not assume the account is unchanged or that deletion is complete.';
+  if (code === 'DELETION_RECEIPT_INVALID')
+    return 'This deletion receipt has expired or is invalid. Cleanup continues independently; this page can no longer confirm completion.';
   return 'Could not complete this action. Check your details and connection, then try again.';
 }
 
@@ -47,7 +57,7 @@ function friendlyError(cause: unknown): string {
  * @returns Account actions or the current authentication availability notice.
  */
 export default function Account() {
-  const { status, user } = useAccount();
+  const { status, user, deletion } = useAccount();
   useEffect(() => {
     document.getElementById('iris-main')?.focus({ preventScroll: true });
   }, []);
@@ -68,7 +78,9 @@ export default function Account() {
             </p>
           </div>
         </section>
-        {status === 'disabled' ? (
+        {deletion ? (
+          <DeletionStatus />
+        ) : status === 'disabled' ? (
           <p className="iris-account-card">
             Accounts are not enabled in this environment.{' '}
             <Link to="/">Continue browsing Iris</Link>.
@@ -217,8 +229,8 @@ function AccountPanel() {
             </div>
           )}
           <p>
-            Nothing is saved automatically. Watchlist controls will be available
-            in a later update.
+            Nothing is saved automatically. Manage saved references on your{' '}
+            <Link to="/watchlist">Watchlist</Link>.
           </p>
           <h3>Sign-in methods</h3>
           <p>
@@ -299,6 +311,7 @@ function AccountPanel() {
           >
             Sign out
           </button>
+          <DeleteAccount busy={busy} run={act} />
         </>
       ) : (
         <>
@@ -408,6 +421,222 @@ function AccountPanel() {
           </p>
         </>
       )}
+    </section>
+  );
+}
+
+/** Account action serialization shared by deletion and the other account forms. */
+interface DeleteAccountProps {
+  busy: boolean;
+  /** Run an account action with shared pending/error feedback.
+   * @param action - Account operation to await.
+   * @param success - Controlled success explanation.
+   * @returns Completion of the action and its feedback.
+   */
+  run(this: void, action: () => Promise<void>, success: string): Promise<void>;
+}
+
+/** Confirm irreversible deletion and choose an already linked reauthentication method.
+ * @param props - Shared account action lock and controlled feedback runner.
+ * @returns The explicit, keyboard-accessible deletion form; never saves a password outside component memory.
+ */
+function DeleteAccount(props: DeleteAccountProps) {
+  const { busy, run } = props;
+  const { user, session } = useAccount();
+  const [expanded, setExpanded] = useState(false);
+  const [confirmation, setConfirmation] = useState('');
+  const [password, setPassword] = useState('');
+  const [method, setMethod] = useState<'password' | 'google.com'>(
+    user?.providers.includes('password') ? 'password' : 'google.com',
+  );
+  const input = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (expanded) input.current?.focus();
+  }, [expanded]);
+  return (
+    <section
+      className="iris-account-deletion"
+      aria-label="Permanent account deletion"
+    >
+      <h3>Delete account permanently</h3>
+      <p>
+        Delete your Iris account and all saved assets and wallets. There is no
+        undo. Public blockchain data is unaffected.
+      </p>
+      <p>
+        Live saved references are removed when accepted. Firebase cleanup can
+        take longer. Deletion-status metadata stays for 31 days after
+        completion. Provider backups may retain deleted data temporarily; this
+        is not immediate erasure from backups.
+      </p>
+      {!expanded ? (
+        <button type="button" disabled={busy} onClick={() => setExpanded(true)}>
+          Delete my account
+        </button>
+      ) : (
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (confirmation !== 'DELETE') return;
+            void run(async () => {
+              const credential = password;
+              setPassword('');
+              await session.deleteAccount(method, credential);
+            }, 'Deletion accepted.');
+          }}
+        >
+          <label>
+            Type DELETE to confirm
+            <input
+              ref={input}
+              required
+              value={confirmation}
+              autoComplete="off"
+              disabled={busy}
+              onChange={(event) => setConfirmation(event.target.value)}
+            />
+          </label>
+          {user?.providers.includes('password') &&
+          user.providers.includes('google.com') ? (
+            <label>
+              Confirm identity with
+              <select
+                disabled={busy}
+                value={method}
+                onChange={(event) => {
+                  setMethod(
+                    event.target.value === 'password'
+                      ? 'password'
+                      : 'google.com',
+                  );
+                  setPassword('');
+                }}
+              >
+                <option value="password">Email and password</option>
+                <option value="google.com">Google</option>
+              </select>
+            </label>
+          ) : null}
+          {method === 'password' ? (
+            <label>
+              Password for account deletion
+              <input
+                type="password"
+                autoComplete="current-password"
+                required
+                disabled={busy}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+              />
+            </label>
+          ) : (
+            <p>Google will ask you to confirm this account's identity.</p>
+          )}
+          <button type="submit" disabled={busy || confirmation !== 'DELETE'}>
+            {busy ? 'Confirming deletion…' : 'Confirm permanent deletion'}
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => {
+              setExpanded(false);
+              setPassword('');
+              setConfirmation('');
+            }}
+          >
+            Cancel
+          </button>
+        </form>
+      )}
+    </section>
+  );
+}
+
+/** Show receipt-only status after clearing authentication, without depending on an open browser for cleanup.
+ * @returns A bounded manual status check and honest pending/completed feedback.
+ */
+function DeletionStatus() {
+  const { deletion, session, signOutFailed, user } = useAccount();
+  const [busy, setBusy] = useState(false);
+  const [failure, setFailure] = useState('');
+  const heading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    heading.current?.focus();
+  }, []);
+  if (!deletion) return null;
+  const expired = Date.parse(deletion.expiresAt) <= Date.now();
+  return (
+    <section className="iris-account-card" aria-busy={busy || undefined}>
+      <h2 ref={heading} tabIndex={-1}>
+        {deletion.status === 'deleted'
+          ? 'Account deletion confirmed'
+          : 'Account deletion underway'}
+      </h2>
+      <p role="status">
+        {deletion.status === 'deleted'
+          ? 'Your Firebase account is deleted and live saved references are removed.'
+          : 'Your live saved references are removed. Firebase cleanup is pending; this is not yet confirmation of full account deletion.'}
+      </p>
+      <p>
+        Cleanup continues if you close this page. The status receipt stays only
+        in memory and expires at{' '}
+        {new Date(deletion.expiresAt).toLocaleTimeString()}. Reloading loses
+        this page's ability to confirm completion, not the cleanup job.
+      </p>
+      {failure && <p role="alert">{failure}</p>}
+      {signOutFailed && (
+        <p role="alert">
+          Browser sign-out has not completed. Retry before leaving a shared
+          device.{' '}
+          <button
+            disabled={busy}
+            onClick={() => {
+              setBusy(true);
+              void session
+                .signOut()
+                .catch((cause: unknown) => setFailure(friendlyError(cause)))
+                .finally(() => setBusy(false));
+            }}
+          >
+            Retry sign out
+          </button>
+        </p>
+      )}
+      {deletion.status === 'deleting' &&
+        (expired ? (
+          <p>
+            This receipt has expired. Cleanup continues, but completion cannot
+            be confirmed here.
+          </p>
+        ) : (
+          <button
+            disabled={busy}
+            onClick={() => {
+              setBusy(true);
+              setFailure('');
+              void session
+                .checkDeletion()
+                .catch((cause: unknown) => setFailure(friendlyError(cause)))
+                .finally(() => setBusy(false));
+            }}
+          >
+            Check deletion status
+          </button>
+        ))}
+      {!signOutFailed && !user && (
+        <>
+          <p>
+            Returning to account access discards this page's status receipt.
+            Cleanup continues; this cannot undo deletion.
+          </p>
+          <button disabled={busy} onClick={() => session.dismissDeletion()}>
+            Return to sign in or create an account
+          </button>
+        </>
+      )}
+      <p>
+        <Link to="/">Continue public browsing</Link>
+      </p>
     </section>
   );
 }

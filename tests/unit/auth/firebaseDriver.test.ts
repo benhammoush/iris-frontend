@@ -79,6 +79,19 @@ beforeEach(() => {
   mocks.auth.currentUser = mocks.user;
   mocks.user.getIdToken.mockResolvedValue('firebase-id-token');
 });
+test('deletion reauthenticates only a linked provider and force-refreshes its token', async () => {
+  const driver = await createFirebaseDriver();
+  await driver.reauthenticate('password', 'current-password');
+  expect(mocks.reauthPassword).toHaveBeenCalledWith(mocks.user, {
+    email: mocks.user.email,
+    password: 'current-password',
+  });
+  expect(mocks.user.getIdToken).toHaveBeenCalledWith(true);
+  await expect(driver.reauthenticate('google.com', '')).rejects.toThrow(
+    'AUTH_CHANGED',
+  );
+  expect(mocks.reauthGoogle).not.toHaveBeenCalled();
+});
 test('uses SDK persistence and password/email flows without Worker credential handling', async () => {
   const driver = await createFirebaseDriver();
   expect(mocks.persistence).toHaveBeenCalledWith(mocks.auth, 'local');

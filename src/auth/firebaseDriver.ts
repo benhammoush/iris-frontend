@@ -179,6 +179,31 @@ export async function createFirebaseDriver(): Promise<AccountDriver> {
       );
       requireUser(user.uid);
     },
+    /** Reauthenticate the same UID before irreversible account deletion.
+     * @param method - A sign-in provider already linked to this account.
+     * @param password - Current password, used only for password reauthentication.
+     */
+    reauthenticate: async (method, password) => {
+      const user = requireUser();
+      if (!user.providerData.some((provider) => provider.providerId === method))
+        throw new Error('AUTH_CHANGED');
+      if (method === 'password') {
+        if (!user.email) throw new Error('AUTH_CHANGED');
+        await reauthenticateWithCredential(
+          user,
+          EmailAuthProvider.credential(user.email, password),
+        );
+      } else {
+        await reauthenticateWithPopup(
+          user,
+          googleProvider(),
+          browserPopupRedirectResolver,
+        );
+      }
+      requireUser(user.uid);
+      await user.getIdToken(true);
+      requireUser(user.uid);
+    },
     /** End the current authentication session and invalidate identity-bound work.
      * @returns Completion of provider sign-out.
      */
