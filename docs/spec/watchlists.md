@@ -45,17 +45,28 @@ See [the account specification](accounts.md) for authentication boundaries and
   to assistive technology; the wallet detail page contains the full holdings view.
   Helius supplies balances; Jupiter may supply pricing. No transaction/activity
   endpoint is called until the user enters wallet detail.
-- Automatic wallet reads are anonymous (no Firebase token), bounded to four in
-  flight and at most 100 saved addresses. Results/queues are tied to the current
+- Owner-approved revision, 2026-10-26: frontend 1.26.1 loads automatic wallet
+  summaries sequentially, one response before the next request, replacing the
+  four-read pool. Reads are anonymous (no Firebase token), with at most 100 saved
+  addresses. Results/queues are tied to the current
   private view and aborted/discarded on identity change or unmount. Page entry,
   visible focus return and explicit refresh reload summaries; there is no polling.
   Refresh retains the last successful summary while pending; failure marks it
   stale with a retry control instead of removing it. Identity changes clear all
   retained summaries. First-load failures stay per row; a manual row retry fetches
   only that wallet. Surfaced Worker throttling/outage failures stop the remaining
-  queue rather than flooding/retrying it; swallowed Jupiter enrichment failures
-  cannot yet signal a stop. The backend specification requires provider budgets
-  and typed end-to-end stop propagation before activation.
+  queue rather than flooding/retrying it. Worker 3.18.0 additionally drains failed
+  mint-enrichment work before returning and sends typed `meta.providerStop` on
+  partial wallet responses. The initiating row retains valid balances and partial
+  valuation; queued rows show unavailable without issuing requests. Missing prices
+  alone do not stop the queue. Malformed stop metadata fails closed. This is a
+  per-batch policy, not global serialization across users/tabs or superseded work.
+  Owner-approved publication pins the Worker and both OpenAPI URLs to backend
+  source `ca0c8ad681c859661635883656838d3c3f539c53` from
+  [backend PR #36](https://github.com/benhammoush/iris-backend/pull/36), which must
+  merge before the frontend PR. Local verification is not hosted acceptance.
+  Enforced provider budgets, typed Helius failure details and quota approval remain
+  activation work.
   Automatic summaries can add up to 100 public wallet reads per refresh; review
   hosted quotas and provider logging/privacy before activation. Reference saves and
   removals remain usable when a public summary cannot load.

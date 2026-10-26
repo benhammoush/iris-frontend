@@ -372,6 +372,91 @@ test('email account flows use the Firebase SDK without touching live services', 
   await wallets.getByRole('button', { name: 'Retry wallet summary' }).click();
   await expect(wallets.getByText('Stale', { exact: true })).toHaveCount(0);
   await expect(wallets.getByText('$1,234.56')).toBeVisible();
+  saved.wallets.push({
+    address: unknownAddress,
+    savedAt: '2026-10-21T08:00:00.000Z',
+  });
+  api.setHandler((url) =>
+    url.pathname === `/v3/wallets/${unknownAddress}`
+      ? {
+          data: {
+            address: unknownAddress,
+            balances: [],
+            valuation: { pricedSubtotalUsd: 0, complete: true },
+          },
+        }
+      : undefined,
+  );
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await expect(
+    wallets.getByRole('link', { name: unknownAddress, exact: true }),
+  ).toBeVisible();
+  await expect(wallets.getByText('Loading…', { exact: true })).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: 'Refresh watchlist', exact: true }),
+  ).toBeEnabled();
+  const sequentialRequests: string[] = [];
+  /** Release the controlled first wallet response after checking queued loading. */
+  let releaseWallet: () => void = () => {};
+  const firstWalletReady = new Promise<void>((resolve) => {
+    releaseWallet = resolve;
+  });
+  const walletRoute = 'https://iris.test/v3/wallets/*';
+  await page.route(walletRoute, async (route) => {
+    const address = new URL(route.request().url()).pathname.split('/').pop();
+    sequentialRequests.push(address ?? '');
+    expect(route.request().headers().authorization).toBeUndefined();
+    await firstWalletReady;
+    return route.fulfill({
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      json: {
+        data: {
+          address,
+          balances: [
+            { mint: sol.mint, amount: '1', priceUsd: null, valueUsd: null },
+          ],
+          valuation: { pricedSubtotalUsd: 0, complete: false },
+        },
+        meta: {
+          requestId: 'sequential-partial',
+          providerStop: { provider: 'jupiter', reason: 'throttled' },
+        },
+      },
+    });
+  });
+  try {
+    await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+    await expect(
+      wallets.getByRole('link', { name: unknownAddress, exact: true }),
+    ).toBeVisible();
+    await expect.poll(() => sequentialRequests.length).toBe(1);
+    expect(sequentialRequests).toEqual([walletAddress]);
+    await expect(
+      page.getByRole('button', { name: 'Refresh watchlist', exact: true }),
+    ).toBeDisabled();
+    releaseWallet();
+    await expect(wallets.getByRole('alert')).toContainText(
+      'Wallet summaries are temporarily unavailable. Retry later.',
+    );
+    await expect(wallets.getByText('Partial', { exact: true })).toBeVisible();
+    await expect(wallets.getByText('Loading…', { exact: true })).toHaveCount(0);
+    expect(sequentialRequests).toEqual([walletAddress]);
+  } finally {
+    releaseWallet();
+    await page.unroute(walletRoute);
+    saved.wallets = saved.wallets.filter(
+      ({ address }) => address !== unknownAddress,
+    );
+  }
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await expect(
+    wallets.getByRole('link', { name: unknownAddress, exact: true }),
+  ).toHaveCount(0);
+  await expect(wallets.getByText('$1,234.56')).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Refresh watchlist', exact: true }),
+  ).toBeEnabled();
+  api.setHandler(() => undefined);
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page
     .getByRole('button', { name: `Remove ${sol.mint} from assets` })

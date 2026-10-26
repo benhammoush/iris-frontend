@@ -80,7 +80,7 @@ test('snapshot freshness reads the real Worker metadata envelope, never a body t
     expect(publish.mock.calls[0][1].data?.stale).toBe(true);
   }
 });
-test('automatic summaries bound concurrency to four, use public calls and preserve exact quantities', async () => {
+test('automatic summaries load one wallet at a time, use public calls and preserve exact quantities', async () => {
   const { session, driver } = setup();
   let active = 0,
     peak = 0;
@@ -102,13 +102,13 @@ test('automatic summaries bound concurrency to four, use public calls and preser
     new AbortController().signal,
     publish,
   );
-  expect(request).toHaveBeenCalledTimes(4);
+  expect(request).toHaveBeenCalledTimes(1);
   for (let i = 0; i < addresses.length; i++) {
     await vi.waitFor(() => expect(complete.has(addresses[i])).toBe(true));
     complete.get(addresses[i])?.();
   }
   await pending;
-  expect(peak).toBe(4);
+  expect(peak).toBe(1);
   expect(publish).toHaveBeenCalledTimes(9);
   expect(publish.mock.calls[0][1].data?.wallet.assets[0].amount).toBe(
     '9007199254740993.123456789',
@@ -136,12 +136,12 @@ test('identity changes abort active requests, discard late responses and stop qu
     new AbortController().signal,
     publish,
   );
-  expect(request).toHaveBeenCalledTimes(4);
+  expect(request).toHaveBeenCalledTimes(1);
   emit({ ...alice, uid: 'bob' });
   expect(request.mock.calls[0][1]?.signal?.aborted).toBe(true);
   finish();
   await pending;
-  expect(request).toHaveBeenCalledTimes(4);
+  expect(request).toHaveBeenCalledTimes(1);
   expect(publish).not.toHaveBeenCalled();
 });
 test('rate limits stop the remaining queue rather than retrying or flooding the Worker', async () => {
@@ -155,7 +155,7 @@ test('rate limits stop the remaining queue rather than retrying or flooding the 
     new AbortController().signal,
     publish,
   );
-  expect(request).toHaveBeenCalledTimes(4);
+  expect(request).toHaveBeenCalledTimes(1);
   expect(publish).toHaveBeenCalledTimes(9);
   expect(
     publish.mock.calls.every(([, result]) =>
@@ -184,6 +184,103 @@ test('malformed/wrong-wallet data fails per row without poisoning healthy summar
       ?.wallet.address,
   ).toBe(addresses[1]);
 });
+test.each(['throttled', 'unavailable', 'budget-exhausted'] as const)(
+  'partial wallet data survives a typed %s stop without starting another wallet',
+  async (reason) => {
+    const { session } = setup();
+    const fixture = response(addresses[0]);
+    request.mockResolvedValueOnce({
+      ...fixture,
+      meta: { ...fixture.meta, providerStop: { provider: 'jupiter', reason } },
+    });
+    const publish =
+      vi.fn<(address: string, result: WalletSummaryResult) => void>();
+    await loadWalletSummaries(
+      session,
+      addresses,
+      new AbortController().signal,
+      publish,
+    );
+    expect(request).toHaveBeenCalledTimes(1);
+    expect(publish.mock.calls[0][1].data?.wallet.assets[0].amount).toBe(
+      '9007199254740993.123456789',
+    );
+    expect(publish.mock.calls[0][1].data?.wallet.valuation.complete).toBe(
+      false,
+    );
+    expect(
+      publish.mock.calls
+        .slice(1)
+        .every(([, result]) =>
+          result.error?.includes('temporarily unavailable'),
+        ),
+    ).toBe(true);
+  },
+);
+test.each([
+  null,
+  { provider: 'unknown', reason: 'unavailable' },
+  { provider: 'jupiter', reason: 'unknown' },
+])(
+  'malformed provider stop metadata fails closed without continuing the queue: %j',
+  async (providerStop) => {
+    const { session } = setup();
+    const fixture = response(addresses[0]);
+    const meta: { requestId: string } & Record<string, unknown> = {
+      ...fixture.meta,
+      providerStop,
+    };
+    request.mockResolvedValueOnce({
+      ...fixture,
+      meta,
+    });
+    const publish =
+      vi.fn<(address: string, result: WalletSummaryResult) => void>();
+    await loadWalletSummaries(
+      session,
+      addresses,
+      new AbortController().signal,
+      publish,
+    );
+    expect(request).toHaveBeenCalledTimes(1);
+    expect(publish).toHaveBeenCalledTimes(addresses.length);
+    expect(
+      publish.mock.calls.every(([, result]) => !result.data && result.error),
+    ).toBe(true);
+  },
+);
+test('unpriced holdings alone do not stop sequential wallet loading', async () => {
+  const { session } = setup();
+  request.mockImplementation((address) => Promise.resolve(response(address)));
+  const publish =
+    vi.fn<(address: string, result: WalletSummaryResult) => void>();
+  await loadWalletSummaries(
+    session,
+    addresses,
+    new AbortController().signal,
+    publish,
+  );
+  expect(request).toHaveBeenCalledTimes(addresses.length);
+  expect(
+    publish.mock.calls.every(([, result]) => result.data && !result.error),
+  ).toBe(true);
+});
+test.each([{ status: 503 }, { code: 'TIMEOUT' }, { code: 'NETWORK_ERROR' }])(
+  'provider or transport failure stops the next sequential read: %j',
+  async (cause) => {
+    const { session } = setup();
+    request.mockRejectedValue(cause);
+    const publish = vi.fn();
+    await loadWalletSummaries(
+      session,
+      addresses,
+      new AbortController().signal,
+      publish,
+    );
+    expect(request).toHaveBeenCalledTimes(1);
+    expect(publish).toHaveBeenCalledTimes(addresses.length);
+  },
+);
 test('unverified sessions and pre-aborted batches send no requests', async () => {
   const { session, emit } = setup();
   const controller = new AbortController();
