@@ -5,7 +5,7 @@
   "automationSha": "d1143395dc6a078ef284978c1daf039ed06ff7d1",
   "integration": true,
   "workerRepository": "benhammoush/iris-backend",
-  "workerSha": "ca0c8ad681c859661635883656838d3c3f539c53",
+  "workerSha": "e30bc7de1e770f4fca92ba996ecbb437436812e2",
   "legacyChecks": [],
   "deploymentVariables": [
     "VERCEL_ORG_ID",
@@ -16,12 +16,12 @@
   "buildEnvironment": {
     "dev": {
       "VITE_API_BASE": "https://iris-backend-dev.benhxm.workers.dev",
-      "VITE_OPENAPI_URL": "https://raw.githubusercontent.com/benhammoush/iris-backend/ca0c8ad681c859661635883656838d3c3f539c53/openapi.yaml",
+      "VITE_OPENAPI_URL": "https://raw.githubusercontent.com/benhammoush/iris-backend/e30bc7de1e770f4fca92ba996ecbb437436812e2/openapi.yaml",
       "VITE_ENABLE_FIXTURES": "false"
     },
     "production": {
       "VITE_API_BASE": "https://iris-backend-production.benhxm.workers.dev",
-      "VITE_OPENAPI_URL": "https://raw.githubusercontent.com/benhammoush/iris-backend/ca0c8ad681c859661635883656838d3c3f539c53/openapi.yaml",
+      "VITE_OPENAPI_URL": "https://raw.githubusercontent.com/benhammoush/iris-backend/e30bc7de1e770f4fca92ba996ecbb437436812e2/openapi.yaml",
       "VITE_ENABLE_FIXTURES": "false"
     }
   }
