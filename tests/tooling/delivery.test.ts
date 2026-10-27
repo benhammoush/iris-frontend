@@ -5,7 +5,17 @@
 
 // @vitest-environment node
 /** Consumer contracts; executable release-rejection tests live with the pinned shared guards. */
-import { readFileSync } from 'node:fs';
+import {
+  mkdtempSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import config from '../../.github/ci-cd.json';
 import packageJson from '../../package.json';
@@ -32,6 +42,65 @@ const browsers = readFileSync(
 );
 
 describe('versioned delivery consumer', () => {
+  it.each(['dev', 'production'] as const)(
+    'uses the checked-in OpenAPI URL for %s delivery even with a missing or stale GitHub variable',
+    (target) => {
+      expect(config.deploymentVariables).not.toContain('VITE_OPENAPI_URL');
+      const root = mkdtempSync(join(tmpdir(), 'iris-delivery-test-'));
+      try {
+        mkdirSync(join(root, 'scripts'));
+        writeFileSync(
+          join(root, 'scripts/providers.mjs'),
+          'export async function publishWeb(env, settings) { console.log(JSON.stringify(settings.buildEnvironment)); }',
+        );
+        for (const value of [
+          undefined,
+          'https://example.test/old/openapi.yaml',
+        ]) {
+          const env: NodeJS.ProcessEnv = {
+            ...process.env,
+            CI_CONTROL_ROOT: fileURLToPath(new URL('../../', import.meta.url)),
+            CI_AUTOMATION_ROOT: root,
+            CI_ENVIRONMENT: target,
+            VITE_API_BASE: config.buildEnvironment[target].VITE_API_BASE,
+          };
+          delete env.VITE_OPENAPI_URL;
+          if (value !== undefined) env.VITE_OPENAPI_URL = value;
+          const result = spawnSync(
+            process.execPath,
+            [
+              fileURLToPath(
+                new URL('../../scripts/ci-deploy.mjs', import.meta.url),
+              ),
+            ],
+            { env, encoding: 'utf8' },
+          );
+          expect(result.stderr).toBe('');
+          expect(result.status).toBe(0);
+          expect(JSON.parse(result.stdout)).toEqual(
+            config.buildEnvironment[target],
+          );
+          env.VITE_API_BASE = 'https://wrong-environment.test';
+          const drifted = spawnSync(
+            process.execPath,
+            [
+              fileURLToPath(
+                new URL('../../scripts/ci-deploy.mjs', import.meta.url),
+              ),
+            ],
+            { env, encoding: 'utf8' },
+          );
+          expect(drifted.status).not.toBe(0);
+          expect(drifted.stderr).toContain(
+            'Target build/contract configuration drifted',
+          );
+          expect(drifted.stdout).toBe('');
+        }
+      } finally {
+        rmSync(root, { recursive: true, force: true });
+      }
+    },
+  );
   it('uses one immutable shared version for verification and deployment in both entry points', () => {
     expect(config.automationSha).toMatch(/^[a-f0-9]{40}$/);
     for (const file of [workflow, production]) {
