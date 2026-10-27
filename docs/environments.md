@@ -112,12 +112,12 @@ token or extra GitHub PAT: the owner reviews dev acceptance/recovery and exact
 candidate/configuration identities before native approval. Obsolete-token inventory
 and removal are separately authorized; this runbook does not revoke credentials.
 
-| Repository | Variables                                                                 | Secrets                                      |
-| ---------- | ------------------------------------------------------------------------- | -------------------------------------------- |
-| Frontend   | `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`, `VITE_API_BASE`, `VITE_OPENAPI_URL` | `VERCEL_TOKEN`                               |
-| Worker     | `CLOUDFLARE_ACCOUNT_ID`, `IRIS_WORKER_ORIGIN`                             | `CLOUDFLARE_API_TOKEN`, `IRIS_REFRESH_TOKEN` |
+| Repository | Variables                                             | Secrets                                      |
+| ---------- | ----------------------------------------------------- | -------------------------------------------- |
+| Frontend   | `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`, `VITE_API_BASE` | `VERCEL_TOKEN`                               |
+| Worker     | `CLOUDFLARE_ACCOUNT_ID`, `IRIS_WORKER_ORIGIN`         | `CLOUDFLARE_API_TOKEN`, `IRIS_REFRESH_TOKEN` |
 
-Use the corresponding environment's project/API URLs. API origins must be HTTPS with no path/trailing slash. `VITE_OPENAPI_URL` should pin the compatible Worker SHA's public `openapi.yaml`, not a moving branch. `IRIS_REFRESH_TOKEN` must match that Worker's `REFRESH_TOKEN`. Tokens need only their provider's deployment permissions; no cross-repository dispatch or administration-read token is needed.
+Use the corresponding environment's project/API URLs. API origins must be HTTPS with no path/trailing slash. In `.github/ci-cd.json`, each target's `buildEnvironment.VITE_OPENAPI_URL` pins the compatible Worker SHA's public `openapi.yaml`, not a moving branch. That checked-in value is used for both build and delivery; a GitHub `VITE_OPENAPI_URL` variable is not required and is ignored if still present. Remove obsolete copies from GitHub environments during separately authorized settings cleanup. `VITE_API_BASE` retains its deployment-time environment match check. `IRIS_REFRESH_TOKEN` must match that Worker's `REFRESH_TOKEN`. Tokens need only their provider's deployment permissions; no cross-repository dispatch or administration-read token is needed.
 
 The frontend's `.github/ci-cd.json` `workerSha` selects the exact compatible Worker commit used by vertical CI; the versioned workflow does not read the legacy repository variable `IRIS_WORKER_SHA`. Update the declared pin deliberately for coordinated changes, and keep it at the dev-accepted compatible Worker SHA when testing/promoting the frontend. The vertical-CI pin and target OpenAPI pin are separate inputs; record and verify both. A missing pin fails CI; no matching-branch guessing or implicit pin changes.
 

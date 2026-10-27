@@ -11,12 +11,11 @@ const config = JSON.parse(
   readFileSync(resolve(env.CI_CONTROL_ROOT, '.github/ci-cd.json'), 'utf8'),
 );
 const buildEnvironment = config.buildEnvironment[env.CI_ENVIRONMENT];
-for (const name of ['VITE_API_BASE', 'VITE_OPENAPI_URL'])
-  assert.equal(
-    env[name],
-    buildEnvironment[name],
-    'Target build/contract configuration drifted',
-  );
+assert.equal(
+  env.VITE_API_BASE,
+  buildEnvironment.VITE_API_BASE,
+  'Target build/contract configuration drifted',
+);
 const origin = `https://iris-frontend-${env.CI_ENVIRONMENT}.vercel.app`;
 const { publishWeb } = await import(
   pathToFileURL(resolve(env.CI_AUTOMATION_ROOT, 'scripts/providers.mjs')).href
