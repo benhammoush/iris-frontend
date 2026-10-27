@@ -886,6 +886,7 @@ export interface components {
         message: string;
         requestId: string;
       };
+      meta?: components['schemas']['Meta'];
     };
     HealthEnvelope: components['schemas']['Envelope'] & {
       data: {
@@ -1029,7 +1030,7 @@ export interface components {
         tokenProgram?: string | null;
       };
     };
-    /** @description Stop queued provider work even when the response retains usable partial wallet balances. Absence does not guarantee all holdings are priced. Budget exhaustion is reserved for separately approved budget enforcement. */
+    /** @description Stop queued provider work, including when a successful response retains usable partial wallet balances. Wallet enrichment allows at most 80 Jupiter fetch attempts including retries per lookup, covering up to two attempts for each of 40 mints; exhaustion returns budget-exhausted. This is not a shared or global quota. Absence does not guarantee all holdings are priced. */
     ProviderStop: {
       /** @enum {string} */
       provider: 'helius' | 'jupiter';
@@ -1127,7 +1128,7 @@ export interface components {
       valueUsd: number | null;
     };
     WalletEnvelope: components['schemas']['Envelope'] & {
-      /** @description Fresh DAS responses populate balances and valuation; compatible cached wallet records can omit those fields. */
+      /** @description Live DAS responses populate balances and valuation without retaining completed results; seeded local/CI fixtures can omit those fields. */
       data: {
         address: string;
         balances?: components['schemas']['WalletBalance'][];

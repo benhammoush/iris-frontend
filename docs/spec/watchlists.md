@@ -1,13 +1,10 @@
-# Private watchlist UI — WL-3
+# Private watchlist UI
 
-Frontend 1.25.0 adds `/watchlist` and explicit Save/Remove controls on asset and
-wallet detail pages. Everything remains behind the existing disabled-by-default
-account flag. No Firebase/D1 resources, remote pins or hosted settings changed.
+The `/watchlist` page and explicit Save/Remove controls on asset and wallet detail
+pages remain behind the disabled-by-default account flag.
 
-The [WL-3 backend specification](https://github.com/benhammoush/iris-backend/blob/1924192f99347c43542a83cf33d3947901c02171/WATCHLISTS.md)
-owns the owner-approved public-summary requirements; its coordinated
-[backend PR #19](https://github.com/benhammoush/iris-backend/pull/19) must merge
-before this frontend PR. The implemented OpenAPI owns the private contract:
+The [backend specification](https://github.com/benhammoush/iris-backend/blob/main/docs/spec/watchlists.md)
+owns public-summary requirements. The implemented OpenAPI owns the private contract:
 `GET /v3/me/watchlist` still fetches references only, never provider data. Summaries
 use separate anonymous `GET /v3/wallets/{address}` requests.
 See [the account specification](accounts.md) for authentication boundaries and
@@ -61,12 +58,15 @@ See [the account specification](accounts.md) for authentication boundaries and
   valuation; queued rows show unavailable without issuing requests. Missing prices
   alone do not stop the queue. Malformed stop metadata fails closed. This is a
   per-batch policy, not global serialization across users/tabs or superseded work.
-  Owner-approved publication pins the Worker and both OpenAPI URLs to backend
-  source `ca0c8ad681c859661635883656838d3c3f539c53` from
-  [backend PR #36](https://github.com/benhammoush/iris-backend/pull/36), which must
-  merge before the frontend PR. Local verification is not hosted acceptance.
-  Enforced provider budgets, typed Helius failure details and quota approval remain
-  activation work.
+  Worker 3.19.0 adds local per-wallet caps of 2 Helius and 80 Jupiter fetch
+  attempts including retries. Jupiter exhaustion returns `budget-exhausted` on a
+  partial response; Helius HTTP 503 failures carry typed stop metadata and use
+  the existing HTTP-failure queue stop. No frontend scheduling change is needed.
+  These caps are not global quotas across users/tabs; hosted quota acceptance
+  remains activation work. No shared quota service is added for the portfolio.
+  Wallet balances and price charts are fetched on demand, without Worker KV or
+  browser/CDN response caching. The current view still retains displayed data while
+  refreshing; this does not reuse a completed response for a later request.
   Automatic summaries can add up to 100 public wallet reads per refresh; review
   hosted quotas and provider logging/privacy before activation. Reference saves and
   removals remain usable when a public summary cannot load.

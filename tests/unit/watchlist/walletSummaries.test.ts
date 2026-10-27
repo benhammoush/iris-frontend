@@ -41,7 +41,6 @@ const response = (address: string) => ({
     wallet: {
       source: 'helius-das',
       asOf: '2026-10-22T08:00:00.000Z',
-      cacheState: 'fresh',
     },
   },
 });
