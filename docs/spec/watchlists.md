@@ -1,13 +1,10 @@
-# Private watchlist UI — WL-3
+# Private watchlist UI
 
-Frontend 1.25.0 adds `/watchlist` and explicit Save/Remove controls on asset and
-wallet detail pages. Everything remains behind the existing disabled-by-default
-account flag. No Firebase/D1 resources, remote pins or hosted settings changed.
+The `/watchlist` page and explicit Save/Remove controls on asset and wallet detail
+pages remain behind the disabled-by-default account flag.
 
-The [WL-3 backend specification](https://github.com/benhammoush/iris-backend/blob/1924192f99347c43542a83cf33d3947901c02171/WATCHLISTS.md)
-owns the owner-approved public-summary requirements; its coordinated
-[backend PR #19](https://github.com/benhammoush/iris-backend/pull/19) must merge
-before this frontend PR. The implemented OpenAPI owns the private contract:
+The [backend specification](https://github.com/benhammoush/iris-backend/blob/main/docs/spec/watchlists.md)
+owns public-summary requirements. The implemented OpenAPI owns the private contract:
 `GET /v3/me/watchlist` still fetches references only, never provider data. Summaries
 use separate anonymous `GET /v3/wallets/{address}` requests.
 See [the account specification](accounts.md) for authentication boundaries and
