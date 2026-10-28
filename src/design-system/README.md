@@ -4,9 +4,6 @@ Iris owns its visual values and reusable UI here. Product pages import from
 `design-system`, rather than individual implementation files. This is a local
 module, not a published package or a cross-product component library.
 
-The [repository-local template](../../docs/design-system-template.md) extracts
-the structural rules for other products without copying Iris's design.
-
 ## Structure
 
 ```text
