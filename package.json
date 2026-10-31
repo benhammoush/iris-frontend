@@ -18,7 +18,7 @@
   },
   "scripts": {
     "ci:quality": "npm run check",
-    "ci:integration": "npm run test:e2e && npm run check:contracts && npm run test:vertical",
+    "ci:integration": "npm run test:contracts && npm run test:e2e && npm run check:contracts && npm run test:vertical",
     "ci:browser": "playwright test --config playwright.release.config.ts",
     "lint": "eslint . --max-warnings 0",
     "check:tooling": "node scripts/check-tooling.mjs",
@@ -37,6 +37,7 @@
     "test:merge-policy": "node --test tests/tooling/merge-policy.test.mjs",
     "generate:contracts": "node scripts/generate-contracts.mjs",
     "check:contracts": "node scripts/generate-contracts.mjs --check",
+    "test:contracts": "node --test tests/integration/contracts.test.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "build:e2e": "vite build --mode e2e",

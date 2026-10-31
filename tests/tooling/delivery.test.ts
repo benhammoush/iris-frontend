@@ -52,6 +52,8 @@ describe('versioned delivery consumer', () => {
     expect(dev.VITE_FIREBASE_APP_ID).toBe(
       '1:568005945790:web:436ac652377731e44cf1ef',
     );
+    // Intentionally public Firebase browser identification key, not an admin secret.
+    // Never substitute a service-account credential; API/auth restrictions still apply.
     expect(dev.VITE_FIREBASE_API_KEY).toMatch(/^AIza[\w-]{35}$/);
     expect(production).not.toHaveProperty('VITE_ENABLE_ACCOUNTS');
     expect(
@@ -155,6 +157,10 @@ describe('versioned delivery consumer', () => {
   });
   it('retains fixture, vertical, browser and production-build checks without rebuilding at deployment', () => {
     expect(config.integration).toBe(true);
+    expect(scripts['ci:integration']).toMatch(/^npm run test:contracts && /);
+    expect(scripts['test:contracts']).toBe(
+      'node --test tests/integration/contracts.test.mjs',
+    );
     expect(scripts['ci:integration']).toContain('npm run test:e2e');
     expect(scripts['ci:integration']).toContain('npm run test:vertical');
     expect(scripts['ci:quality']).toBe('npm run check');
