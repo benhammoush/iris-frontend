@@ -5,9 +5,16 @@
 
 // @vitest-environment node
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  copyFileSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import openapiTS from 'openapi-typescript';
 import { describe, expect, expectTypeOf, it } from 'vitest';
@@ -122,6 +129,48 @@ describe('contract generation', () => {
           );
         expect(readFileSync(destination, 'utf8')).toBe(before);
       }
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
+  it('uses the GitHub worker checkout when the integration override is absent', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'iris-contract-workspace-'));
+    const before = readFileSync(destination, 'utf8');
+    const source = resolve(
+      process.env.IRIS_WORKER_ROOT ||
+        (process.env.GITHUB_WORKSPACE
+          ? resolve(process.env.GITHUB_WORKSPACE, 'worker')
+          : '../iris-backend'),
+      'openapi.yaml',
+    );
+    try {
+      mkdirSync(join(directory, 'worker'));
+      copyFileSync(source, join(directory, 'worker', 'openapi.yaml'));
+      const result = spawnSync(process.execPath, [script, '--check'], {
+        env: {
+          ...process.env,
+          IRIS_WORKER_ROOT: '',
+          GITHUB_WORKSPACE: directory,
+        },
+        encoding: 'utf8',
+        timeout: 30_000,
+      });
+      expect(result.status, result.stderr).toBe(0);
+      expect(result.stdout).toContain('Generated contract types match');
+      expect(readFileSync(destination, 'utf8')).toBe(before);
+      rmSync(join(directory, 'worker', 'openapi.yaml'));
+      const missing = spawnSync(process.execPath, [script, '--check'], {
+        env: {
+          ...process.env,
+          IRIS_WORKER_ROOT: '',
+          GITHUB_WORKSPACE: directory,
+        },
+        encoding: 'utf8',
+        timeout: 30_000,
+      });
+      expect(missing.status).not.toBe(0);
+      expect(readFileSync(destination, 'utf8')).toBe(before);
     } finally {
       rmSync(directory, { recursive: true, force: true });
     }

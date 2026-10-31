@@ -10,7 +10,10 @@ import openapiTS from 'openapi-typescript';
 import { format, resolveConfig } from 'prettier';
 
 const source = resolve(
-  process.env.IRIS_WORKER_ROOT || '../iris-backend',
+  process.env.IRIS_WORKER_ROOT ||
+    (process.env.GITHUB_WORKSPACE
+      ? resolve(process.env.GITHUB_WORKSPACE, 'worker')
+      : '../iris-backend'),
   'openapi.yaml',
 );
 const destination = new URL('../src/api/generated.ts', import.meta.url);
