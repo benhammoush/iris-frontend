@@ -42,6 +42,37 @@ const browsers = readFileSync(
 );
 
 describe('versioned delivery consumer', () => {
+  it('enables accounts with matching public Firebase configuration only in dev', () => {
+    const { dev, production } = config.buildEnvironment;
+    expect(dev.VITE_ENABLE_ACCOUNTS).toBe('true');
+    expect(dev.VITE_FIREBASE_PROJECT_ID).toBe('iris-watchlists-dev-v2');
+    expect(dev.VITE_FIREBASE_AUTH_DOMAIN).toBe(
+      `${dev.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
+    );
+    expect(dev.VITE_FIREBASE_APP_ID).toBe(
+      '1:568005945790:web:436ac652377731e44cf1ef',
+    );
+    // Intentionally public Firebase browser identification key, not an admin secret.
+    // Never substitute a service-account credential; API/auth restrictions still apply.
+    expect(dev.VITE_FIREBASE_API_KEY).toMatch(/^AIza[\w-]{35}$/);
+    expect(production).not.toHaveProperty('VITE_ENABLE_ACCOUNTS');
+    expect(
+      Object.keys(production).filter((key) => key.startsWith('VITE_FIREBASE_')),
+    ).toEqual([]);
+    const publicInputs = new Set([
+      'VITE_FIREBASE_API_KEY',
+      'VITE_FIREBASE_AUTH_DOMAIN',
+      'VITE_FIREBASE_PROJECT_ID',
+      'VITE_FIREBASE_APP_ID',
+    ]);
+    for (const values of Object.values(config.buildEnvironment)) {
+      expect(values.VITE_ENABLE_FIXTURES).toBe('false');
+      for (const key of Object.keys(values)) {
+        if (key.includes('FIREBASE')) expect(publicInputs.has(key)).toBe(true);
+        expect(key).not.toMatch(/PRIVATE_KEY|CLIENT_EMAIL|RECEIPT|PASSWORD/);
+      }
+    }
+  });
   it.each(['dev', 'production'] as const)(
     'uses the checked-in OpenAPI URL for %s delivery even with a missing or stale GitHub variable',
     (target) => {
@@ -126,6 +157,10 @@ describe('versioned delivery consumer', () => {
   });
   it('retains fixture, vertical, browser and production-build checks without rebuilding at deployment', () => {
     expect(config.integration).toBe(true);
+    expect(scripts['ci:integration']).toMatch(/^npm run test:contracts && /);
+    expect(scripts['test:contracts']).toBe(
+      'node --test tests/integration/contracts.test.mjs',
+    );
     expect(scripts['ci:integration']).toContain('npm run test:e2e');
     expect(scripts['ci:integration']).toContain('npm run test:vertical');
     expect(scripts['ci:quality']).toBe('npm run check');
