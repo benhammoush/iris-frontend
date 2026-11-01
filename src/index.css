@@ -3050,12 +3050,23 @@ html[data-theme='light'] .iris-wallet-activity .iris-table-toolbar input {
 }
 @media (max-width: 1100px) {
   .iris-header-main {
-    gap: 6px;
+    gap: 4px;
+    padding-inline: 12px;
+  }
+  .iris-header .iris-nav a,
+  .iris-header .iris-auth-links > a {
+    padding-inline: 6px;
   }
   .iris-jupiter-market,
   .iris-helius-market {
+    gap: 6px;
+    padding-inline: 4px;
     font-family: 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif;
     font-size: 12px;
+  }
+  .iris-jupiter-market > span + span,
+  .iris-helius-market > span + span {
+    padding-left: 6px;
   }
   .iris-mobile-search-toggle {
     display: inline-flex;
@@ -3132,16 +3143,16 @@ html[data-theme='light'] .iris-wallet-activity .iris-table-toolbar input {
 @media (max-width: 360px) {
   .iris-header .iris-header-main {
     padding-inline: 4px;
-    gap: 2px;
+    gap: 1px;
   }
   .iris-header-actions,
   .iris-header .iris-header-metrics {
-    gap: 2px;
+    gap: 1px;
   }
   .iris-jupiter-market,
   .iris-helius-market {
-    padding-inline: 2px;
-    font-size: 12px;
+    padding-inline: 0;
+    font-size: 11px;
   }
   .iris-jupiter-market b,
   .iris-helius-market b {

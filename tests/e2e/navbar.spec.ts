@@ -54,10 +54,13 @@ for (const width of [390, 1024, 1440]) {
   }
 }
 
-for (const width of [
-  320, 390, 720, 768, 960, 961, 1024, 1100, 1101, 1280, 1281, 1440,
+for (const { width, fallbackFont } of [
+  ...[320, 390, 720, 768, 960, 961, 1024, 1100, 1101, 1280, 1281, 1440].map(
+    (width) => ({ width, fallbackFont: false }),
+  ),
+  ...[320, 961].map((width) => ({ width, fallbackFont: true })),
 ]) {
-  test(`fits navigation and single-line metrics at ${width}px`, async ({
+  test(`fits navigation and single-line metrics at ${width}px${fallbackFont ? ' with wider fallback font' : ''}`, async ({
     page,
     api,
   }, testInfo) => {
@@ -76,6 +79,11 @@ for (const width of [
     );
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/');
+    if (fallbackFont)
+      await page.addStyleTag({
+        content:
+          '.iris-header, .iris-header * { font-family: Verdana, sans-serif !important; }',
+      });
     await expect(
       page.getByRole('heading', { name: 'Market overview' }),
     ).toBeVisible();
@@ -108,7 +116,7 @@ for (const width of [
       await expect(group).toBeVisible();
       await expect(group).toHaveCSS(
         'font-size',
-        `${width > 1100 ? 13 : width > 360 && width <= 480 ? 14 : 12}px`,
+        `${width > 1100 ? 13 : width <= 360 ? 11 : width <= 480 ? 14 : 12}px`,
       );
       await expect(group).toHaveCSS('font-weight', '600');
       await expect(group).toHaveCSS('background-image', 'none');

@@ -392,6 +392,9 @@ test('email signup, verification, restoration and reset use the Firebase SDK wit
   await page
     .getByRole('button', { name: 'Create an account', exact: true })
     .click();
+  await expect(
+    page.getByRole('heading', { name: 'Create an account', exact: true }),
+  ).toBeFocused();
   await page.getByLabel('Email address').fill('test@example.test');
   await page.getByLabel('Password', { exact: true }).fill('test-password123');
   await page
@@ -413,12 +416,21 @@ test('email signup, verification, restoration and reset use the Firebase SDK wit
     page.getByRole('heading', { name: 'Sign in', exact: true }),
   ).toBeVisible();
   await page.getByRole('button', { name: 'Forgot password?' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Reset password', exact: true }),
+  ).toBeFocused();
   await page.getByLabel('Email address').fill('test@example.test');
+  await expect(page.getByLabel('Email address')).toHaveValue(
+    'test@example.test',
+  );
   await page.getByRole('button', { name: 'Send reset instructions' }).click();
   await expect(
     page.locator('.iris-account-feedback [role="status"]'),
   ).toContainText('If this email can receive');
   await page.getByRole('button', { name: 'Back to sign in' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Sign in', exact: true }),
+  ).toBeFocused();
   await page.getByLabel('Email address').fill('test@example.test');
   await page.getByLabel('Password', { exact: true }).fill('test-password123');
   await page.getByRole('button', { name: 'Sign in with email' }).click();
