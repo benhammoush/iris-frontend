@@ -8,7 +8,7 @@
     "npm": "^10.5.1 || ^11.3.0"
   },
   "dependencies": {
-    "@scalar/api-reference-react": "0.9.79",
+    "@scalar/api-reference-react": "0.9.85",
     "@tanstack/react-virtual": "^3.14.19",
     "firebase": "13.1.0",
     "lightweight-charts": "^5.0.9",
