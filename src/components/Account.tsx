@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useAccount } from '../contexts/AccountContext';
 import { isRecord } from '../data/record';
 import Navbar from './Navbar';
@@ -58,9 +58,28 @@ function friendlyError(cause: unknown): string {
  */
 export default function Account() {
   const { status, user, deletion } = useAccount();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedMode = searchParams.get('mode');
+  const mode =
+    !user && (requestedMode === 'signup' || requestedMode === 'reset')
+      ? requestedMode
+      : 'signin';
   useEffect(() => {
-    document.getElementById('iris-main')?.focus({ preventScroll: true });
+    const main = document.getElementById('iris-main');
+    if (!main?.contains(document.activeElement))
+      main?.focus({ preventScroll: true });
   }, []);
+  useEffect(() => {
+    if (!user || !searchParams.has('mode')) return;
+    setSearchParams(
+      (previous) => {
+        const next = new URLSearchParams(previous);
+        next.delete('mode');
+        return next;
+      },
+      { replace: true },
+    );
+  }, [user, searchParams, setSearchParams]);
   return (
     <div className="iris-shell">
       <Navbar />
@@ -93,19 +112,29 @@ export default function Account() {
         ) : status === 'loading' ? (
           <p role="status">Loading account...</p>
         ) : (
-          <AccountPanel key={user?.uid ?? 'signed-out'} />
+          <AccountPanel
+            key={`${user?.uid ?? 'signed-out'}:${mode}`}
+            mode={mode}
+          />
         )}
       </main>
     </div>
   );
 }
 
+/** URL-selected account access form. */
+interface AccountPanelProps {
+  mode: 'signin' | 'signup' | 'reset';
+}
+
 /** Render account actions and their pending, successful and failed states.
+ * @param props - URL-selected access mode; mode changes remount sensitive form state.
  * @returns Forms and account controls with operation-scoped feedback.
  */
-function AccountPanel() {
+function AccountPanel(props: AccountPanelProps) {
+  const { mode } = props;
   const { user, session, signOutFailed, verificationNotice } = useAccount();
-  const [mode, setMode] = useState<'signin' | 'signup' | 'reset'>('signin');
+  const [, setSearchParams] = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -163,10 +192,12 @@ function AccountPanel() {
    * @param next - Sign-in, sign-up or password-reset form mode.
    */
   function changeMode(next: typeof mode) {
-    setMode(next);
-    setPassword('');
-    setMessage('');
-    setFailure('');
+    setSearchParams((previous) => {
+      const params = new URLSearchParams(previous);
+      if (next === 'signin') params.delete('mode');
+      else params.set('mode', next);
+      return params;
+    });
   }
   return (
     <section
@@ -232,21 +263,28 @@ function AccountPanel() {
             Nothing is saved automatically. Manage saved references on your{' '}
             <Link to="/watchlist">Watchlist</Link>.
           </p>
-          <h3>Sign-in methods</h3>
-          <p>
-            {user.providers
-              .map((provider) =>
-                provider === 'google.com'
-                  ? 'Google'
-                  : provider === 'password'
-                    ? 'Email and password'
-                    : provider,
-              )
-              .join(' · ')}
-          </p>
+          {user.providers.includes('google.com') &&
+          !user.providers.includes('password') ? (
+            <p>Signed in with Google.</p>
+          ) : (
+            <>
+              <h3>Sign-in methods</h3>
+              <p>
+                {user.providers
+                  .map((provider) =>
+                    provider === 'google.com'
+                      ? 'Google'
+                      : provider === 'password'
+                        ? 'Email and password'
+                        : provider,
+                  )
+                  .join(' · ')}
+              </p>
+            </>
+          )}
           {user.email &&
-            (user.providers.includes('password') &&
-            !user.providers.includes('google.com') ? (
+            user.providers.includes('password') &&
+            !user.providers.includes('google.com') && (
               <form
                 onSubmit={(event) => {
                   event.preventDefault();
@@ -271,38 +309,7 @@ function AccountPanel() {
                   Link Google to this account
                 </button>
               </form>
-            ) : user.providers.includes('google.com') &&
-              !user.providers.includes('password') ? (
-              <form
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  void act(async () => {
-                    await session.linkPassword(password);
-                    await session.refresh();
-                  }, 'Email and password linked to this account.');
-                }}
-              >
-                <p>
-                  Add a password for {user.email}. Google will ask you to
-                  confirm your identity.
-                </p>
-                <label>
-                  New password
-                  <input
-                    type="password"
-                    autoComplete="new-password"
-                    minLength={6}
-                    required
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    disabled={busy}
-                  />
-                </label>
-                <button type="submit" disabled={busy}>
-                  Add email and password
-                </button>
-              </form>
-            ) : null)}
+            )}
           <button
             type="button"
             className="iris-account-secondary"

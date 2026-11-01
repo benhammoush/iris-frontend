@@ -9,7 +9,7 @@ import Home from './components/Home';
 import Wallet from './components/Wallet';
 import Asset from './components/Asset';
 import NoMatch from './components/NoMatch';
-import Catalog from './components/Catalog';
+import Footer from './components/Footer';
 import { CatalogProvider } from './contexts/CatalogContext';
 import { HeliusDashboardProvider } from './contexts/HeliusDashboardContext';
 import { apiConfigurationError } from './api/client';
@@ -27,9 +27,18 @@ function App() {
   const previousPath = useRef(location.pathname);
   useEffect(() => {
     if (previousPath.current === location.pathname) return;
+    // Footer entry and the return link must not inherit the previous page's scroll.
+    if (
+      location.pathname === '/api-docs' ||
+      previousPath.current === '/api-docs'
+    ) {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    }
     previousPath.current = location.pathname;
-    // Dashboard navigation must not leave focus on a removed search control.
-    document.getElementById('iris-main')?.focus({ preventScroll: true });
+    // Respect a page's deliberate form focus while clearing removed search controls.
+    const main = document.getElementById('iris-main');
+    if (!main?.contains(document.activeElement))
+      main?.focus({ preventScroll: true });
   }, [location.pathname]);
 
   if (location.pathname === '/api-docs') {
@@ -44,6 +53,7 @@ function App() {
         >
           <ApiDocs />
         </Suspense>
+        <Footer />
       </ThemeProvider>
     );
   }
@@ -104,8 +114,6 @@ function App() {
                       </Suspense>
                     }
                   />
-                  <Route path="/assets" element={<Catalog kind="assets" />} />
-                  <Route path="/wallets" element={<Catalog kind="wallets" />} />
                   <Route
                     key={location.pathname}
                     path="/wallet/:address"
@@ -120,6 +128,7 @@ function App() {
                     {' '}
                   </Route>
                 </Routes>
+                <Footer />
               </div>
             </HeliusDashboardProvider>
           </CatalogProvider>

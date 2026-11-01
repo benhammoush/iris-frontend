@@ -3,11 +3,12 @@
  * @packageDocumentation
  */
 
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../../src/App';
 import { BrowserRouter } from 'react-router-dom';
 import { vi } from 'vitest';
+import { APP_DISPLAY_VERSION } from '../../src/appVersion';
 
 const catalogFixture = {
   topTraded: [
@@ -317,6 +318,12 @@ test('uses Home-only navigation and shows the selected market metrics in the Jup
     </BrowserRouter>,
   );
   await screen.findByRole('heading', { name: 'Market overview' });
+  expect(
+    within(screen.getByRole('banner')).queryByText(APP_DISPLAY_VERSION),
+  ).not.toBeInTheDocument();
+  expect(
+    within(screen.getByRole('contentinfo')).getByText(APP_DISPLAY_VERSION),
+  ).toBeVisible();
   expect(screen.getAllByRole('link', { name: 'Home' }).length).toBeGreaterThan(
     0,
   );
@@ -337,10 +344,10 @@ test('uses Home-only navigation and shows the selected market metrics in the Jup
     screen.queryByRole('button', { name: /FDV/i }),
   ).not.toBeInTheDocument();
   expect(screen.getByLabelText('SOL market summary')).toHaveTextContent(
-    'SOL : $1.00',
+    'SOL $1.00',
   );
   expect(screen.getByLabelText('Helius network summary')).toHaveTextContent(
-    'TPS : 123.46/TRUE TPS : 78.9/AVG FEE : 0.000457 SOL',
+    'TPS 123.46TRUE TPS 78.9AVG FEE 0.000457 SOL',
   );
   expect(screen.queryByText('Average paid fee')).not.toBeInTheDocument();
   expect(container.querySelectorAll('.iris-metric-card')).toHaveLength(0);
@@ -369,12 +376,12 @@ test('keeps navbar market and network summaries populated outside Home', async (
     </BrowserRouter>,
   );
   expect(await screen.findByLabelText('SOL market summary')).toHaveTextContent(
-    'SOL : $1.00',
+    'SOL $1.00',
   );
   expect(screen.queryByLabelText('JUP market summary')).not.toBeInTheDocument();
   expect(
     await screen.findByLabelText('Helius network summary'),
-  ).toHaveTextContent('TPS : 123.46');
+  ).toHaveTextContent('TPS 123.46');
   assetPage.unmount();
 
   window.history.pushState(
@@ -388,11 +395,11 @@ test('keeps navbar market and network summaries populated outside Home', async (
     </BrowserRouter>,
   );
   expect(await screen.findByLabelText('SOL market summary')).toHaveTextContent(
-    'SOL : $1.00',
+    'SOL $1.00',
   );
   expect(
     await screen.findByLabelText('Helius network summary'),
-  ).toHaveTextContent('TPS : 123.46');
+  ).toHaveTextContent('TPS 123.46');
 });
 
 test('asset table click and keyboard navigation open asset detail', async () => {

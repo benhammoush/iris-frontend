@@ -65,6 +65,7 @@ test.each([
     const repeated = session.signOut();
     expect(captured.signal.aborted).toBe(true);
     expect(session.snapshot().user).toBeNull();
+    expect(session.snapshot().signingOut).toBe(true);
     expect(fake.driver.signOut).not.toHaveBeenCalled();
     await expect(
       session.signIn('alice@example.test', 'password'),
@@ -76,6 +77,7 @@ test.each([
     expect(session.snapshot()).toMatchObject({
       user: null,
       signOutFailed: false,
+      signingOut: false,
     });
     if (method === 'signUp') expect(fake.driver.verify).not.toHaveBeenCalled();
     await session.signIn('alice@example.test', 'password');
@@ -112,3 +114,28 @@ test('failed late authentication still drains; failed persistence cleanup stays 
   await session.signIn('alice@example.test', 'password');
   expect(session.snapshot().user).toEqual(alice);
 });
+
+test.each([false, true])(
+  'pending sign-out stays observable through SDK callbacks until completion (failure: %s)',
+  async (fails) => {
+    const fake = fakeDriver(alice);
+    const session = new AccountSession(true);
+    session.connect(fake.driver);
+    const cleanup = deferred();
+    fake.driver.signOut.mockImplementation(() => cleanup.promise);
+    const pending = session.signOut();
+    const settled = fails
+      ? expect(pending).rejects.toMatchObject({ code: 'SIGN_OUT_FAILED' })
+      : pending;
+    fake.emit(null);
+    expect(session.snapshot()).toMatchObject({ user: null, signingOut: true });
+    if (fails) cleanup.reject(new Error('cleanup failed'));
+    else cleanup.resolve();
+    await settled;
+    expect(session.snapshot()).toMatchObject({
+      user: null,
+      signingOut: false,
+      signOutFailed: fails,
+    });
+  },
+);

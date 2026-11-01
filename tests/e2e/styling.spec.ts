@@ -227,7 +227,7 @@ test('keeps unmatched-route layout and shared browser defaults in both themes', 
   );
   await expect(main.locator('..')).toHaveCSS('font-family', 'Poppins');
   await expect(page.locator('body')).toHaveCSS('margin-top', '0px');
-  const brand = page.getByRole('link', { name: /IRIS/ }).first();
+  const brand = page.getByRole('link', { name: 'Iris home', exact: true });
   await expect(brand).toHaveCSS('text-decoration-line', 'none');
   await expect(brand.locator('img')).toHaveCSS('display', 'block');
   await page.getByRole('button', { name: /theme/i }).click();
