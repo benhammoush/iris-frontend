@@ -4,14 +4,167 @@
  */
 
 import { test, expect } from './support/test';
+import type { Page } from '@playwright/test';
 import { sol, walletAddress } from './support/workerMock';
 
-test('email account flows use the Firebase SDK without touching live services', async ({
+test('a restored Google session shows its provider without password setup', async ({
   page,
   browserName,
-  api,
 }) => {
-  let verified = false;
+  const now = Math.floor(Date.now() / 1000);
+  const token = [
+    { alg: 'RS256', kid: 'e2e-only' },
+    {
+      sub: 'e2e-google',
+      aud: 'iris-e2e',
+      iss: 'https://securetoken.google.com/iris-e2e',
+      email: 'google@example.test',
+      email_verified: true,
+      iat: now,
+      auth_time: now,
+      exp: now + 3600,
+      firebase: { sign_in_provider: 'google.com' },
+    },
+  ]
+    .map((part) => Buffer.from(JSON.stringify(part)).toString('base64url'))
+    .join('.');
+  const provider = {
+    providerId: 'google.com',
+    uid: 'e2e-google',
+    displayName: 'Google test user',
+    email: 'google@example.test',
+    photoURL: null,
+  };
+  await page.addInitScript(
+    (user) =>
+      localStorage.setItem(
+        'firebase:authUser:iris-e2e-public-key:iris-accounts',
+        JSON.stringify(user),
+      ),
+    {
+      uid: 'e2e-google',
+      email: 'google@example.test',
+      emailVerified: true,
+      isAnonymous: false,
+      providerData: [provider],
+      stsTokenManager: {
+        refreshToken: 'e2e-google-refresh',
+        accessToken: `${token}.test-signature`,
+        expirationTime: (now + 3600) * 1000,
+      },
+      createdAt: '1',
+      lastLoginAt: '1',
+      apiKey: 'iris-e2e-public-key',
+      appName: 'iris-accounts',
+    },
+  );
+  const unexpected: string[] = [];
+  await page.route('**/*', async (route) => {
+    const url = new URL(route.request().url());
+    if (url.hostname === '127.0.0.1' || url.origin === 'https://iris.test')
+      return route.fallback();
+    if (
+      url.origin === 'https://identitytoolkit.googleapis.com' &&
+      url.pathname.endsWith('/accounts:lookup')
+    )
+      return route.fulfill({
+        json: {
+          users: [
+            {
+              localId: 'e2e-google',
+              email: 'google@example.test',
+              emailVerified: true,
+              providerUserInfo: [
+                { ...provider, rawId: provider.uid, federatedId: provider.uid },
+              ],
+              createdAt: '1',
+              lastLoginAt: '1',
+            },
+          ],
+        },
+      });
+    unexpected.push(url.origin + url.pathname);
+    return route.abort();
+  });
+  await page.goto('/account');
+  await expect(page.getByText('Signed in with Google.')).toBeVisible();
+  await expect(page.getByText('Email verified.')).toBeVisible();
+  await expect(page.getByLabel('New password')).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: 'Add email and password' }),
+  ).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Delete my account' }),
+  ).toBeVisible();
+  await page.screenshot({
+    path: `test-results/google-provider-summary-${browserName}.png`,
+  });
+  const header = page.getByRole('banner');
+  const accountMenu = header.getByRole('button', {
+    name: 'Account menu',
+    exact: true,
+  });
+  await expect(accountMenu).toBeVisible();
+  await expect(
+    header.getByRole('link', { name: 'Log in', exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    header.getByRole('link', { name: 'Sign up', exact: true }),
+  ).toHaveCount(0);
+  await accountMenu.click();
+  const navigation = page.getByRole('navigation', {
+    name: 'Account and navigation',
+  });
+  await expect(
+    navigation.getByRole('link', { name: 'Account', exact: true }),
+  ).toBeVisible();
+  await expect(
+    navigation.getByRole('link', { name: 'Home', exact: true }),
+  ).toBeHidden();
+  await page.keyboard.press('Escape');
+  await expect(accountMenu).toBeFocused();
+  await header.screenshot({
+    path: `test-results/navbar-signed-in-${browserName}.png`,
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await header.getByRole('button', { name: 'Toggle color theme' }).click();
+  await header.getByRole('button', { name: 'Navigation menu' }).click();
+  await expect(
+    navigation.getByRole('link', { name: 'Account', exact: true }),
+  ).toBeVisible();
+  await expect(
+    navigation.getByRole('link', { name: 'Sign up', exact: true }),
+  ).toHaveCount(0);
+  await page.screenshot({
+    path: `test-results/navbar-signed-in-mobile-${browserName}.png`,
+  });
+  await navigation
+    .getByRole('button', { name: 'Sign out', exact: true })
+    .click();
+  await expect(
+    page.getByRole('heading', { name: 'Sign in', exact: true }),
+  ).toBeVisible();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await expect(
+    header.getByRole('link', { name: 'Log in', exact: true }),
+  ).toBeVisible();
+  await expect(
+    header.getByRole('link', { name: 'Sign up', exact: true }),
+  ).toBeVisible();
+  await expect(
+    header.getByRole('button', { name: 'Account menu' }),
+  ).toHaveCount(0);
+  expect(unexpected).toEqual([]);
+});
+
+/** Install isolated provider and private-API responses without contacting live accounts.
+ * @param page - Fresh test page owning all request interception.
+ * @param initiallyVerified - Whether this journey starts with a verified email identity.
+ * @returns Mutable fixture controls and request evidence scoped to this page.
+ */
+async function installEmailAccountMock(page: Page, initiallyVerified = false) {
+  let verified = initiallyVerified;
   const operations: string[] = [];
   const unexpected: string[] = [];
   /** Build the browser-test identity token for the isolated authentication fixture.
@@ -121,10 +274,6 @@ test('email account flows use the Firebase SDK without touching live services', 
       expect(method).toBe('DELETE');
       expect(request.headers()['x-iris-confirm-deletion']).toBe('permanent');
       expect(request.postData()).toBeNull();
-      expect(
-        operations.filter((operation) => operation === 'signInWithPassword')
-          .length,
-      ).toBeGreaterThan(2);
       deletionAccepted = true;
       saved.assets = [];
       saved.wallets = [];
@@ -182,12 +331,54 @@ test('email account flows use the Firebase SDK without touching live services', 
       json: { data: { removed: true }, meta: { requestId: 'private-e2e' } },
     });
   });
+  return {
+    operations,
+    unexpected,
+    saved,
+    savedAt,
+    privateOperations,
+    /** Publish verification through the next mocked provider response. */
+    verifyEmail() {
+      verified = true;
+    },
+    /** Reject only the next attempted watchlist save with the existing limit response. */
+    limitNextSave() {
+      limitNextSave = true;
+    },
+    /** Observe whether the controlled Worker accepted permanent deletion.
+     * @returns Whether the deletion endpoint accepted the request.
+     */
+    get deletionAccepted() {
+      return deletionAccepted;
+    },
+  };
+}
+
+/** Sign in through the real email form against this test's intercepted provider.
+ * @param page - Fresh page whose isolated account responses are already installed.
+ */
+async function signInEmail(page: Page) {
+  await page.goto('/account');
+  await page.getByLabel('Email address').fill('test@example.test');
+  await page.getByLabel('Password', { exact: true }).fill('test-password123');
+  await page.getByRole('button', { name: 'Sign in with email' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Signed in', exact: true }),
+  ).toBeVisible();
+}
+
+test('email signup, verification, restoration and reset use the Firebase SDK without live services', async ({
+  page,
+  browserName,
+}) => {
+  const account = await installEmailAccountMock(page);
+  const { operations, unexpected, privateOperations } = account;
   await page.goto(`/asset/${sol.mint}`);
   await expect(
     page.getByRole('link', { name: 'Sign in to save to watchlist' }),
   ).toBeVisible();
   expect(privateOperations).toEqual([]);
-  await page.getByRole('link', { name: 'Account', exact: true }).click();
+  await page.getByRole('link', { name: 'Log in', exact: true }).click();
   await expect(
     page.getByRole('heading', { name: 'Sign in', exact: true }),
   ).toBeVisible();
@@ -201,6 +392,9 @@ test('email account flows use the Firebase SDK without touching live services', 
   await page
     .getByRole('button', { name: 'Create an account', exact: true })
     .click();
+  await expect(
+    page.getByRole('heading', { name: 'Create an account', exact: true }),
+  ).toBeFocused();
   await page.getByLabel('Email address').fill('test@example.test');
   await page.getByLabel('Password', { exact: true }).fill('test-password123');
   await page
@@ -210,7 +404,7 @@ test('email account flows use the Firebase SDK without touching live services', 
     page.getByText('Verify your email before using private watchlists.'),
   ).toBeVisible();
   await page.getByRole('button', { name: 'Resend verification email' }).click();
-  verified = true;
+  account.verifyEmail();
   await page.getByRole('button', { name: 'I have verified my email' }).click();
   await expect(page.getByText('Email verified.')).toBeVisible();
   await page.reload();
@@ -222,12 +416,21 @@ test('email account flows use the Firebase SDK without touching live services', 
     page.getByRole('heading', { name: 'Sign in', exact: true }),
   ).toBeVisible();
   await page.getByRole('button', { name: 'Forgot password?' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Reset password', exact: true }),
+  ).toBeFocused();
   await page.getByLabel('Email address').fill('test@example.test');
+  await expect(page.getByLabel('Email address')).toHaveValue(
+    'test@example.test',
+  );
   await page.getByRole('button', { name: 'Send reset instructions' }).click();
   await expect(
     page.locator('.iris-account-feedback [role="status"]'),
   ).toContainText('If this email can receive');
   await page.getByRole('button', { name: 'Back to sign in' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Sign in', exact: true }),
+  ).toBeFocused();
   await page.getByLabel('Email address').fill('test@example.test');
   await page.getByLabel('Password', { exact: true }).fill('test-password123');
   await page.getByRole('button', { name: 'Sign in with email' }).click();
@@ -251,11 +454,24 @@ test('email account flows use the Firebase SDK without touching live services', 
   expect(operations).toContain('signInWithPassword');
   expect(operations).toContain('signUp');
   expect(privateOperations.filter((method) => method !== 'GET')).toEqual([]);
+  expect(unexpected).toEqual([]);
+});
+
+test('private watchlists preserve save limits, recovery, sequential loading and sign-out isolation', async ({
+  page,
+  browserName,
+  api,
+}) => {
+  const account = await installEmailAccountMock(page, true);
+  const { saved, savedAt, unexpected } = account;
+  await signInEmail(page);
+  await page.getByRole('button', { name: 'Toggle color theme' }).click();
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`/asset/${sol.mint}`);
   await expect(
     page.getByRole('button', { name: 'Save to watchlist', exact: true }),
   ).toBeEnabled();
-  limitNextSave = true;
+  account.limitNextSave();
   await page
     .getByRole('button', { name: 'Save to watchlist', exact: true })
     .click();
@@ -470,7 +686,11 @@ test('email account flows use the Firebase SDK without touching live services', 
       .first()
       .getByRole('link', { name: new RegExp(sol.mint) }),
   ).toHaveCount(0);
-  await page.getByRole('link', { name: 'Account', exact: true }).click();
+  await page.getByRole('button', { name: 'Account menu', exact: true }).click();
+  await page
+    .getByRole('navigation', { name: 'Account and navigation' })
+    .getByRole('link', { name: 'Account', exact: true })
+    .click();
   await page.getByRole('button', { name: 'Sign out', exact: true }).click();
   await page.getByRole('link', { name: 'Watchlist', exact: true }).click();
   await expect(
@@ -479,10 +699,21 @@ test('email account flows use the Firebase SDK without touching live services', 
   await expect(
     page.getByRole('link', { name: unknownAddress, exact: true }),
   ).toHaveCount(0);
-  await page.getByRole('link', { name: 'Account', exact: true }).click();
-  await page.getByLabel('Email address').fill('test@example.test');
-  await page.getByLabel('Password', { exact: true }).fill('test-password123');
-  await page.getByRole('button', { name: 'Sign in with email' }).click();
+  expect(unexpected).toEqual([]);
+});
+
+test('permanent account deletion requires reauthentication and retains its completion receipt', async ({
+  page,
+  browserName,
+}) => {
+  const account = await installEmailAccountMock(page, true);
+  const { saved, savedAt, operations, unexpected } = account;
+  saved.assets.push({ address: sol.mint, savedAt });
+  saved.wallets.push({ address: walletAddress, savedAt });
+  await signInEmail(page);
+  const signInsBeforeDeletion = operations.filter(
+    (operation) => operation === 'signInWithPassword',
+  ).length;
   await page.getByRole('button', { name: 'Delete my account' }).click();
   const confirmation = page.getByLabel('Type DELETE to confirm');
   await expect(confirmation).toBeFocused();
@@ -517,7 +748,11 @@ test('email account flows use the Firebase SDK without touching live services', 
   await expect(
     page.getByRole('heading', { name: 'Account deletion underway' }),
   ).toBeFocused();
-  expect(deletionAccepted).toBe(true);
+  expect(account.deletionAccepted).toBe(true);
+  expect(
+    operations.filter((operation) => operation === 'signInWithPassword'),
+  ).toHaveLength(signInsBeforeDeletion + 1);
+  expect(saved).toEqual({ assets: [], wallets: [] });
   await page.getByRole('link', { name: 'Continue public browsing' }).click();
   await page.getByRole('link', { name: 'Account', exact: true }).click();
   await expect(

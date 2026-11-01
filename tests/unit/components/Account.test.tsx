@@ -5,7 +5,7 @@
 
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
+import { Link, MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { AccountProvider } from '../../../src/contexts/AccountContext';
 import { createFirebaseDriver } from '../../../src/auth/firebaseDriver';
@@ -34,19 +34,70 @@ beforeEach(() => {
   );
 });
 /** Open the controlled account or watchlist view for the UI test.
+ * @param path - Account destination, including an optional access-mode query.
+ * @param heading - Form heading to await after session restoration.
  * @returns User-event controls after the sign-in view is ready.
  */
-async function open() {
+async function open(path = '/account', heading = 'Sign in') {
   render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[path]}>
       <AccountProvider>
         <Account />
       </AccountProvider>
     </MemoryRouter>,
   );
-  await screen.findByRole('heading', { name: 'Sign in' });
+  await screen.findByRole('heading', { name: heading });
   return userEvent.setup();
 }
+
+test('signup deep links open the signup form and invalid modes fall back to sign-in', async () => {
+  await open('/account?mode=signup', 'Create an account');
+  expect(screen.getByLabelText('Password', { exact: true })).toHaveAttribute(
+    'autocomplete',
+    'new-password',
+  );
+  expect(
+    screen.queryByRole('button', { name: 'Sign in with email' }),
+  ).not.toBeInTheDocument();
+});
+
+test('unsupported access modes use the ordinary sign-in form', async () => {
+  await open('/account?mode=unknown');
+  expect(screen.getByLabelText('Password', { exact: true })).toHaveAttribute(
+    'autocomplete',
+    'current-password',
+  );
+});
+
+test('same-route navbar links switch forms and clear entered secrets', async () => {
+  render(
+    <MemoryRouter initialEntries={['/account']}>
+      <Link to="/account">Log in</Link>
+      <Link to="/account?mode=signup">Sign up</Link>
+      <AccountProvider>
+        <Account />
+      </AccountProvider>
+    </MemoryRouter>,
+  );
+  const user = userEvent.setup();
+  await screen.findByRole('heading', { name: 'Sign in' });
+  await user.type(
+    screen.getByLabelText('Password', { exact: true }),
+    'do-not-retain',
+  );
+  await user.click(screen.getByRole('link', { name: 'Sign up' }));
+  expect(
+    await screen.findByRole('heading', { name: 'Create an account' }),
+  ).toHaveFocus();
+  expect(screen.getByLabelText('Password', { exact: true })).toHaveValue('');
+  await user.type(
+    screen.getByLabelText('Password', { exact: true }),
+    'another-secret',
+  );
+  await user.click(screen.getByRole('link', { name: 'Log in' }));
+  expect(await screen.findByRole('heading', { name: 'Sign in' })).toHaveFocus();
+  expect(screen.getByLabelText('Password', { exact: true })).toHaveValue('');
+});
 
 test('permanent deletion requires explicit confirmation and fresh identity proof; status survives sign-out', async () => {
   const user = await open();
@@ -239,16 +290,37 @@ test('failed sign-out keeps its retry control after a later null identity event'
   ).toBeEnabled();
 });
 
-test('Google and password linking are separate explicit actions', async () => {
+test('Google sign-in shows its provider without offering password setup', async () => {
   const user = await open();
   await user.click(
     screen.getByRole('button', { name: 'Continue with Google' }),
   );
   expect(fake.driver.google).toHaveBeenCalledTimes(1);
-  await user.type(screen.getByLabelText('New password'), 'password123');
-  await user.click(
-    screen.getByRole('button', { name: 'Add email and password' }),
-  );
-  expect(fake.driver.linkPassword).toHaveBeenCalledWith('password123');
+  expect(await screen.findByText('Signed in with Google.')).toBeVisible();
+  expect(screen.queryByLabelText('New password')).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole('button', { name: 'Add email and password' }),
+  ).not.toBeInTheDocument();
+  expect(fake.driver.linkPassword).not.toHaveBeenCalled();
+  expect(screen.getByRole('link', { name: /^Watchlist$/ })).toBeVisible();
+  expect(screen.getByRole('button', { name: 'Sign out' })).toBeVisible();
+  expect(
+    screen.getByRole('button', { name: 'Delete my account' }),
+  ).toBeVisible();
+  await user.click(screen.getByRole('button', { name: 'Delete my account' }));
+  expect(
+    screen.getByText("Google will ask you to confirm this account's identity."),
+  ).toBeVisible();
+  expect(
+    screen.queryByLabelText('Password for account deletion'),
+  ).not.toBeInTheDocument();
+});
+
+test('existing linked credentials remain visible without a password setup form', async () => {
+  await open();
+  act(() => fake.emit({ ...alice, providers: ['password', 'google.com'] }));
   expect(await screen.findByText('Email and password · Google')).toBeVisible();
+  expect(screen.queryByText('Signed in with Google.')).not.toBeInTheDocument();
+  expect(screen.queryByLabelText('New password')).not.toBeInTheDocument();
+  expect(fake.driver.linkPassword).not.toHaveBeenCalled();
 });
