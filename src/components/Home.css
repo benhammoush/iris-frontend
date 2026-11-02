@@ -1,0 +1,472 @@
+/* Studio surfaces are scoped to Home; shared navigation and other pages keep their styles. */
+.iris-shell.iris-home {
+  --studio-bg: #100e14;
+  --studio-paper: #18141e;
+  --studio-ink: #f1ecf7;
+  --studio-muted: #b1a6c0;
+  --studio-line: #372e43;
+  --studio-purple: #bc96eb;
+  --studio-tint: #2c213c;
+  --studio-positive: #83cba6;
+  --studio-negative: #eb97a7;
+  background: var(--studio-bg);
+  color: var(--studio-ink);
+}
+html[data-theme='light'] .iris-shell.iris-home {
+  --studio-bg: #f7f6f9;
+  --studio-paper: #fff;
+  --studio-ink: #201c29;
+  --studio-muted: #6d647b;
+  --studio-line: #ded9e5;
+  --studio-purple: #7951b0;
+  --studio-tint: #eee6f6;
+  --studio-positive: #247452;
+  --studio-negative: #b34355;
+}
+.iris-shell.iris-home .iris-studio {
+  width: 100%;
+  max-width: 1440px;
+  padding: 24px 28px;
+  font-family: 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif;
+  color: var(--studio-ink);
+}
+.iris-shell.iris-home .iris-studio-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+.iris-shell.iris-home
+  :is(.iris-studio-discovery, .iris-helius-card, .iris-defillama-card) {
+  min-width: 0;
+  margin: 0;
+  padding: 20px;
+  border: 0;
+  border-radius: 0;
+  background: var(--studio-paper);
+  box-shadow: none;
+  color: var(--studio-ink);
+  overflow: visible;
+}
+.iris-shell.iris-home .iris-studio-discovery {
+  border-left: 3px solid var(--studio-purple);
+}
+.iris-shell.iris-home .iris-helius-card {
+  background: var(--studio-tint);
+}
+.iris-shell.iris-home .iris-helius-card::before,
+.iris-shell.iris-home .iris-defillama-card::before {
+  display: none;
+}
+.iris-shell.iris-home .iris-defillama-card {
+  margin-top: 18px;
+}
+.iris-shell.iris-home .iris-studio-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.iris-shell.iris-home .iris-studio-heading h2 {
+  margin: 0;
+  color: var(--studio-ink);
+  font-size: 21px;
+  line-height: 1.2;
+  font-weight: 750;
+  letter-spacing: -0.8px;
+}
+.iris-shell.iris-home .iris-studio-heading :is(span, a) {
+  font-size: 11px;
+  color: var(--studio-muted);
+  text-decoration: none;
+}
+.iris-shell.iris-home .iris-studio-heading a:hover {
+  text-decoration: underline;
+}
+.iris-shell.iris-home .iris-discovery-tabs {
+  display: flex;
+  gap: 22px;
+  border-bottom: 1px solid var(--studio-line);
+}
+.iris-shell.iris-home .iris-discovery-tabs button {
+  min-height: 44px;
+  padding: 8px 0 12px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--studio-muted);
+  font:
+    600 13px 'Segoe UI Variable',
+    'Segoe UI',
+    system-ui,
+    sans-serif;
+  cursor: pointer;
+}
+.iris-shell.iris-home .iris-discovery-tabs button[aria-selected='true'] {
+  border-color: var(--studio-purple);
+  color: var(--studio-ink);
+}
+.iris-shell.iris-home
+  .iris-studio
+  :is(button, a, summary, [role='tabpanel']):focus-visible {
+  outline: 2px solid var(--studio-purple);
+  outline-offset: 3px;
+}
+.iris-shell.iris-home .iris-catalog-list {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+}
+.iris-shell.iris-home .iris-studio-discovery .iris-catalog-list-heading {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.iris-shell.iris-home .iris-discovery-columns,
+.iris-shell.iris-home .iris-studio-discovery .iris-catalog-list-rows > button {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 100px 70px 120px;
+  align-items: center;
+  gap: 14px;
+}
+.iris-shell.iris-home .iris-discovery-columns {
+  padding: 14px 0 10px;
+  color: var(--studio-muted);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.iris-shell.iris-home .iris-discovery-columns > :not(:first-child) {
+  text-align: right;
+}
+.iris-shell.iris-home .iris-catalog-list-rows {
+  max-height: 420px;
+  overflow-y: auto;
+  padding: 0;
+  scrollbar-color: var(--studio-purple) transparent;
+}
+.iris-shell.iris-home .iris-studio-discovery .iris-catalog-list-rows > button {
+  width: 100%;
+  min-height: 64px;
+  padding: 12px 0;
+  border: 0;
+  border-top: 1px solid var(--studio-line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--studio-ink);
+  text-align: left;
+  cursor: pointer;
+}
+.iris-shell.iris-home
+  .iris-studio-discovery
+  .iris-catalog-list-rows
+  > button:hover {
+  background: var(--studio-tint);
+}
+.iris-shell.iris-home .iris-studio-discovery .iris-catalog-list-identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.iris-shell.iris-home .iris-catalog-list-identity > span {
+  min-width: 0;
+}
+.iris-shell.iris-home .iris-catalog-list-identity strong {
+  color: var(--studio-ink);
+  font-size: 14px;
+}
+.iris-shell.iris-home .iris-catalog-list-identity small {
+  display: block;
+  color: var(--studio-muted);
+  font-size: 11px;
+}
+.iris-shell.iris-home .iris-catalog-list-identity em {
+  color: var(--studio-muted);
+  font-size: 10px;
+}
+.iris-shell.iris-home
+  :is(
+    .iris-catalog-list-price,
+    .iris-catalog-list-change,
+    .iris-catalog-list-volume
+  ) {
+  position: relative;
+  display: block;
+  color: var(--studio-ink);
+  text-align: right;
+  font:
+    12px ui-monospace,
+    'Cascadia Code',
+    Consolas,
+    monospace;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.iris-shell.iris-home .iris-studio-discovery .iris-sr-only {
+  left: 0;
+  top: 0;
+}
+.iris-shell.iris-home .iris-positive {
+  color: var(--studio-positive);
+}
+.iris-shell.iris-home .iris-negative {
+  color: var(--studio-negative);
+}
+.iris-shell.iris-home .iris-muted {
+  color: var(--studio-muted);
+}
+.iris-shell.iris-home .iris-empty,
+.iris-shell.iris-home :is(.iris-helius-loading, .iris-defillama-state) {
+  min-height: 0;
+  padding: 18px 0;
+  color: var(--studio-muted);
+  font-size: 12px;
+  text-align: left;
+}
+.iris-shell.iris-home .iris-helius-grid {
+  display: block;
+}
+.iris-shell.iris-home .iris-helius-column {
+  border: 0;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.iris-shell.iris-home .iris-studio-snapshot {
+  margin: 0 0 12px;
+  color: var(--studio-muted);
+  font-size: 12px;
+}
+.iris-shell.iris-home .iris-studio-snapshot[data-state='fresh'] {
+  color: var(--studio-positive);
+}
+.iris-shell.iris-home .iris-helius-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+  background: transparent;
+}
+.iris-shell.iris-home .iris-helius-summary .iris-helius-field {
+  min-height: 0;
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+.iris-shell.iris-home .iris-helius-column + .iris-helius-column {
+  border-left: 0;
+}
+.iris-shell.iris-home .iris-helius-field > span {
+  color: var(--studio-muted);
+  font-size: 10px;
+}
+.iris-shell.iris-home .iris-helius-field > strong {
+  color: var(--studio-ink);
+  font-size: 17px;
+  font-weight: 550;
+}
+.iris-shell.iris-home .iris-helius-column-heading {
+  border: 0;
+  margin: 0;
+  padding: 0 0 10px;
+}
+.iris-shell.iris-home .iris-helius-column-heading h3 {
+  color: var(--studio-ink);
+  font-size: 12px;
+}
+.iris-shell.iris-home .iris-recent-transaction-list {
+  max-height: 270px;
+  overflow-y: auto;
+  padding: 0;
+  scrollbar-color: var(--studio-purple) transparent;
+}
+.iris-shell.iris-home
+  :is(.iris-recent-transaction-head, .iris-recent-transaction-row) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 65px 85px;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  border-top: 1px solid var(--studio-line);
+  border-radius: 0;
+  padding: 10px 0;
+  background: transparent;
+  font-size: 11px;
+}
+.iris-shell.iris-home .iris-recent-transaction-head {
+  color: var(--studio-muted);
+  font-size: 10px;
+  background: var(--studio-tint);
+}
+.iris-shell.iris-home .iris-recent-transaction-row :is(a, strong) {
+  color: var(--studio-ink);
+}
+.iris-shell.iris-home .iris-recent-transaction-row time {
+  color: var(--studio-muted);
+}
+.iris-shell.iris-home .iris-transaction-slot {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.iris-shell.iris-home .iris-studio-technical {
+  margin-top: 14px;
+  font-size: 11px;
+  color: var(--studio-muted);
+}
+.iris-shell.iris-home .iris-studio-technical summary {
+  cursor: pointer;
+  min-height: 24px;
+}
+.iris-shell.iris-home .iris-studio-technical .iris-helius-summary {
+  margin: 12px 0 0;
+}
+.iris-shell.iris-home .iris-defillama-lists {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 28px;
+}
+.iris-shell.iris-home .iris-defillama-lists .iris-catalog-list-heading {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 0 12px;
+  border: 0;
+  background: transparent;
+}
+.iris-shell.iris-home .iris-defillama-lists .iris-catalog-list-heading > span {
+  display: none;
+}
+.iris-shell.iris-home .iris-defillama-lists .iris-catalog-list-heading h2 {
+  color: var(--studio-ink);
+  font-size: 13px;
+}
+.iris-shell.iris-home .iris-defillama-lists .iris-catalog-list-heading small {
+  color: var(--studio-muted);
+  font-size: 11px;
+}
+.iris-shell.iris-home
+  .iris-defillama-lists
+  .iris-catalog-list-rows
+  > :is(a, span, div) {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 58px;
+  padding: 10px 0;
+  border: 0;
+  border-top: 1px solid var(--studio-line);
+  border-radius: 0;
+  color: var(--studio-ink);
+  background: transparent;
+}
+.iris-shell.iris-home .iris-defillama-lists .iris-catalog-list-price {
+  margin-left: auto;
+}
+.iris-shell.iris-home .iris-defillama-lists .iris-catalog-list-rows > a:hover {
+  background: var(--studio-tint);
+}
+.iris-shell.iris-home .iris-defillama-lists .iris-asset-icon-fallback {
+  width: 20px;
+  height: 20px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--studio-muted);
+}
+.iris-shell.iris-home .iris-resource-feedback {
+  color: var(--studio-muted);
+  font-size: 12px;
+}
+@media (max-width: 1100px) {
+  .iris-shell.iris-home .iris-studio {
+    padding: 20px;
+  }
+  .iris-shell.iris-home .iris-studio-top {
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    gap: 14px;
+  }
+  .iris-shell.iris-home
+    :is(.iris-studio-discovery, .iris-helius-card, .iris-defillama-card) {
+    padding: 16px;
+  }
+  .iris-shell.iris-home .iris-discovery-columns,
+  .iris-shell.iris-home
+    .iris-studio-discovery
+    .iris-catalog-list-rows
+    > button {
+    grid-template-columns: minmax(0, 1fr) 84px 65px;
+    gap: 10px;
+  }
+  .iris-shell.iris-home .iris-discovery-columns > :last-child,
+  .iris-shell.iris-home .iris-catalog-list-volume {
+    display: none;
+  }
+  .iris-shell.iris-home .iris-recent-transaction-row,
+  .iris-shell.iris-home .iris-recent-transaction-head {
+    grid-template-columns: minmax(0, 1fr) 52px 70px;
+    gap: 6px;
+  }
+}
+@media (max-width: 900px) {
+  .iris-shell.iris-home .iris-studio-top {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .iris-shell.iris-home .iris-defillama-lists {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 22px;
+  }
+}
+@media (max-width: 480px) {
+  .iris-shell.iris-home .iris-studio {
+    padding: 18px 14px;
+  }
+  .iris-shell.iris-home .iris-studio-heading h2 {
+    font-size: 20px;
+  }
+  .iris-shell.iris-home .iris-discovery-tabs {
+    gap: 18px;
+  }
+  .iris-shell.iris-home .iris-discovery-tabs button {
+    font-size: 12px;
+  }
+  .iris-shell.iris-home .iris-discovery-columns,
+  .iris-shell.iris-home
+    .iris-studio-discovery
+    .iris-catalog-list-rows
+    > button {
+    grid-template-columns: minmax(0, 1fr) 76px 58px;
+    gap: 8px;
+  }
+  .iris-shell.iris-home .iris-studio-discovery .iris-catalog-list-identity {
+    gap: 7px;
+  }
+  .iris-shell.iris-home
+    .iris-studio-discovery
+    .iris-catalog-list-identity
+    :is(img, .iris-asset-icon-fallback) {
+    width: 24px;
+    height: 24px;
+  }
+  .iris-shell.iris-home .iris-catalog-list-identity strong {
+    font-size: 12px;
+  }
+  .iris-shell.iris-home .iris-catalog-list-identity small {
+    font-size: 10px;
+  }
+  .iris-shell.iris-home
+    :is(.iris-catalog-list-price, .iris-catalog-list-change) {
+    font-size: 11px;
+  }
+}

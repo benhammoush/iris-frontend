@@ -29,16 +29,25 @@ export default function CatalogAssetContent(props: CatalogAssetProps) {
   const { asset } = props;
   return (
     <>
-      <AssetIcon src={asset.imageUrl} symbol={asset.symbol} />
       <span className="iris-catalog-list-identity">
-        <strong>{asset.symbol}</strong>
-        <small>{asset.name}</small>
-        <small>Volume {currency(asset.activity?.volume24hUsd)}</small>
-        {asset.verification?.isVerified === false && <em>Unverified</em>}
+        <AssetIcon src={asset.imageUrl} symbol={asset.symbol} />
+        <span>
+          <strong>{asset.symbol}</strong>
+          <small>{asset.name}</small>
+          {asset.verification?.isVerified === false && <em>Unverified</em>}
+        </span>
       </span>
       <span className="iris-catalog-list-price">
+        <span className="iris-sr-only">Price </span>
         {currency(asset.priceUsd, 5)}
+      </span>
+      <span className="iris-catalog-list-change">
+        <span className="iris-sr-only">24h change </span>
         <Change value={asset.change24hPct} />
+      </span>
+      <span className="iris-catalog-list-volume">
+        <span className="iris-sr-only">Volume </span>
+        {currency(asset.activity?.volume24hUsd)}
       </span>
     </>
   );

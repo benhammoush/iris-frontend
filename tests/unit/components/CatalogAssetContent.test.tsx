@@ -33,7 +33,9 @@ test('shared catalog presentation preserves unknown metrics and unverified label
   expect(screen.getByRole('region', { name: 'Assets' })).toBeVisible();
   expect(screen.getByText('SOL')).toBeVisible();
   expect(screen.getByText('Unverified')).toBeVisible();
-  expect(screen.getByText('Volume —')).toBeVisible();
+  expect(document.querySelector('.iris-catalog-list-volume')).toHaveTextContent(
+    'Volume —',
+  );
   expect(screen.queryByText('$0')).not.toBeInTheDocument();
   expect(fetch).not.toHaveBeenCalled();
   fetch.mockRestore();
