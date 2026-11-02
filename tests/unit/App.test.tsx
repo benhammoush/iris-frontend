@@ -206,11 +206,13 @@ test('renders the Worker-backed portfolio shell', async () => {
   expect(
     screen.getByRole('heading', { name: 'Top Volume' }),
   ).toBeInTheDocument();
-  expect(screen.getByRole('heading', { name: 'Trending' })).toBeInTheDocument();
+  expect(screen.getByRole('tab', { name: 'Trending' })).toBeInTheDocument();
+  expect(screen.getByRole('tab', { name: 'New tokens' })).toBeInTheDocument();
   expect(
-    screen.getByRole('heading', { name: 'New tokens' }),
-  ).toBeInTheDocument();
-  expect(screen.getByText('Volume $12,345')).toBeInTheDocument();
+    [...document.querySelectorAll('.iris-catalog-list-volume')].map(
+      (element) => element.textContent,
+    ),
+  ).toContain('Volume $12,345');
   expect(screen.getByText('Unverified')).toBeInTheDocument();
   expect(screen.queryByText('Tracked assets')).not.toBeInTheDocument();
   expect(screen.queryByText('Assets priced')).not.toBeInTheDocument();
@@ -243,7 +245,7 @@ test('renders the Worker-backed portfolio shell', async () => {
   unmount();
 });
 
-test('renders the DefiLlama dashboard after Helius and before Jupiter with safe protocol links', async () => {
+test('renders the Studio discovery/network row above DeFi with safe protocol links', async () => {
   const { container } = render(
     <BrowserRouter>
       <App />
@@ -272,12 +274,12 @@ test('renders the DefiLlama dashboard after Helius and before Jupiter with safe 
   ).toHaveTextContent('1');
   expect(
     container.querySelector(
-      '.iris-catalog-list--volume .iris-catalog-list-identity small',
+      '.iris-defillama-lists .iris-catalog-list--volume .iris-catalog-list-identity small',
     ),
   ).toHaveTextContent('1D +2.50%');
   expect(
     container.querySelector(
-      '.iris-catalog-list--trending .iris-catalog-list-identity small',
+      '.iris-defillama-lists .iris-catalog-list--trending .iris-catalog-list-identity small',
     ),
   ).toHaveTextContent('1D -1.50% · 7D +4.25%');
   expect(screen.getByText('24H $750K')).toBeInTheDocument();
@@ -296,11 +298,14 @@ test('renders the DefiLlama dashboard after Helius and before Jupiter with safe 
     return element;
   }
   const cards = [...required('.iris-page').children];
-  expect(cards.indexOf(required('.iris-helius-card'))).toBeLessThan(
+  expect(cards.indexOf(required('.iris-studio-top'))).toBeLessThan(
     cards.indexOf(required('.iris-defillama-card')),
   );
-  expect(cards.indexOf(required('.iris-defillama-card'))).toBeLessThan(
-    cards.indexOf(required('.iris-jupiter-dex')),
+  expect(required('.iris-studio-top').firstElementChild).toBe(
+    required('.iris-studio-discovery'),
+  );
+  expect(required('.iris-studio-top').lastElementChild).toBe(
+    required('.iris-helius-card'),
   );
 });
 
@@ -311,11 +316,12 @@ test('Jupiter discovery rows use the styled list structure and open canonical as
     </BrowserRouter>,
   );
   await screen.findByText('JUP');
-  expect(container.querySelector('.iris-jupiter-mark')).toBeInTheDocument();
+  expect(container.querySelector('.iris-studio-discovery')).toBeInTheDocument();
   expect(
-    container.querySelectorAll('.iris-jupiter-dex .iris-catalog-list'),
+    container.querySelectorAll('.iris-studio-discovery .iris-catalog-list'),
   ).toHaveLength(3);
   expect(screen.queryByText('Jupiter 24H activity')).not.toBeInTheDocument();
+  await userEvent.click(screen.getByRole('tab', { name: 'Trending' }));
   await userEvent.click(screen.getByText('JUP'));
   expect(window.location.pathname).toContain('/asset/JUPyiwrY');
 });
@@ -340,15 +346,13 @@ test('uses Home-only navigation and shows the selected market metrics in the Jup
     screen.queryByRole('link', { name: 'Market' }),
   ).not.toBeInTheDocument();
   expect(
-    container.querySelector('.iris-jupiter-dex-label p'),
+    container.querySelector('.iris-studio-discovery .iris-studio-heading span'),
   ).toHaveTextContent('Jupiter');
   expect(
     screen.getByRole('heading', { name: 'Top Volume' }),
   ).toBeInTheDocument();
-  expect(screen.getByRole('heading', { name: 'Trending' })).toBeInTheDocument();
-  expect(
-    screen.getByRole('heading', { name: 'New tokens' }),
-  ).toBeInTheDocument();
+  expect(screen.getByRole('tab', { name: 'Trending' })).toBeInTheDocument();
+  expect(screen.getByRole('tab', { name: 'New tokens' })).toBeInTheDocument();
   expect(
     screen.queryByRole('button', { name: /FDV/i }),
   ).not.toBeInTheDocument();
@@ -426,6 +430,7 @@ test('asset table click and keyboard navigation open asset detail', async () => 
     </BrowserRouter>,
   );
   await screen.findByText('JUP');
+  await userEvent.click(screen.getByRole('tab', { name: 'Trending' }));
   await act(async () => {
     await userEvent.click(screen.getByText('JUP'));
   });
@@ -439,6 +444,7 @@ test('asset table rows support keyboard navigation', async () => {
     </BrowserRouter>,
   );
   await screen.findByText('JUP');
+  await userEvent.click(screen.getByRole('tab', { name: 'Trending' }));
   const row = screen
     .getAllByRole('button')
     .find((button) => button.textContent?.includes('JUP'));

@@ -57,9 +57,6 @@ const count = (value: number | null | undefined) =>
   value === null || value === undefined || !Number.isFinite(value)
     ? '—'
     : value.toLocaleString('en-US');
-const preloadImage = {
-  fetchpriority: 'high',
-};
 
 /** Nullable percentage-change metric. */
 interface ChangeProps {
@@ -129,19 +126,10 @@ export default function DefiLlamaCard(props: DefiLlamaCardProps) {
       className="iris-defillama-card"
       aria-label="DefiLlama Solana dashboard"
     >
-      <div className="iris-defillama-topline">
-        <img
-          className="iris-defillama-logo"
-          src="/assets/defillama.webp"
-          height="37.1"
-          width="108.5"
-          alt="DefiLlama"
-          {...preloadImage}
-          loading="eager"
-          decoding="sync"
-        />
+      <div className="iris-studio-heading">
+        <h2>DeFi activity</h2>
         <a href="https://defillama.com" target="_blank" rel="noreferrer">
-          Defi
+          DefiLlama
         </a>
       </div>
       <ResourceFeedback

@@ -28,7 +28,7 @@ for (const width of [390, 1440]) {
       ),
     ).toHaveCount(0);
     const provider = page.getByRole('region', {
-      name: 'Helius Solana network and recent transactions',
+      name: 'Jupiter discovery catalogs',
     });
     await expect(provider).toBeInViewport();
     const headerBounds = await page.getByRole('banner').boundingBox();
