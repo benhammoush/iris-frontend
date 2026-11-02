@@ -1,28 +1,4 @@
-/* Studio surfaces are scoped to Home; shared navigation and other pages keep their styles. */
-.iris-shell.iris-home {
-  --studio-bg: #100e14;
-  --studio-paper: #18141e;
-  --studio-ink: #f1ecf7;
-  --studio-muted: #b1a6c0;
-  --studio-line: #372e43;
-  --studio-purple: #bc96eb;
-  --studio-tint: #2c213c;
-  --studio-positive: #83cba6;
-  --studio-negative: #eb97a7;
-  background: var(--studio-bg);
-  color: var(--studio-ink);
-}
-html[data-theme='light'] .iris-shell.iris-home {
-  --studio-bg: #f7f6f9;
-  --studio-paper: #fff;
-  --studio-ink: #201c29;
-  --studio-muted: #6d647b;
-  --studio-line: #ded9e5;
-  --studio-purple: #7951b0;
-  --studio-tint: #eee6f6;
-  --studio-positive: #247452;
-  --studio-negative: #b34355;
-}
+@import './Studio.css';
 .iris-shell.iris-home .iris-studio {
   width: 100%;
   max-width: 1440px;

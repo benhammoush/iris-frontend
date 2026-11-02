@@ -17,48 +17,34 @@ for (const width of [1440, 390]) {
       page.getByRole('heading', { name: /Solana SOL/ }),
     ).toBeVisible();
 
-    const card = page.locator('.iris-asset-jupiter-card');
+    const card = page.locator('.iris-studio-asset-page');
     const primary = card.locator(
       '.iris-asset-identity h1, .iris-hero-price > strong, .iris-jupiter-metric strong',
     );
     const secondary = card.locator(
-      '.iris-asset-identity h1 span, .iris-hero-price > span, .iris-jupiter-metric > span, .iris-jupiter-metric small',
+      '.iris-asset-identity h1 span, .iris-hero-price > span:not(.iris-change), .iris-jupiter-metric > span, .iris-jupiter-metric small',
     );
     const mint = card.locator('.iris-asset-identity a');
     const chart = page.locator('.iris-birdeye-card');
     const toolbar = chart.locator('.iris-chart-toolbar');
     const pair = chart.locator('.iris-birdeye-pair strong');
-    const caption = chart.locator('.iris-birdeye-pair span');
     const badge = chart.locator('.iris-birdeye-card-header span');
     const selectedTimeframe = chart.locator('.iris-timeframe button.active');
 
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-    const birdeyeLogo = chart.getByRole('img', {
-      name: 'Birdeye',
-      exact: true,
-    });
-    await expect(birdeyeLogo).toHaveCount(1);
-    await expect(birdeyeLogo).toHaveAttribute('src', '/birdeye-on-light.png');
-    await expect
-      .poll(() =>
-        birdeyeLogo.evaluate((image) =>
-          image instanceof HTMLImageElement ? image.naturalWidth : 0,
-        ),
-      )
-      .toBeGreaterThan(0);
+    await expect(badge).toHaveText('Birdeye');
     for (const element of await primary.all()) {
-      await expect(element).toHaveCSS('color', 'rgb(23, 33, 47)');
+      await expect(element).toHaveCSS('color', 'rgb(32, 28, 41)');
     }
     for (const element of await secondary.all()) {
-      await expect(element).toHaveCSS('color', 'rgb(64, 82, 105)');
+      await expect(element).toHaveCSS('color', 'rgb(109, 100, 123)');
     }
-    await expect(mint).toHaveCSS('color', 'rgb(19, 109, 56)');
-    await expect(chart).toHaveCSS('background-color', 'rgb(253, 250, 255)');
-    await expect(toolbar).toHaveCSS('background-color', 'rgb(253, 250, 255)');
-    await expect(pair).toHaveCSS('color', 'rgb(23, 33, 47)');
-    await expect(caption).toHaveCSS('color', 'rgb(64, 82, 105)');
-    await expect(badge).toHaveCSS('color', 'rgb(134, 25, 143)');
-    await expect(selectedTimeframe).toHaveCSS('color', 'rgb(23, 33, 47)');
+    await expect(mint).toHaveCSS('color', 'rgb(121, 81, 176)');
+    await expect(chart).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+    await expect(toolbar).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+    await expect(pair).toHaveCSS('color', 'rgb(32, 28, 41)');
+    await expect(badge).toHaveCSS('color', 'rgb(109, 100, 123)');
+    await expect(selectedTimeframe).toHaveCSS('color', 'rgb(121, 81, 176)');
     await expect(chart.locator('.tv-lightweight-charts')).toBeVisible();
     await page.screenshot({
       path: testInfo.outputPath('asset-light.png'),
@@ -67,30 +53,20 @@ for (const width of [1440, 390]) {
 
     await page.getByRole('button', { name: 'Toggle color theme' }).click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-    await expect(birdeyeLogo).toHaveCount(1);
-    await expect(birdeyeLogo).toHaveAttribute('src', '/birdeye-on-dark.png');
-    await expect
-      .poll(() =>
-        birdeyeLogo.evaluate((image) =>
-          image instanceof HTMLImageElement ? image.naturalWidth : 0,
-        ),
-      )
-      .toBeGreaterThan(0);
     for (const element of await primary.all()) {
-      await expect(element).toHaveCSS('color', 'rgb(255, 255, 255)');
+      await expect(element).toHaveCSS('color', 'rgb(241, 236, 247)');
     }
     for (const element of await secondary.all()) {
-      await expect(element).toHaveCSS('color', 'rgb(167, 184, 190)');
+      await expect(element).toHaveCSS('color', 'rgb(177, 166, 192)');
     }
-    await expect(mint).toHaveCSS('color', 'rgb(142, 236, 200)');
-    await expect(chart).toHaveCSS('background-color', 'rgb(9, 10, 13)');
-    await expect(toolbar).toHaveCSS('background-color', 'rgb(9, 10, 13)');
-    await expect(pair).toHaveCSS('color', 'rgb(255, 255, 255)');
-    await expect(caption).toHaveCSS('color', 'rgb(199, 175, 206)');
-    await expect(badge).toHaveCSS('color', 'rgb(245, 181, 255)');
-    await expect(selectedTimeframe).toHaveCSS('color', 'rgb(255, 255, 255)');
+    await expect(mint).toHaveCSS('color', 'rgb(188, 150, 235)');
+    await expect(chart).toHaveCSS('background-color', 'rgb(24, 20, 30)');
+    await expect(toolbar).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+    await expect(pair).toHaveCSS('color', 'rgb(241, 236, 247)');
+    await expect(badge).toHaveCSS('color', 'rgb(177, 166, 192)');
+    await expect(selectedTimeframe).toHaveCSS('color', 'rgb(188, 150, 235)');
     await page.getByRole('button', { name: 'Toggle color theme' }).click();
-    await expect(chart).toHaveCSS('background-color', 'rgb(253, 250, 255)');
+    await expect(chart).toHaveCSS('background-color', 'rgb(255, 255, 255)');
     await expect(chart.locator('.tv-lightweight-charts')).toBeVisible();
   });
 

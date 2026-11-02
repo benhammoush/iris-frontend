@@ -375,10 +375,10 @@ test('email signup, verification, restoration and reset use the Firebase SDK wit
   const { operations, unexpected, privateOperations } = account;
   await page.goto(`/asset/${sol.mint}`);
   await expect(
-    page.getByRole('link', { name: 'Sign in to save to watchlist' }),
+    page.getByRole('link', { name: 'Log in to save', exact: true }),
   ).toBeVisible();
   expect(privateOperations).toEqual([]);
-  await page.getByRole('link', { name: 'Log in', exact: true }).click();
+  await page.getByRole('link', { name: 'Log in to save', exact: true }).click();
   await expect(
     page.getByRole('heading', { name: 'Sign in', exact: true }),
   ).toBeVisible();

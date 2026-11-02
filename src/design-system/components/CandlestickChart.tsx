@@ -30,6 +30,8 @@ export interface CandleChartPoint {
 interface Props {
   candles: CandleChartPoint[];
   height?: number;
+  /** Use inherited surface colors and a restrained horizontal grid. */
+  minimalGrid?: boolean;
   /** Format an available chart value for the visible price axis.
    * @param value - Available numeric price.
    * @returns Display text for the chart's price axis.
@@ -79,6 +81,7 @@ export default function CandlestickChart(props: Props) {
   const {
     candles,
     height = 360,
+    minimalGrid = false,
     valueFormatter,
     canLoadEarlier = false,
     onLoadEarlier,
@@ -107,7 +110,9 @@ export default function CandlestickChart(props: Props) {
     const container = containerRef.current;
     if (!container) return undefined;
 
-    const style = getComputedStyle(document.documentElement);
+    const style = getComputedStyle(
+      minimalGrid ? container : document.documentElement,
+    );
     /** Read a chart color from the current theme with the supported fallback.
      * @param name - CSS custom-property name for the chart color.
      * @param fallback - Existing display color when the theme token is absent.
@@ -125,8 +130,13 @@ export default function CandlestickChart(props: Props) {
         textColor: color('--iris-muted', '#66788f'),
       },
       grid: {
-        vertLines: { color: color('--iris-border', '#ccd7e5') },
-        horzLines: { color: color('--iris-border', '#ccd7e5') },
+        vertLines: {
+          color: color('--iris-border', '#ccd7e5'),
+          visible: !minimalGrid,
+        },
+        horzLines: {
+          color: color('--iris-chart-grid', color('--iris-border', '#ccd7e5')),
+        },
       },
       rightPriceScale: {
         borderColor: color('--iris-border', '#ccd7e5'),
@@ -167,6 +177,7 @@ export default function CandlestickChart(props: Props) {
     const volume = chart.addSeries(HistogramSeries, {
       priceScaleId: 'volume',
       priceFormat: { type: 'volume' },
+      lastValueVisible: !minimalGrid,
     });
     chart
       .priceScale('volume')
@@ -213,11 +224,15 @@ export default function CandlestickChart(props: Props) {
       candleSeriesRef.current = null;
       volumeSeriesRef.current = null;
     };
-  }, [height, mode]);
+  }, [height, mode, minimalGrid]);
 
   useEffect(() => {
     if (!candleSeriesRef.current || !volumeSeriesRef.current) return;
-    const style = getComputedStyle(document.documentElement);
+    const style = getComputedStyle(
+      minimalGrid && containerRef.current
+        ? containerRef.current
+        : document.documentElement,
+    );
     const green = style.getPropertyValue('--iris-green').trim() || '#24d166';
     const red = style.getPropertyValue('--iris-red').trim() || '#f05454';
     const data = asChartCandles(candles);
@@ -235,12 +250,15 @@ export default function CandlestickChart(props: Props) {
       chartRef.current?.timeScale().fitContent();
       hasDataRef.current = true;
     }
-  }, [candles, mode]);
+  }, [candles, mode, minimalGrid]);
 
   return (
     <div
       ref={containerRef}
-      style={{ height, width: '100%' }}
+      style={{
+        height: minimalGrid ? `var(--iris-candle-height, ${height}px)` : height,
+        width: '100%',
+      }}
       aria-label="Historical candlestick chart with USD trading volume"
     />
   );
