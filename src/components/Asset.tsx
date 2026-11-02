@@ -11,7 +11,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import SaveControl from './SaveControl';
 import { workerApi } from '../api/worker';
 import type { CandleTimeframe } from '../api/contracts';
@@ -33,7 +33,7 @@ import {
 } from '../design-system';
 import { solanaExplorerUrl } from '../data/solana';
 import { ValueSkeleton } from '../design-system';
-import { JupiterLogo } from './Home';
+import './Asset.css';
 import ResourceFeedback from './ResourceFeedback';
 
 /** Format a known monetary value for display and preserve the unavailable-data fallback.
@@ -389,6 +389,8 @@ const distributionColumns = (
  */
 export default function Asset() {
   const { mint = '' } = useParams();
+  const [expandedMint, setExpandedMint] = useState<string | null>(null);
+  const mintId = useId();
   const [timeframe, setTimeframe] = useState<CandleTimeframe>('1H');
   const [olderCandles, setOlderCandles] = useState<
     ReturnType<typeof assetCandlesFrom>
@@ -513,25 +515,26 @@ export default function Asset() {
   const metrics: { label: string; value: string; detail?: string | null }[] = [
     asset?.marketCapUsd != null
       ? { label: 'Market cap', value: compactCurrency(asset.marketCapUsd) }
-      : null,
+      : { label: 'Market cap', value: '—' },
+    activity?.volume24hUsd != null
+      ? { label: '24H volume', value: compactCurrency(activity.volume24hUsd) }
+      : { label: '24H volume', value: '—' },
     asset?.fullyDilutedValuationUsd != null
       ? {
           label: 'Fully diluted valuation',
           value: compactCurrency(asset.fullyDilutedValuationUsd),
         }
-      : null,
+      : { label: 'Fully diluted valuation', value: '—' },
     asset?.liquidityUsd != null
       ? { label: 'Liquidity', value: compactCurrency(asset.liquidityUsd) }
-      : null,
+      : { label: 'Liquidity', value: '—' },
     asset?.circulatingSupply != null
       ? {
           label: 'Circulating supply',
           value: compactQuantity(asset.circulatingSupply),
+          detail: asset.symbol,
         }
-      : null,
-    activity?.volume24hUsd != null
-      ? { label: '24H volume', value: compactCurrency(activity.volume24hUsd) }
-      : null,
+      : { label: 'Circulating supply', value: '—' },
     asset?.quality?.organicScore != null
       ? {
           label: 'Organic score',
@@ -540,37 +543,31 @@ export default function Asset() {
           }),
           detail: asset.quality.organicScoreLabel || null,
         }
-      : null,
-  ].filter(
-    (
-      metric,
-    ): metric is { label: string; value: string; detail?: string | null } =>
-      metric !== null,
-  );
+      : { label: 'Organic score', value: '—' },
+  ];
   const assetLoading = result.loading && !asset;
-  const displayedMetrics: {
-    label: string;
-    value: string;
-    detail?: string | null;
-  }[] = metrics.length
-    ? metrics
-    : [
-        'Market cap',
-        'Fully diluted valuation',
-        'Liquidity',
-        'Circulating supply',
-        '24H volume',
-        'Organic score',
-      ].map((label) => ({ label, value: '' }));
+  const showHero = Boolean(asset) || (result.loading && !result.error);
+  const saveControl = (
+    <div className="iris-asset-save">
+      <SaveControl kind="asset" address={mint} compact />
+    </div>
+  );
   return (
-    <div className="iris-shell">
+    <div className="iris-shell iris-asset-studio">
       <Navbar />
-      <DataStatus
-        meta={result.meta || candlesResult.meta}
-        error={result.error || candlesResult.error}
-      />
-      <main id="iris-main" tabIndex={-1} className="iris-page">
-        <SaveControl kind="asset" address={mint} />
+      <main
+        id="iris-main"
+        tabIndex={-1}
+        className="iris-page iris-studio-asset-page"
+      >
+        <nav className="iris-asset-breadcrumb" aria-label="Breadcrumb">
+          <Link to="/">Home</Link>
+          <span aria-hidden="true"> / </span>
+          <span>Assets</span>
+          <span aria-hidden="true"> / </span>
+          <span aria-current="page">{asset?.symbol || 'Asset'}</span>
+        </nav>
+        {!showHero && saveControl}
         <ResourceFeedback
           label="Asset data"
           error={result.error}
@@ -588,15 +585,6 @@ export default function Asset() {
               className="iris-section iris-jupiter-dex iris-asset-jupiter-card"
               aria-busy={assetLoading || undefined}
             >
-              <div className="iris-jupiter-dex-label">
-                <JupiterLogo />
-                <div>
-                  <p>Jupiter</p>
-                </div>
-                <span className="iris-jupiter-badge">
-                  Decentralised Exchange
-                </span>
-              </div>
               <div className="iris-asset-jupiter-content">
                 <div className="iris-asset-heading">
                   <div className="iris-asset-identity">
@@ -619,20 +607,39 @@ export default function Asset() {
                         <ValueSkeleton width="220px" />
                       ) : (
                         explorerUrl && (
-                          <a
-                            href={explorerUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            title={asset?.mint}
-                          >
-                            {asset?.mint}
-                          </a>
+                          <div className="iris-asset-mint">
+                            <a
+                              id={mintId}
+                              href={explorerUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              title={asset?.mint}
+                            >
+                              {expandedMint === mint
+                                ? asset?.mint
+                                : short(asset?.mint ?? null)}
+                            </a>
+                            <button
+                              type="button"
+                              aria-expanded={expandedMint === mint}
+                              aria-controls={mintId}
+                              onClick={() =>
+                                setExpandedMint(
+                                  expandedMint === mint ? null : mint,
+                                )
+                              }
+                            >
+                              {expandedMint === mint
+                                ? 'Hide mint'
+                                : 'Show mint'}
+                            </button>
+                          </div>
                         )
                       )}
                     </div>
                   </div>
                   <div className="iris-hero-price">
-                    <span>Current price</span>
+                    <span className="iris-sr-only">Current price</span>
                     <strong>
                       {assetLoading ? (
                         <ValueSkeleton width="118px" />
@@ -644,13 +651,105 @@ export default function Asset() {
                       <Change value={asset.change24hPct} />
                     )}
                   </div>
+                  {saveControl}
+                </div>
+              </div>
+            </section>
+            <div className="iris-asset-market-layout">
+              <section
+                className="iris-section iris-asset-chart iris-birdeye-card"
+                aria-busy={
+                  (candlesResult.loading && !candles.length) || undefined
+                }
+              >
+                <div className="iris-birdeye-card-header">
+                  <h2>Price &amp; volume</h2>
+                  <span>Birdeye</span>
+                </div>
+                <div className="iris-chart-toolbar">
+                  <div className="iris-birdeye-pair">
+                    <strong>
+                      {assetLoading ? (
+                        <ValueSkeleton width="78px" />
+                      ) : (
+                        `${asset?.symbol} / USD`
+                      )}
+                    </strong>
+                  </div>
+                  <div className="iris-timeframe" aria-label="Candle timeframe">
+                    {primaryTimeframes.map(([label, value]) => (
+                      <button
+                        key={value}
+                        className={timeframe === value ? 'active' : ''}
+                        aria-pressed={timeframe === value}
+                        onClick={() => setTimeframe(value)}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <ResourceFeedback
+                  label="Price history"
+                  error={candlesResult.error}
+                  busy={candlesResult.loading || candlesResult.refreshing}
+                  hasData={candles.length > 0}
+                  onRetry={candlesResult.refetch}
+                  retryLabel="Retry price history"
+                />
+                <ResourceFeedback
+                  label="Earlier price history"
+                  error={olderCandlesError}
+                  busy={loadingOlder}
+                  hasData={candles.length > 0}
+                  onRetry={() => void loadEarlierCandles(true)}
+                  retryLabel="Retry earlier history"
+                />
+                {candles.length ? (
+                  <CandlestickChart
+                    candles={candles}
+                    height={245}
+                    minimalGrid
+                    canLoadEarlier={canLoadEarlier}
+                    onLoadEarlier={loadEarlierCandles}
+                    valueFormatter={price}
+                  />
+                ) : candlesResult.loading ? (
+                  <div className="iris-chart-skeleton">
+                    <ValueSkeleton width="88%" />
+                    <ValueSkeleton width="74%" />
+                    <ValueSkeleton width="92%" />
+                  </div>
+                ) : !candlesResult.error ? (
+                  <p className="iris-empty">No price history is available.</p>
+                ) : null}
+                <div className="iris-asset-chart-note">
+                  <span>
+                    {
+                      primaryTimeframes.find(
+                        (entry) => entry[1] === timeframe,
+                      )?.[0]
+                    }{' '}
+                    candles
+                  </span>
+                  <span>USD</span>
+                </div>
+              </section>
+              <aside
+                className="iris-asset-snapshot"
+                aria-label="Market snapshot"
+                aria-busy={assetLoading || undefined}
+              >
+                <div className="iris-studio-asset-section-heading">
+                  <h2>Market snapshot</h2>
+                  <span>Jupiter</span>
                 </div>
                 <div
                   className="iris-jupiter-market-data"
                   aria-label="Market metrics"
                 >
                   <div className="iris-jupiter-metrics">
-                    {displayedMetrics.map((metric) => (
+                    {metrics.map((metric) => (
                       <Metric
                         label={metric.label}
                         value={
@@ -672,88 +771,12 @@ export default function Asset() {
                     ))}
                   </div>
                 </div>
-              </div>
-            </section>
-            <section
-              className="iris-section iris-asset-chart iris-birdeye-card"
-              aria-busy={
-                (candlesResult.loading && !candles.length) || undefined
-              }
-            >
-              <div className="iris-birdeye-card-header">
-                <img
-                  className="iris-birdeye-logo--dark"
-                  src="/birdeye-on-dark.png"
-                  alt="Birdeye"
-                  width="130"
-                  height="28"
-                />
-                <img
-                  className="iris-birdeye-logo--light"
-                  src="/birdeye-on-light.png"
-                  alt="Birdeye"
-                  width="130"
-                  height="28"
-                />
-                <span>Market data</span>
-              </div>
-              <div className="iris-chart-toolbar">
-                <div className="iris-birdeye-pair">
-                  <strong>
-                    {assetLoading ? (
-                      <ValueSkeleton width="78px" />
-                    ) : (
-                      `${asset?.symbol} / USD`
-                    )}
-                  </strong>
-                  <span>Price and volume</span>
-                </div>
-                <div className="iris-timeframe" aria-label="Candle timeframe">
-                  {primaryTimeframes.map(([label, value]) => (
-                    <button
-                      key={value}
-                      className={timeframe === value ? 'active' : ''}
-                      aria-pressed={timeframe === value}
-                      onClick={() => setTimeframe(value)}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <ResourceFeedback
-                label="Price history"
-                error={candlesResult.error}
-                busy={candlesResult.loading || candlesResult.refreshing}
-                hasData={candles.length > 0}
-                onRetry={candlesResult.refetch}
-                retryLabel="Retry price history"
-              />
-              <ResourceFeedback
-                label="Earlier price history"
-                error={olderCandlesError}
-                busy={loadingOlder}
-                hasData={candles.length > 0}
-                onRetry={() => void loadEarlierCandles(true)}
-                retryLabel="Retry earlier history"
-              />
-              {candles.length ? (
-                <CandlestickChart
-                  candles={candles}
-                  canLoadEarlier={canLoadEarlier}
-                  onLoadEarlier={loadEarlierCandles}
-                  valueFormatter={price}
-                />
-              ) : candlesResult.loading ? (
-                <div className="iris-chart-skeleton">
-                  <ValueSkeleton width="88%" />
-                  <ValueSkeleton width="74%" />
-                  <ValueSkeleton width="92%" />
-                </div>
-              ) : !candlesResult.error ? (
-                <p className="iris-empty">No price history is available.</p>
-              ) : null}
-            </section>
+                <p className="iris-asset-note">
+                  Provider metrics are not a security guarantee. Unavailable
+                  values remain —.
+                </p>
+              </aside>
+            </div>
             <IntelligencePanel
               tab={intelligenceTab}
               onTabChange={setIntelligenceTab}
@@ -773,6 +796,10 @@ export default function Asset() {
             />
           </>
         )}
+        <DataStatus
+          meta={result.meta || candlesResult.meta}
+          error={result.error || candlesResult.error}
+        />
       </main>
     </div>
   );
@@ -893,8 +920,8 @@ function IntelligencePanel(props: IntelligencePanelProps) {
   return (
     <section className="iris-section iris-holder-panel iris-onchain-intelligence iris-helius-card">
       <div className="iris-helius-topline">
-        <img className="iris-helius-logo" src="/helius-dark.svg" alt="Helius" />
-        <span>Network</span>
+        <h2>On-chain activity</h2>
+        <span>Helius</span>
       </div>
       <div
         className="iris-intelligence-tabs"
@@ -961,6 +988,13 @@ function IntelligencePanel(props: IntelligencePanelProps) {
           />
         )}
       </div>
+      <p className="iris-asset-intelligence-note">
+        {tab === 'distribution'
+          ? 'Largest token accounts, not necessarily unique holders. '
+          : ''}
+        USD values use the current display price, not historical execution
+        prices.
+      </p>
     </section>
   );
 }

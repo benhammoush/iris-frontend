@@ -40,4 +40,7 @@ test('shows an unavailable asset without reporting an empty chart', async ({
     page.getByText('Asset data is currently unavailable from the Worker.'),
   ).toBeVisible();
   await expect(page.getByText('No price history is available.')).toHaveCount(0);
+  await expect(
+    page.getByRole('link', { name: 'Log in to save', exact: true }),
+  ).toBeVisible();
 });
