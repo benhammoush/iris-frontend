@@ -29,3 +29,4 @@ yarn-error.log*
 !.env.vertical
 /playwright-report
 /test-results
+/DEV.md

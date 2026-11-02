@@ -67,27 +67,6 @@
     color: var(--studio-muted);
     opacity: 1;
   }
-  .iris-asset-studio + .iris-footer {
-    padding: 12px 28px;
-    padding-bottom: max(12px, env(safe-area-inset-bottom));
-    gap: 10px;
-    border-color: var(--studio-line);
-    font-size: 11px;
-    color: var(--studio-muted);
-  }
-  .iris-asset-studio + .iris-footer :is(a, .iris-version) {
-    color: var(--studio-muted);
-    font-size: 11px;
-  }
-  .iris-asset-studio + .iris-footer a {
-    min-height: 24px;
-  }
-  .iris-asset-studio + .iris-footer .iris-footer-meta {
-    gap: 7px;
-  }
-  .iris-asset-studio + .iris-footer .iris-version::after {
-    content: ' ·';
-  }
   .iris-asset-studio .iris-asset-chart-note {
     display: flex;
     justify-content: space-between;
@@ -493,9 +472,6 @@
     }
     .iris-shell.iris-asset-studio .iris-asset-identity a {
       font-size: 10px;
-    }
-    .iris-asset-studio + .iris-footer {
-      padding-inline: 14px;
     }
     .iris-asset-studio .iris-asset-snapshot {
       padding: 16px;

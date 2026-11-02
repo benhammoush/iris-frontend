@@ -98,3 +98,24 @@ test('provides a native keyboard action without replacing the row semantics', as
   await userEvent.click(action);
   expect(onRowClick).toHaveBeenCalledTimes(3);
 });
+
+test.each([false, true])(
+  'keeps the header as wide as its columns while loading=%s',
+  (loading) => {
+    render(
+      <VirtualTable
+        columns={[
+          { ...columns[0], width: 700 },
+          { ...columns[0], id: 'second', label: 'Second', width: 450 },
+        ]}
+        data={data}
+        loading={loading}
+        emptyLabel="No rows"
+        filterPlaceholder="Filter rows"
+      />,
+    );
+    expect(
+      screen.getAllByRole('columnheader')[0].closest('[role="row"]'),
+    ).toHaveStyle({ minWidth: '1150px' });
+  },
+);
