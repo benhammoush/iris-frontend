@@ -159,7 +159,16 @@ export default function VirtualTable<T>(props: Props<T>) {
             ),
           }}
         >
-          <div className="iris-table-head" role="row">
+          <div
+            className="iris-table-head"
+            role="row"
+            style={{
+              minWidth: columns.reduce(
+                (width, column) => width + column.width,
+                0,
+              ),
+            }}
+          >
             {columns.map((column) => (
               <div
                 role="columnheader"
@@ -247,7 +256,17 @@ export default function VirtualTable<T>(props: Props<T>) {
               ),
             }}
           >
-            <div className="iris-table-head" role="row" aria-rowindex={1}>
+            <div
+              className="iris-table-head"
+              role="row"
+              aria-rowindex={1}
+              style={{
+                minWidth: columns.reduce(
+                  (width, column) => width + column.width,
+                  0,
+                ),
+              }}
+            >
               {columns.map((column) => (
                 <div
                   role="columnheader"

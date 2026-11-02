@@ -3,8 +3,8 @@
  * @packageDocumentation
  */
 
-import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useId, useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import SaveControl from './SaveControl';
 import { workerApi } from '../api/worker';
 import { nextCursorFrom } from '../data/pagination';
@@ -18,6 +18,7 @@ import { VirtualTable, type VirtualTableColumn } from '../design-system';
 import { solanaExplorerUrl } from '../data/solana';
 import { ValueSkeleton } from '../design-system';
 import ResourceFeedback from './ResourceFeedback';
+import './Wallet.css';
 
 /** Wallet holding identity, exact quantity and nullable valuation fields. */
 type Holding = {
@@ -314,12 +315,21 @@ const activityColumns: VirtualTableColumn<TransactionRow>[] = [
     value: (transaction) => transaction.amount || '',
     /** Render exact atomic quantities with their decimal context.
      * @param transaction - Normalized activity row.
-     * @returns Atomic-unit text and available decimals, or the unavailable placeholder.
+     * @returns Keyboard-scrollable atomic-unit text and decimals, or the unavailable placeholder.
      */
     cell: (transaction) =>
-      transaction.amount === null
-        ? '—'
-        : `${transaction.amount} atomic units (decimals: ${transaction.decimals ?? '?'})`,
+      transaction.amount === null ? (
+        '—'
+      ) : (
+        <span
+          className="iris-wallet-exact-amount"
+          role="group"
+          aria-label="Exact transfer amount"
+          tabIndex={0}
+        >
+          {`${transaction.amount} atomic units (decimals: ${transaction.decimals ?? '?'})`}
+        </span>
+      ),
     align: 'right',
   },
   {
@@ -360,6 +370,8 @@ const activityColumns: VirtualTableColumn<TransactionRow>[] = [
 export default function Wallet() {
   const { address = '' } = useParams();
   const navigate = useNavigate();
+  const addressId = useId();
+  const [expandedAddress, setExpandedAddress] = useState<string | null>(null);
   const summary = useWorkerResource(
     (options) => workerApi.wallet(address, options),
     [address],
@@ -421,15 +433,34 @@ export default function Wallet() {
   };
   const assetCount = wallet?.assets?.length;
   const transactionCount = transactions.length;
+  const walletLabel =
+    wallet?.label && wallet.label !== wallet.address
+      ? wallet.label
+      : 'Public wallet';
+  const walletLoading = summary.loading && !wallet;
+  const showHero =
+    !invalidAddress && (Boolean(wallet) || (summary.loading && !summary.error));
+  const saveControl = (
+    <div className="iris-wallet-save">
+      <SaveControl kind="wallet" address={address} compact />
+    </div>
+  );
   return (
-    <div className="iris-shell">
+    <div className="iris-shell iris-wallet-studio">
       <Navbar />
-      <DataStatus
-        meta={summary.meta || firstPage.meta}
-        error={summary.error || firstPage.error}
-      />
-      <main id="iris-main" tabIndex={-1} className="iris-page">
-        <SaveControl kind="wallet" address={address} />
+      <main
+        id="iris-main"
+        tabIndex={-1}
+        className="iris-page iris-studio-wallet-page"
+      >
+        <nav className="iris-wallet-breadcrumb" aria-label="Breadcrumb">
+          <Link to="/">Home</Link>
+          <span aria-hidden="true"> / </span>
+          <span>Wallets</span>
+          <span aria-hidden="true"> / </span>
+          <span aria-current="page">{walletLabel}</span>
+        </nav>
+        {!showHero && saveControl}
         <ResourceFeedback
           label="Wallet data"
           error={invalidAddress ? null : summary.error}
@@ -449,128 +480,173 @@ export default function Wallet() {
         ) : (
           <>
             <section
-              className="iris-wallet-hero"
-              aria-busy={(summary.loading && !wallet) || undefined}
+              className="iris-studio-wallet-hero"
+              aria-busy={walletLoading || undefined}
             >
-              <div className="iris-wallet-hero-heading">
-                <p className="iris-eyebrow">Public wallet</p>
-                <h1>
+              <div className="iris-studio-wallet-identity">
+                <span className="iris-studio-wallet-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M19 7V5a2 2 0 0 0-2-2H6a3 3 0 0 0 0 6h14v11H6a3 3 0 0 1-3-3V6M20 12h-5v5h5" />
+                    <circle cx="17" cy="14.5" r=".6" />
+                  </svg>
+                </span>
+                <div className="iris-wallet-hero-heading">
+                  <h1>
+                    {summary.loading && !wallet ? (
+                      <ValueSkeleton width="300px" />
+                    ) : (
+                      walletLabel
+                    )}
+                  </h1>
                   {summary.loading && !wallet ? (
-                    <ValueSkeleton width="300px" />
+                    <p>
+                      <ValueSkeleton width="390px" />
+                    </p>
                   ) : (
-                    wallet?.label || address
+                    <p>
+                      {wallet?.description ||
+                        'Public wallet · on-chain holdings & transfers'}
+                    </p>
                   )}
-                </h1>
-                {summary.loading && !wallet ? (
-                  <p>
-                    <ValueSkeleton width="390px" />
-                  </p>
-                ) : (
-                  wallet?.description && <p>{wallet.description}</p>
-                )}
-                {summary.loading && !wallet ? (
-                  <p className="iris-wallet-address">
-                    <ValueSkeleton width="280px" />
-                  </p>
-                ) : explorerUrl ? (
-                  <a
-                    className="iris-wallet-address"
-                    href={explorerUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {wallet?.address}
-                  </a>
-                ) : (
-                  <p className="iris-wallet-address">{address}</p>
-                )}
+                  {summary.loading && !wallet ? (
+                    <p className="iris-studio-wallet-address">
+                      <ValueSkeleton width="280px" />
+                    </p>
+                  ) : explorerUrl ? (
+                    <div className="iris-wallet-address-disclosure">
+                      <a
+                        id={addressId}
+                        className="iris-studio-wallet-address"
+                        href={explorerUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={wallet?.address}
+                        aria-label={`Open ${wallet?.address} in Solana Explorer`}
+                      >
+                        {expandedAddress === address
+                          ? wallet?.address
+                          : short(wallet?.address)}
+                      </a>
+                      <button
+                        type="button"
+                        aria-expanded={expandedAddress === address}
+                        aria-controls={addressId}
+                        onClick={() =>
+                          setExpandedAddress(
+                            expandedAddress === address ? null : address,
+                          )
+                        }
+                      >
+                        {expandedAddress === address
+                          ? 'Hide address'
+                          : 'Show address'}
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="iris-studio-wallet-address">{address}</p>
+                  )}
+                </div>
               </div>
-              <div className="iris-wallet-primary-value">
-                <span>Priced subtotal</span>
-                <strong>
-                  {summary.loading && !wallet ? (
-                    <ValueSkeleton width="150px" />
-                  ) : (
-                    currency(wallet?.totalValue)
-                  )}
-                </strong>
-                <small>
-                  {summary.loading && !wallet ? (
-                    <ValueSkeleton width="180px" />
-                  ) : valuation.complete ? (
-                    'All returned holdings are priced'
-                  ) : (
-                    'Subtotal excludes unpriced holdings'
-                  )}
-                </small>
-              </div>
-              <div className="iris-wallet-hero-metrics">
-                <div>
-                  <span>Assets</span>
+              {saveControl}
+            </section>
+            {wallet?.truncated && (
+              <p className="iris-disclosure iris-disclosure--warning">
+                The Worker truncated this wallet's returned balances; the
+                displayed holdings are incomplete.
+              </p>
+            )}
+            <div className="iris-wallet-workspace">
+              <section
+                className="iris-section iris-studio-wallet-holdings"
+                aria-labelledby={`${addressId}-holdings`}
+              >
+                <div className="iris-wallet-section-heading">
+                  <h2 id={`${addressId}-holdings`}>Holdings</h2>
+                  <span>Returned balances</span>
+                </div>
+                <VirtualTable
+                  columns={holdingsColumns}
+                  data={wallet?.assets || []}
+                  loading={walletLoading}
+                  emptyLabel="No assets are available for this public wallet."
+                  filterPlaceholder="Filter holdings"
+                  onRowClick={(asset) => {
+                    if (asset.mint)
+                      void navigate(`/asset/${encodeURIComponent(asset.mint)}`);
+                  }}
+                />
+                <p className="iris-wallet-table-note">
+                  Unpriced holdings remain visible with their exact balances.
+                </p>
+              </section>
+              <aside
+                className="iris-studio-wallet-valuation"
+                aria-label="Wallet valuation"
+                aria-busy={walletLoading || undefined}
+              >
+                <div className="iris-wallet-primary-value">
+                  <span>Priced subtotal</span>
                   <strong>
                     {summary.loading && !wallet ? (
-                      <ValueSkeleton width="42px" />
+                      <ValueSkeleton width="150px" />
                     ) : (
-                      assetCount?.toLocaleString() || '—'
+                      currency(wallet?.totalValue)
                     )}
                   </strong>
-                  <small>Assets returned by the Worker</small>
-                </div>
-                <div>
-                  <span>Transactions</span>
-                  <strong>
-                    {firstPage.loading && !transactionCount ? (
-                      <ValueSkeleton width="42px" />
+                  <small>
+                    {summary.loading && !wallet ? (
+                      <ValueSkeleton width="180px" />
+                    ) : valuation.complete ? (
+                      'All returned holdings are priced'
+                    ) : valuation.unpricedHoldingCount != null &&
+                      valuation.unpricedHoldingCount > 0 ? (
+                      `Excludes ${valuation.unpricedHoldingCount.toLocaleString()} unpriced ${valuation.unpricedHoldingCount === 1 ? 'holding' : 'holdings'}. Not a complete wallet valuation.`
                     ) : (
-                      transactionCount.toLocaleString()
+                      'Subtotal excludes unpriced holdings. Not a complete wallet valuation.'
                     )}
-                  </strong>
-                  <small>Transactions returned by Helius</small>
+                  </small>
                 </div>
-              </div>
-            </section>
-            <div className="iris-wallet-disclosures">
-              <p className="iris-disclosure">
-                Public on-chain data only. Valuations can be partial when
-                balances are not priced.
-              </p>
-              {wallet?.truncated && (
-                <p className="iris-disclosure iris-disclosure--warning">
-                  The Worker truncated this wallet's returned balances; the
-                  displayed holdings are incomplete.
-                </p>
-              )}
+                <div className="iris-wallet-hero-metrics">
+                  <div>
+                    <span>Holdings returned</span>
+                    <strong>
+                      {summary.loading && !wallet ? (
+                        <ValueSkeleton width="42px" />
+                      ) : (
+                        assetCount?.toLocaleString() || '—'
+                      )}
+                    </strong>
+                    <small>Assets returned by the Worker</small>
+                  </div>
+                  <div>
+                    <span>Transactions loaded</span>
+                    <strong>
+                      {firstPage.loading && !transactionCount ? (
+                        <ValueSkeleton width="42px" />
+                      ) : firstPage.error && !transactionCount ? (
+                        '—'
+                      ) : (
+                        transactionCount.toLocaleString()
+                      )}
+                    </strong>
+                    <small>Not a lifetime total</small>
+                  </div>
+                </div>
+                <div className="iris-wallet-disclosures">
+                  <p className="iris-disclosure">
+                    Public on-chain data only. Valuations can be partial when
+                    balances are not priced.
+                  </p>
+                </div>
+              </aside>
             </div>
-            <section className="iris-section">
-              <div className="iris-panel-heading">
-                <div>
-                  <p className="iris-eyebrow">Portfolio</p>
-                  <h2>Holdings</h2>
-                </div>
-              </div>
-              <VirtualTable
-                columns={holdingsColumns}
-                data={wallet?.assets || []}
-                loading={summary.loading && !wallet}
-                emptyLabel="No assets are available for this public wallet."
-                filterPlaceholder="Filter holdings"
-                onRowClick={(asset) => {
-                  if (asset.mint)
-                    void navigate(`/asset/${encodeURIComponent(asset.mint)}`);
-                }}
-              />
-            </section>
-            <section className="iris-section iris-holder-panel iris-onchain-intelligence iris-helius-card">
-              <div className="iris-helius-topline">
-                <img
-                  className="iris-helius-logo"
-                  src="/helius-dark.svg"
-                  alt="Helius"
-                />
-                <span>Network</span>
-              </div>
-              <div className="iris-intelligence-tabs">
-                <h2 className="active">Transactions</h2>
+            <section
+              className="iris-section iris-studio-wallet-activity"
+              aria-labelledby={`${addressId}-activity`}
+            >
+              <div className="iris-wallet-section-heading">
+                <h2 id={`${addressId}-activity`}>Transactions</h2>
+                <span>Helius</span>
               </div>
               <ResourceFeedback
                 label="Wallet activity"
@@ -611,9 +687,17 @@ export default function Wallet() {
                   )}
                 </>
               )}
+              <p className="iris-wallet-table-note">
+                Exact transfer amounts and explorer links are retained. Loaded
+                transactions are not a complete transaction history.
+              </p>
             </section>
           </>
         )}
+        <DataStatus
+          meta={summary.meta || firstPage.meta}
+          error={summary.error || firstPage.error}
+        />
       </main>
     </div>
   );
