@@ -23,7 +23,7 @@ interface CatalogAssetProps {
 
 /** Display only: callers supply already loaded catalog data, never private fetches.
  * @param props - Normalized asset identity and nullable display metrics.
- * @returns Catalog-row identity, price and change content without fetching data.
+ * @returns Catalog-row identity, price, change and volume without fetching data.
  */
 export default function CatalogAssetContent(props: CatalogAssetProps) {
   const { asset } = props;
@@ -46,7 +46,7 @@ export default function CatalogAssetContent(props: CatalogAssetProps) {
         <Change value={asset.change24hPct} />
       </span>
       <span className="iris-catalog-list-volume">
-        <span className="iris-sr-only">Volume </span>
+        <span className="iris-sr-only iris-volume-label">Volume </span>
         {currency(asset.activity?.volume24hUsd)}
       </span>
     </>

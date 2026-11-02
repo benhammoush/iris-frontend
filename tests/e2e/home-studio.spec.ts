@@ -32,7 +32,9 @@ const discoveryAssets = [
   },
 ];
 
-for (const width of [320, 390, 768, 1024, 1440]) {
+for (const width of [
+  320, 390, 600, 601, 768, 900, 901, 1024, 1100, 1101, 1440,
+]) {
   test(`Studio Home stays readable and navigable in both themes at ${width}px`, async ({
     page,
     api,
@@ -174,6 +176,18 @@ for (const width of [320, 390, 768, 1024, 1440]) {
       if (theme === 'dark')
         await page.getByRole('button', { name: 'Toggle color theme' }).click();
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+      const solRow = discovery.getByRole('button', { name: /SOL Solana/ });
+      await expect(solRow.locator('.iris-catalog-list-volume')).toBeVisible();
+      await expect(solRow.locator('.iris-catalog-list-volume')).toHaveText(
+        'Volume $1,250,000,000',
+      );
+      await expect(solRow).toHaveAccessibleName(/Volume \$1,250,000,000/);
+      const volumeHeader = discovery.locator(
+        '.iris-discovery-columns > :last-child:visible',
+      );
+      await expect(volumeHeader).toHaveCount(
+        width <= 600 || (width >= 901 && width <= 1100) ? 0 : 1,
+      );
       await expect(network).toHaveCSS(
         'background-color',
         theme === 'light' ? 'rgb(238, 230, 246)' : 'rgb(44, 33, 60)',

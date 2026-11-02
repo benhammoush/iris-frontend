@@ -401,18 +401,6 @@ html[data-theme='light'] .iris-shell.iris-home {
     :is(.iris-studio-discovery, .iris-helius-card, .iris-defillama-card) {
     padding: 16px;
   }
-  .iris-shell.iris-home .iris-discovery-columns,
-  .iris-shell.iris-home
-    .iris-studio-discovery
-    .iris-catalog-list-rows
-    > button {
-    grid-template-columns: minmax(0, 1fr) 84px 65px;
-    gap: 10px;
-  }
-  .iris-shell.iris-home .iris-discovery-columns > :last-child,
-  .iris-shell.iris-home .iris-catalog-list-volume {
-    display: none;
-  }
   .iris-shell.iris-home .iris-recent-transaction-row,
   .iris-shell.iris-home .iris-recent-transaction-head {
     grid-template-columns: minmax(0, 1fr) 52px 70px;
@@ -426,6 +414,33 @@ html[data-theme='light'] .iris-shell.iris-home {
   .iris-shell.iris-home .iris-defillama-lists {
     grid-template-columns: minmax(0, 1fr);
     gap: 22px;
+  }
+}
+@media (max-width: 600px), (min-width: 901px) and (max-width: 1100px) {
+  .iris-shell.iris-home .iris-discovery-columns,
+  .iris-shell.iris-home
+    .iris-studio-discovery
+    .iris-catalog-list-rows
+    > button {
+    grid-template-columns: minmax(0, 1fr) 84px 65px;
+    gap: 10px;
+  }
+  .iris-shell.iris-home .iris-discovery-columns > :last-child {
+    display: none;
+  }
+  .iris-shell.iris-home .iris-studio-discovery .iris-catalog-list-volume {
+    grid-column: 1 / -1;
+    text-align: left;
+    color: var(--studio-muted);
+    font-size: 11px;
+  }
+  .iris-shell.iris-home .iris-studio-discovery .iris-volume-label {
+    position: static;
+    width: auto;
+    height: auto;
+    margin: 0;
+    overflow: visible;
+    clip-path: none;
   }
 }
 @media (max-width: 480px) {
