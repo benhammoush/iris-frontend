@@ -289,6 +289,14 @@ export default function NavbarSearch(props: NavbarSearchProps) {
       }}
     >
       <div className="iris-search-input-wrap">
+        <svg
+          className="iris-search-icon"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <circle cx="10.5" cy="10.5" r="6.5" />
+          <path d="m16 16 5 5" />
+        </svg>
         <input
           ref={inputRef}
           value={query}

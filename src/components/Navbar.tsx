@@ -8,7 +8,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useCatalog } from '../contexts/CatalogContext';
 import { useTheme } from '../design-system';
 import { useHeliusDashboard } from '../contexts/HeliusDashboardContext';
-import { ValueSkeleton } from '../design-system';
+import NavbarMetrics from './NavbarMetrics';
 import NavbarSearch from './NavbarSearch';
 import { accountsEnabled } from '../auth/config';
 import { useAccount } from '../contexts/AccountContext';
@@ -91,8 +91,7 @@ function Navbar() {
   const menuTrigger = useRef<HTMLButtonElement | null>(null);
   const navigate = useNavigate();
   const { mode, setMode } = useTheme();
-  const navbarMarket =
-    assets.find((asset) => asset.symbol === 'SOL') || assets[0] || null;
+  const navbarMarket = assets.find((asset) => asset.symbol === 'SOL') || null;
 
   useEffect(() => {
     setMenuOpen(false);
@@ -207,7 +206,7 @@ function Navbar() {
             <span className="iris-brand-mark">
               <img src="/logoiris.png" alt="" />
             </span>
-            <span className="iris-brand-name">IRIS</span>
+            <span className="iris-brand-name">Iris</span>
           </Link>
           <nav className="iris-nav" aria-label="Main navigation">
             <NavLink to="/" end tabIndex={0}>
@@ -229,6 +228,16 @@ function Navbar() {
             mobileOpen={mobileSearchOpen}
             setMobileOpen={setMobileSearchOpen}
             onDismiss={() => mobileSearchTrigger.current?.focus()}
+          />
+          <NavbarMetrics
+            marketLoading={assetsLoading && !navbarMarket}
+            networkLoading={networkLoading && !network}
+            price={money(navbarMarket?.priceUsd)}
+            marketCap={millions(navbarMarket?.marketCapUsd)}
+            volume={millions(navbarMarket?.activity?.volume24hUsd)}
+            tps={number(network?.performance?.tps, 2)}
+            trueTps={number(network?.performance?.nonVoteTps, 2)}
+            fee={sol(network?.fees?.averageFeeLamports)}
           />
           <div className="iris-header-actions">
             <button
@@ -353,86 +362,9 @@ function Navbar() {
               </nav>
             </div>
           </div>
-          <div className="iris-header-metrics">
-            {assetsLoading && !navbarMarket ? (
-              <MarketSkeleton
-                className="iris-jupiter-market"
-                label="Loading Jupiter market summary"
-                labels={['SOL', 'MCAP', '24HVOL']}
-              />
-            ) : (
-              <div
-                className="iris-jupiter-market"
-                role="region"
-                aria-label={`${navbarMarket?.symbol ?? 'SOL'} market summary`}
-              >
-                <span>
-                  <b>{navbarMarket?.symbol ?? 'SOL'}</b>{' '}
-                  {money(navbarMarket?.priceUsd)}
-                </span>
-                <span>
-                  <b>MCAP</b> {millions(navbarMarket?.marketCapUsd)}
-                </span>
-                <span>
-                  <b>24HVOL</b> {millions(navbarMarket?.activity?.volume24hUsd)}
-                </span>
-              </div>
-            )}
-            {networkLoading && !network ? (
-              <MarketSkeleton
-                className="iris-helius-market"
-                label="Loading Helius network summary"
-                labels={['TPS', 'TRUE TPS', 'AVG FEE']}
-              />
-            ) : (
-              <div
-                className="iris-helius-market"
-                role="region"
-                aria-label="Helius network summary"
-              >
-                <span>
-                  <b>TPS</b> {number(network?.performance?.tps, 2)}
-                </span>
-                <span>
-                  <b>TRUE TPS</b> {number(network?.performance?.nonVoteTps, 2)}
-                </span>
-                <span>
-                  <b>AVG FEE</b> {sol(network?.fees?.averageFeeLamports)}
-                </span>
-              </div>
-            )}
-          </div>
         </div>
       </header>
     </>
-  );
-}
-
-/** Navigation-metric placeholder styling and accessible labels. */
-interface MarketSkeletonProps {
-  className: string;
-  label: string;
-  labels: string[];
-}
-
-/** Reserve accessible market-metric layout during loading.
- * @param props - Container styling and the group/metric labels to retain.
- * @returns Stable metric placeholders with the supplied loading-region label.
- */
-function MarketSkeleton(props: MarketSkeletonProps) {
-  const { className, label, labels } = props;
-  return (
-    <div className={className} aria-label={label} aria-busy="true">
-      <span>
-        <b>{labels[0]}</b> <ValueSkeleton width="28px" />
-      </span>
-      <span>
-        <b>{labels[1]}</b> <ValueSkeleton width="32px" />
-      </span>
-      <span>
-        <b>{labels[2]}</b> <ValueSkeleton width="32px" />
-      </span>
-    </div>
   );
 }
 

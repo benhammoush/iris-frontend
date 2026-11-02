@@ -35,13 +35,17 @@ test('loads dashboard and asset intelligence through the seeded Worker KV', asyn
 }) => {
   await page.goto('/');
   await expect(
-    page.getByRole('heading', { name: 'Market overview' }),
+    page.getByRole('heading', { name: 'Solana network', exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole('button', { name: /SOL/i }).first(),
+    page.getByRole('main').getByRole('button', { name: /SOL/i }).first(),
   ).toBeVisible();
 
-  await page.getByRole('button', { name: /SOL/i }).first().click();
+  await page
+    .getByRole('main')
+    .getByRole('button', { name: /SOL/i })
+    .first()
+    .click();
   await expect(page).toHaveURL(`/asset/${solMint}`);
   await expect(page.getByRole('heading', { name: /Solana SOL/ })).toBeVisible();
   await expect(page.getByText('$150.25', { exact: true })).toBeVisible();

@@ -186,6 +186,13 @@ test('renders the Worker-backed portfolio shell', async () => {
   ).toBeInTheDocument();
   await screen.findByRole('heading', { name: 'Recent Solana transactions' });
   expect(
+    screen.getByRole('heading', { level: 1, name: 'Market overview' }),
+  ).toHaveClass('iris-sr-only');
+  expect(screen.queryByText('Market monitor')).not.toBeInTheDocument();
+  expect(
+    screen.queryByText(/Live Solana network data and market discovery/),
+  ).not.toBeInTheDocument();
+  expect(
     screen.getByRole('columnheader', { name: 'Signature' }),
   ).toBeInTheDocument();
   expect(
@@ -212,7 +219,9 @@ test('renders the Worker-backed portfolio shell', async () => {
     screen.queryByText(/global reviewed-pool activity/i),
   ).not.toBeInTheDocument();
   expect(screen.queryByText(/price history/i)).not.toBeInTheDocument();
-  expect(screen.getByText('24HVOL')).toBeInTheDocument();
+  expect(
+    screen.getByRole('button', { name: /SOL .*show details/ }),
+  ).toBeInTheDocument();
   expect(
     vi
       .mocked(fetch)
@@ -343,16 +352,22 @@ test('uses Home-only navigation and shows the selected market metrics in the Jup
   expect(
     screen.queryByRole('button', { name: /FDV/i }),
   ).not.toBeInTheDocument();
-  expect(screen.getByLabelText('SOL market summary')).toHaveTextContent(
-    'SOL $1.00',
+  expect(
+    screen.getByRole('button', { name: /SOL .*show details/ }),
+  ).toHaveTextContent('SOL $1.00');
+  expect(
+    screen.getByRole('button', { name: /TPS .*show details/ }),
+  ).toHaveTextContent('TPS 123.46');
+  await userEvent.click(
+    screen.getByRole('button', { name: /TPS .*show details/ }),
   );
-  expect(screen.getByLabelText('Helius network summary')).toHaveTextContent(
-    'TPS 123.46TRUE TPS 78.9AVG FEE 0.000457 SOL',
-  );
+  expect(
+    screen.getByRole('region', { name: 'Network performance details' }),
+  ).toHaveTextContent('True TPS78.9Average fee0.000457 SOL');
   expect(screen.queryByText('Average paid fee')).not.toBeInTheDocument();
   expect(container.querySelectorAll('.iris-metric-card')).toHaveLength(0);
-  expect(container.querySelector('.iris-jupiter-market')).toBeInTheDocument();
-  expect(container.querySelector('.iris-helius-market')).toBeInTheDocument();
+  expect(container.querySelector('.iris-metric-sol')).toBeInTheDocument();
+  expect(container.querySelector('.iris-metric-tps')).toBeInTheDocument();
   expect(
     screen.queryByRole('button', { name: /Chart/i }),
   ).not.toBeInTheDocument();
@@ -375,12 +390,14 @@ test('keeps navbar market and network summaries populated outside Home', async (
       <App />
     </BrowserRouter>,
   );
-  expect(await screen.findByLabelText('SOL market summary')).toHaveTextContent(
-    'SOL $1.00',
-  );
-  expect(screen.queryByLabelText('JUP market summary')).not.toBeInTheDocument();
   expect(
-    await screen.findByLabelText('Helius network summary'),
+    await screen.findByRole('button', { name: 'SOL $1.00, show details' }),
+  ).toHaveTextContent('SOL $1.00');
+  expect(
+    screen.queryByRole('button', { name: /JUP .*show details/ }),
+  ).not.toBeInTheDocument();
+  expect(
+    await screen.findByRole('button', { name: /TPS 123.46, show details/ }),
   ).toHaveTextContent('TPS 123.46');
   assetPage.unmount();
 
@@ -394,11 +411,11 @@ test('keeps navbar market and network summaries populated outside Home', async (
       <App />
     </BrowserRouter>,
   );
-  expect(await screen.findByLabelText('SOL market summary')).toHaveTextContent(
-    'SOL $1.00',
-  );
   expect(
-    await screen.findByLabelText('Helius network summary'),
+    await screen.findByRole('button', { name: 'SOL $1.00, show details' }),
+  ).toHaveTextContent('SOL $1.00');
+  expect(
+    await screen.findByRole('button', { name: /TPS 123.46, show details/ }),
   ).toHaveTextContent('TPS 123.46');
 });
 
