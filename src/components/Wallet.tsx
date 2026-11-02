@@ -315,12 +315,21 @@ const activityColumns: VirtualTableColumn<TransactionRow>[] = [
     value: (transaction) => transaction.amount || '',
     /** Render exact atomic quantities with their decimal context.
      * @param transaction - Normalized activity row.
-     * @returns Atomic-unit text and available decimals, or the unavailable placeholder.
+     * @returns Keyboard-scrollable atomic-unit text and decimals, or the unavailable placeholder.
      */
     cell: (transaction) =>
-      transaction.amount === null
-        ? '—'
-        : `${transaction.amount} atomic units (decimals: ${transaction.decimals ?? '?'})`,
+      transaction.amount === null ? (
+        '—'
+      ) : (
+        <span
+          className="iris-wallet-exact-amount"
+          role="group"
+          aria-label="Exact transfer amount"
+          tabIndex={0}
+        >
+          {`${transaction.amount} atomic units (decimals: ${transaction.decimals ?? '?'})`}
+        </span>
+      ),
     align: 'right',
   },
   {

@@ -265,3 +265,90 @@ test('unlabelled wallets retain full address identity and an honest empty subtot
     }),
   ).toBeVisible();
 });
+
+for (const width of [390, 1440]) {
+  test(`long exact transfer amounts remain keyboard-scrollable at ${width}px`, async ({
+    page,
+    api,
+  }) => {
+    const amount = '18446744073709551615';
+    const text = `${amount} atomic units (decimals: 9)`;
+    api.setHandler((url) =>
+      url.pathname === `/v3/wallets/${walletAddress}/transactions`
+        ? {
+            data: {
+              events: [
+                {
+                  id: 'exact-amount-test',
+                  timestamp: '2026-10-08T10:00:00.000Z',
+                  type: 'TRANSFER',
+                  transfers: [
+                    {
+                      atomicAmount: amount,
+                      decimals: 9,
+                      from: null,
+                      to: walletAddress,
+                    },
+                  ],
+                },
+              ],
+              nextCursor: null,
+            },
+          }
+        : undefined,
+    );
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto(`/wallet/${walletAddress}`);
+    const exact = page.getByRole('group', { name: 'Exact transfer amount' });
+    for (const theme of ['light', 'dark']) {
+      if (theme === 'dark')
+        await page.getByRole('button', { name: 'Toggle color theme' }).click();
+      await expect(exact).toHaveText(text);
+      await exact.scrollIntoViewIfNeeded();
+      await expect(exact).toHaveCSS('white-space', 'nowrap');
+      expect(
+        await exact.evaluate(
+          (element) => element.scrollWidth > element.clientWidth,
+        ),
+      ).toBe(true);
+      await exact.evaluate((element) => {
+        element.scrollLeft = 0;
+      });
+      await exact.focus();
+      await exact.press('ArrowRight');
+      await expect
+        .poll(() => exact.evaluate((element) => element.scrollLeft))
+        .toBeGreaterThan(0);
+      const visible = await exact.evaluate((element) => {
+        element.scrollLeft = element.scrollWidth;
+        const range = document.createRange();
+        range.selectNodeContents(element);
+        const text = range.getBoundingClientRect(),
+          bounds = element.getBoundingClientRect(),
+          row = element.closest('.iris-table-row')?.getBoundingClientRect();
+        return {
+          endVisible: text.right <= bounds.right + 1,
+          verticallyVisible: element.scrollHeight <= element.clientHeight,
+          insideRow: Boolean(
+            row && bounds.top >= row.top && bounds.bottom <= row.bottom,
+          ),
+          atEnd:
+            Math.abs(
+              element.scrollWidth - element.clientWidth - element.scrollLeft,
+            ) <= 1,
+        };
+      });
+      expect(visible).toEqual({
+        endVisible: true,
+        verticallyVisible: true,
+        insideRow: true,
+        atEnd: true,
+      });
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+    }
+  });
+}

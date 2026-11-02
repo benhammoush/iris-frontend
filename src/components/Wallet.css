@@ -302,12 +302,20 @@
     > [role='columnheader'] {
     flex-shrink: 0;
   }
-  .iris-wallet-studio
-    .iris-studio-wallet-activity
-    .iris-table-row
-    .iris-table-cell--right {
-    white-space: normal;
-    overflow-wrap: anywhere;
+  .iris-wallet-studio .iris-wallet-exact-amount {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+    text-align: left;
+    scrollbar-width: thin;
+    overscroll-behavior-x: contain;
+  }
+  .iris-wallet-studio .iris-wallet-exact-amount:focus-visible {
+    outline: 2px solid var(--studio-purple);
+    outline-offset: -2px;
   }
   .iris-wallet-studio .iris-table-row:nth-child(even) {
     background: var(--studio-paper);
