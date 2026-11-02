@@ -59,16 +59,7 @@ export default function Home() {
         error={selectedResult.error || catalogsResult.error || catalogError}
       />
       <main id="iris-main" tabIndex={-1} className="iris-page">
-        <section className="iris-page-heading">
-          <div>
-            <p className="iris-eyebrow">Market monitor</p>
-            <h1>Market overview</h1>
-            <p>
-              Live Solana network data and market discovery from the Iris
-              Worker.
-            </p>
-          </div>
-        </section>
+        <h1 className="iris-sr-only">Market overview</h1>
         <ResourceFeedback
           label="Market discovery"
           error={selectedResult.error || catalogsResult.error || catalogError}

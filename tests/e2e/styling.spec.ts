@@ -106,7 +106,7 @@ for (const width of [1440, 390]) {
     );
     await page.goto('/');
     await expect(
-      page.getByRole('heading', { name: 'Market overview' }),
+      page.getByRole('heading', { name: 'Solana network', exact: true }),
     ).toBeVisible();
     await expect(
       page.getByRole('button', { name: /SOL Solana/ }).first(),
@@ -144,7 +144,7 @@ for (const width of [1440, 390]) {
     });
     await page.getByRole('link', { name: 'Back to Iris', exact: true }).click();
     await expect(
-      page.getByRole('heading', { name: 'Market overview' }),
+      page.getByRole('heading', { name: 'Solana network', exact: true }),
     ).toBeVisible();
     expect(await styles()).toEqual(before);
     await page.getByRole('button', { name: 'Toggle color theme' }).click();

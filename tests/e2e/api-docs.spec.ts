@@ -128,6 +128,6 @@ test('loads the pinned document, sends a direct request, deep-links and returns 
   expect(pageErrors).toEqual([]);
   await page.getByRole('link', { name: 'Back to Iris' }).click();
   await expect(
-    page.getByRole('heading', { name: 'Market overview' }),
+    page.getByRole('heading', { name: 'Solana network', exact: true }),
   ).toBeVisible();
 });

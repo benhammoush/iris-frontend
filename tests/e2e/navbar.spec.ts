@@ -7,6 +7,113 @@ import { expect, test } from './support/test';
 import { openapiUrl } from './support/origins';
 import { APP_DISPLAY_VERSION } from '../../src/appVersion';
 
+test.describe('touch metric disclosures', () => {
+  test.use({ hasTouch: true });
+  for (const width of [320, 390]) {
+    test(`tap reveals metric details and outside tap dismisses them at ${width}px`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height: 844 });
+      await page.goto('/');
+      const sol = page.getByRole('button', {
+        name: 'SOL $150.25, show details',
+      });
+      const market = page.getByRole('region', { name: 'SOL market details' });
+      await sol.tap();
+      await expect(market).toBeVisible();
+      await page.getByRole('button', { name: /TPS .*show details/ }).tap();
+      await expect(market).toBeHidden();
+      const network = page.getByRole('region', {
+        name: 'Network performance details',
+      });
+      await expect(network).toBeVisible();
+      await page.getByRole('main').tap({ position: { x: 2, y: 200 } });
+      await expect(network).toBeHidden();
+    });
+  }
+});
+
+for (const width of [320, 390, 768, 1440]) {
+  test(`metric details support hover, keyboard and touch-style activation at ${width}px`, async ({
+    page,
+    api,
+  }, testInfo) => {
+    api.setHandler((url) =>
+      url.pathname === '/v3/transactions/recent'
+        ? {
+            data: {
+              network: {
+                performance: { tps: 1647.97, nonVoteTps: 1234.56 },
+                fees: { averageFeeLamports: 24000 },
+              },
+              transactions: [],
+            },
+          }
+        : undefined,
+    );
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+    const header = page.getByRole('banner');
+    const sol = header.getByRole('button', {
+      name: 'SOL $150.25, show details',
+    });
+    const tps = header.getByRole('button', {
+      name: 'TPS 1,647.97, show details',
+    });
+    const market = header.getByRole('region', { name: 'SOL market details' });
+    const network = header.getByRole('region', {
+      name: 'Network performance details',
+    });
+    await sol.hover();
+    await expect(market).toBeVisible();
+    await market.hover();
+    await expect(market).toBeVisible();
+    await expect(market).toContainText(
+      'Market cap$75,000.00M24h volume$1,250.00M',
+    );
+    await page.getByRole('main').hover({ position: { x: 2, y: 200 } });
+    await expect(market).toBeHidden();
+    await sol.focus();
+    await expect(market).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(market).toBeHidden();
+    await expect(sol).toBeFocused();
+    await sol.press('Enter');
+    await expect(market).toBeVisible();
+    await sol.press('Tab');
+    await expect(tps).toBeFocused();
+    await expect(market).toBeHidden();
+    await expect(network).toContainText(
+      'True TPS1,234.56Average fee0.000024 SOL',
+    );
+    for (const theme of ['light', 'dark']) {
+      if (theme === 'dark') {
+        await header
+          .getByRole('button', { name: 'Toggle color theme' })
+          .click();
+        await expect(network).toBeHidden();
+      }
+      await tps.click();
+      await expect(network).toBeVisible();
+      const bounds = await network.boundingBox();
+      if (!bounds) throw new Error('Open details need visible bounds.');
+      expect(bounds.x).toBeGreaterThanOrEqual(0);
+      expect(bounds.x + bounds.width).toBeLessThanOrEqual(width);
+      await page.screenshot({
+        path: testInfo.outputPath(`navbar-hover-${width}-${theme}.png`),
+      });
+      await expect(
+        page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
+      ).resolves.toBe(true);
+    }
+    await page.getByRole('main').click({ position: { x: 2, y: 200 } });
+    await expect(network).toBeHidden();
+    await tps.click();
+    await page.setViewportSize({ width: width + 1, height: 900 });
+    await expect(network).toBeHidden();
+  });
+}
+
 for (const width of [390, 1024, 1440]) {
   for (const state of ['failed', 'empty']) {
     test(`keeps unavailable Jupiter metrics visible when market data is ${state} at ${width}px`, async ({
@@ -28,22 +135,19 @@ for (const width of [390, 1024, 1440]) {
       await page.setViewportSize({ width, height: 900 });
       await page.goto('/');
       const header = page.getByRole('banner');
-      const jupiter = header.getByRole('region', {
-        name: 'SOL market summary',
+      const jupiter = header.getByRole('button', {
+        name: 'SOL —, show details',
       });
       await expect(jupiter).toBeVisible();
-      await expect(jupiter.locator(':scope > span')).toHaveText([
-        'SOL —',
-        'MCAP —',
-        '24HVOL —',
-      ]);
-      await expect(jupiter.locator(':scope > span:visible')).toHaveCount(
-        width <= 960 ? 1 : width <= 1280 ? 2 : 3,
-      );
+      await jupiter.click();
+      const details = header.getByRole('region', {
+        name: 'SOL market details',
+      });
+      await expect(details).toContainText('Market cap—24h volume—');
       await expect(
-        header.getByRole('region', { name: 'Helius network summary' }),
+        header.getByRole('button', { name: /TPS .*show details/ }),
       ).toBeVisible();
-      await expect(jupiter.locator('.iris-value-skeleton')).toHaveCount(0);
+      await expect(details.locator('.iris-value-skeleton')).toHaveCount(0);
       await expect(
         page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
       ).resolves.toBe(true);
@@ -85,7 +189,7 @@ for (const { width, fallbackFont } of [
           '.iris-header, .iris-header * { font-family: Verdana, sans-serif !important; }',
       });
     await expect(
-      page.getByRole('heading', { name: 'Market overview' }),
+      page.getByRole('heading', { name: 'Solana network', exact: true }),
     ).toBeVisible();
     const header = page.getByRole('banner');
     await expect(
@@ -99,11 +203,9 @@ for (const { width, fallbackFont } of [
     expect((await header.boundingBox())?.height).toBeLessThanOrEqual(
       width <= 720 ? 61 : 49,
     );
-    await expect(header.locator('.iris-helius-market > span')).toHaveText([
-      'TPS 1,647.97',
-      'TRUE TPS 1,234.56',
-      'AVG FEE 0.000024 SOL',
-    ]);
+    await expect(
+      header.getByRole('button', { name: 'TPS 1,647.97, show details' }),
+    ).toBeVisible();
     await expect(header.getByRole('link', { name: 'API Docs' })).toHaveCount(0);
     await expect(
       page.getByRole('contentinfo').getByRole('link', { name: 'API Docs' }),
@@ -111,22 +213,17 @@ for (const { width, fallbackFont } of [
     const theme = header.getByRole('button', { name: 'Toggle color theme' });
     await expect(theme).toHaveText('');
     await expect(theme.locator('svg')).toBeVisible();
-    for (const selector of ['.iris-jupiter-market', '.iris-helius-market']) {
+    for (const selector of [
+      '.iris-metric-sol .iris-metric-trigger',
+      '.iris-metric-tps .iris-metric-trigger',
+    ]) {
       const group = header.locator(selector);
       await expect(group).toBeVisible();
-      await expect(group).toHaveCSS(
-        'font-size',
-        `${width > 1100 ? 13 : width <= 360 ? 11 : width <= 480 ? 14 : 12}px`,
-      );
+      await expect(group).toHaveCSS('font-size', `${width <= 360 ? 11 : 12}px`);
       await expect(group).toHaveCSS('font-weight', '600');
       await expect(group).toHaveCSS('background-image', 'none');
       await expect(group).toHaveCSS('border-bottom-style', 'solid');
-      await expect(group.locator('b').first()).toHaveCSS('display', 'inline');
-      await expect(group).not.toHaveAttribute('aria-busy', 'true');
-      const visible = group.locator(':scope > span:visible');
-      await expect(visible).toHaveCount(
-        width <= 960 ? 1 : width <= 1280 ? 2 : 3,
-      );
+      await expect(group).toHaveAttribute('aria-expanded', 'false');
       expect(
         await group.evaluate((element) => {
           const bounds = element.getBoundingClientRect();
@@ -134,13 +231,7 @@ for (const { width, fallbackFont } of [
             bounds.left >= 0 &&
             bounds.right <= innerWidth &&
             element.scrollWidth <= element.clientWidth &&
-            [...element.children].every(
-              (child) =>
-                child.scrollWidth <= child.clientWidth &&
-                // Mixed font sizes can round a single line up by one pixel.
-                child.clientHeight <=
-                  Math.ceil(parseFloat(getComputedStyle(child).lineHeight)) + 1,
-            )
+            element.clientHeight <= 44
           );
         }),
         JSON.stringify(
@@ -155,8 +246,7 @@ for (const { width, fallbackFont } of [
           })),
         ),
       ).toBe(true);
-      const last = visible.last();
-      await expect(last).toBeInViewport();
+      await expect(group).toBeInViewport();
       const headerBounds = await header.boundingBox();
       const groupBounds = await group.boundingBox();
       if (!headerBounds || !groupBounds)
@@ -165,16 +255,37 @@ for (const { width, fallbackFont } of [
       expect(groupBounds.y + groupBounds.height).toBeLessThanOrEqual(
         headerBounds.y + headerBounds.height,
       );
-      const lastBounds = await last.boundingBox();
-      if (!lastBounds)
-        throw new Error('The last visible metric must have bounds.');
-      expect(
-        groupBounds.x + groupBounds.width - lastBounds.x - lastBounds.width,
-      ).toBeLessThanOrEqual(12);
     }
-    await expect(
-      page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
-    ).resolves.toBe(true);
+    if (width > 1100) {
+      const search = await header.getByRole('combobox').boundingBox();
+      const metrics = await header
+        .locator('.iris-header-metrics')
+        .boundingBox();
+      const nav = await header
+        .getByRole('navigation', { name: 'Main navigation', exact: true })
+        .boundingBox();
+      if (!search || !metrics || !nav)
+        throw new Error('Desktop navigation must have visible bounds.');
+      expect(
+        Math.abs(search.x + search.width / 2 - width / 2),
+      ).toBeLessThanOrEqual(1);
+      expect(search.width).toBe(width >= 1440 ? 360 : 320);
+      expect(nav.x + nav.width).toBeLessThanOrEqual(search.x);
+      expect(search.x + search.width).toBeLessThanOrEqual(metrics.x);
+    }
+    expect(
+      await page.evaluate(() => ({
+        overflow: document.documentElement.scrollWidth > innerWidth,
+        outside: [...document.querySelectorAll('.iris-header *')]
+          .filter(
+            (element) => element.getBoundingClientRect().right > innerWidth,
+          )
+          .map((element) => ({
+            className: element.className,
+            right: element.getBoundingClientRect().right,
+          })),
+      })),
+    ).toEqual({ overflow: false, outside: [] });
     await expect(page.locator('.iris-auth-pending')).toHaveCount(0);
     if (width <= 720) {
       await expect(
@@ -206,6 +317,11 @@ for (const { width, fallbackFont } of [
     });
     await theme.click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await expect(header.locator('.iris-brand-mark')).toHaveCSS(
+      'background-color',
+      'rgb(255, 255, 255)',
+    );
+    await expect(header).toHaveCSS('background-color', 'rgb(9, 9, 11)');
     await header.screenshot({
       path: testInfo.outputPath(`navbar-${width}-dark.png`),
     });
@@ -286,9 +402,7 @@ test('mobile navigation closes on Escape, outside interaction, search and route 
   await expect(trigger).toBeFocused();
   await expect(menu).toBeHidden();
   await trigger.click();
-  await page
-    .getByRole('heading', { name: 'Market overview' })
-    .click({ position: { x: 4, y: 4 } });
+  await page.getByRole('main').click({ position: { x: 4, y: 4 } });
   await expect(menu).toBeHidden();
   await trigger.click();
   await page.getByRole('button', { name: 'Open search' }).click();
@@ -376,7 +490,7 @@ test('footer entry opens documentation at the top and returns to the top of Home
   await expect(page.evaluate(() => scrollY)).resolves.toBe(0);
   await page.getByRole('link', { name: 'Back to Iris' }).click();
   await expect(
-    page.getByRole('heading', { name: 'Market overview' }),
+    page.getByRole('heading', { name: 'Solana network', exact: true }),
   ).toBeInViewport();
   await expect(page.evaluate(() => scrollY)).resolves.toBe(0);
 });

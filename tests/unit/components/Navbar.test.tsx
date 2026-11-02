@@ -73,18 +73,13 @@ test('renders loading skeletons for the navbar market summaries', () => {
     '0',
   );
 
-  expect(
-    screen.getByLabelText('Loading Jupiter market summary'),
-  ).toHaveAttribute('aria-busy', 'true');
-  expect(
-    screen.getByLabelText('Loading Helius network summary'),
-  ).toHaveAttribute('aria-busy', 'true');
-  expect(
-    screen.getByLabelText('Loading Jupiter market summary'),
-  ).toHaveTextContent('SOL MCAP 24HVOL');
-  expect(
-    screen.getByLabelText('Loading Helius network summary'),
-  ).toHaveTextContent('TPS TRUE TPS AVG FEE');
+  for (const label of ['SOL', 'TPS']) {
+    const trigger = screen.getByRole('button', {
+      name: `${label} loading, show details`,
+    });
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    expect(trigger.querySelector('.iris-value-skeleton')).toBeInTheDocument();
+  }
 });
 
 test('opens and closes the mobile search control', async () => {
@@ -110,20 +105,22 @@ test('opens and closes the mobile search control', async () => {
 
 test.each([undefined, new Error('Market unavailable')])(
   'keeps Jupiter labels and unavailable values when no market data exists (error: %s)',
-  (error) => {
+  async (error) => {
     vi.mocked(useCatalog).mockReturnValue({
       assets: [],
       loading: false,
       error,
     });
-    openNavbar();
-    const summary = screen.getByRole('region', { name: 'SOL market summary' });
+    const user = openNavbar();
+    const trigger = screen.getByRole('button', { name: 'SOL —, show details' });
+    await user.click(trigger);
+    const summary = screen.getByRole('region', { name: 'SOL market details' });
     expect(summary).toBeVisible();
-    expect(summary).toHaveTextContent('SOL —MCAP —24HVOL —');
-    expect(within(summary).getAllByText('—')).toHaveLength(3);
+    expect(summary).toHaveTextContent('Market cap—24h volume—');
+    expect(within(summary).getAllByText('—')).toHaveLength(2);
     expect(summary).not.toHaveAttribute('aria-busy', 'true');
     expect(
-      screen.queryByLabelText('Loading Jupiter market summary'),
+      screen.queryByRole('button', { name: 'SOL loading, show details' }),
     ).not.toBeInTheDocument();
   },
 );

@@ -10,12 +10,16 @@ test('supports browser history, direct asset links, and unknown routes', async (
   page,
 }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: /SOL/i }).first().click();
+  await page
+    .getByRole('main')
+    .getByRole('button', { name: /SOL/i })
+    .first()
+    .click();
   await expect(page).toHaveURL(`/asset/${sol.mint}`);
 
   await page.goBack();
   await expect(
-    page.getByRole('heading', { name: 'Market overview' }),
+    page.getByRole('heading', { name: 'Solana network', exact: true }),
   ).toBeVisible();
 
   await page.goto(`/asset/${sol.mint}`);
@@ -27,6 +31,6 @@ test('supports browser history, direct asset links, and unknown routes', async (
   ).toBeVisible();
   await page.getByRole('link', { name: 'Home' }).first().click();
   await expect(
-    page.getByRole('heading', { name: 'Market overview' }),
+    page.getByRole('heading', { name: 'Solana network', exact: true }),
   ).toBeVisible();
 });

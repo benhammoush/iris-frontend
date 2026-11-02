@@ -17,7 +17,7 @@ for (const route of ['/assets', '/wallets']) {
     await page.getByRole('link', { name: 'Home', exact: true }).first().click();
     await expect(page).toHaveURL('/');
     await expect(
-      page.getByRole('heading', { name: 'Market overview' }),
+      page.getByRole('heading', { name: 'Solana network', exact: true }),
     ).toBeVisible();
   });
 }
