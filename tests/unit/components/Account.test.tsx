@@ -69,7 +69,7 @@ test('unsupported access modes use the ordinary sign-in form', async () => {
   );
 });
 
-test('keeps account access concise and leaves signed-in settings unscoped', async () => {
+test('keeps account access concise and uses one Studio account heading when signed in', async () => {
   await open();
   expect(screen.getByRole('heading', { name: 'Sign in' }).tagName).toBe('H1');
   expect(
@@ -80,8 +80,23 @@ test('keeps account access concise and leaves signed-in settings unscoped', asyn
   ).not.toBeInTheDocument();
   expect(document.querySelector('.iris-account-studio')).not.toBeNull();
   act(() => fake.emit(alice));
-  await screen.findByRole('heading', { name: 'Signed in' });
-  expect(document.querySelector('.iris-account-studio')).toBeNull();
+  const heading = await screen.findByRole('heading', {
+    name: /^Account$/,
+  });
+  expect(heading.tagName).toBe('H1');
+  expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+  expect(document.querySelector('.iris-account-settings')).not.toBeNull();
+  expect(screen.queryByText('Your Iris account')).not.toBeInTheDocument();
+  expect(
+    screen.queryByText(/Nothing is saved automatically/),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.queryByText(/No wallet connection required/),
+  ).not.toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'Open watchlist' })).toHaveAttribute(
+    'href',
+    '/watchlist',
+  );
 });
 
 test('same-route navbar links switch forms and clear entered secrets', async () => {
@@ -190,8 +205,10 @@ test('email sign-in never saves automatically and sign-out clears the account', 
     'password123',
   );
   expect(await screen.findByText('alice@example.test')).toBeVisible();
-  expect(screen.getByRole('heading', { name: 'Signed in' })).toHaveFocus();
-  expect(screen.getByText(/Nothing is saved automatically/)).toBeVisible();
+  expect(screen.getByRole('heading', { name: /^Account$/ })).toHaveFocus();
+  expect(
+    screen.queryByText(/Nothing is saved automatically/),
+  ).not.toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: 'Sign out' }));
   expect(await screen.findByRole('heading', { name: 'Sign in' })).toBeVisible();
   expect(screen.getByRole('heading', { name: 'Sign in' })).toHaveFocus();
@@ -236,7 +253,7 @@ test('verification failure survives the signup remount without retaining a passw
   expect(await screen.findByRole('alert')).toHaveTextContent(
     'verification email could not be requested',
   );
-  expect(screen.getByLabelText('Current password')).toHaveValue('');
+  expect(screen.queryByLabelText('Current password')).not.toBeInTheDocument();
   await user.click(
     screen.getByRole('button', { name: 'Resend verification email' }),
   );
@@ -274,6 +291,7 @@ test('explicit linking reports credential conflicts without merging accounts', a
   fake.driver.linkGoogle.mockRejectedValue({
     code: 'auth/credential-already-in-use',
   });
+  await user.click(screen.getByRole('button', { name: /^Link Google$/ }));
   await user.type(screen.getByLabelText('Current password'), 'password123');
   await user.click(
     screen.getByRole('button', { name: 'Link Google to this account' }),
@@ -284,6 +302,18 @@ test('explicit linking reports credential conflicts without merging accounts', a
   expect(fake.driver.signIn).not.toHaveBeenCalled();
   expect(screen.getByText('alice@example.test')).toBeVisible();
   expect(screen.getByLabelText('Current password')).toHaveValue('');
+});
+
+test('cancelling Google linking discards the password without calling the provider', async () => {
+  const user = await open();
+  act(() => fake.emit(alice));
+  await user.click(screen.getByRole('button', { name: /^Link Google$/ }));
+  await user.type(screen.getByLabelText('Current password'), 'do-not-retain');
+  await user.click(screen.getByRole('button', { name: 'Cancel linking' }));
+  expect(screen.queryByLabelText('Current password')).not.toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: /^Link Google$/ }));
+  expect(screen.getByLabelText('Current password')).toHaveValue('');
+  expect(fake.driver.linkGoogle).not.toHaveBeenCalled();
 });
 
 test('failed sign-out keeps its retry control after a later null identity event', async () => {
@@ -317,7 +347,7 @@ test('Google sign-in shows its provider without offering password setup', async 
     screen.queryByRole('button', { name: 'Add email and password' }),
   ).not.toBeInTheDocument();
   expect(fake.driver.linkPassword).not.toHaveBeenCalled();
-  expect(screen.getByRole('link', { name: /^Watchlist$/ })).toBeVisible();
+  expect(screen.getByRole('link', { name: 'Open watchlist' })).toBeVisible();
   expect(screen.getByRole('button', { name: 'Sign out' })).toBeVisible();
   expect(
     screen.getByRole('button', { name: 'Delete my account' }),
@@ -334,8 +364,13 @@ test('Google sign-in shows its provider without offering password setup', async 
 test('existing linked credentials remain visible without a password setup form', async () => {
   await open();
   act(() => fake.emit({ ...alice, providers: ['password', 'google.com'] }));
-  expect(await screen.findByText('Email and password · Google')).toBeVisible();
-  expect(screen.queryByText('Signed in with Google.')).not.toBeInTheDocument();
+  expect(
+    await screen.findByRole('heading', { name: 'Email & password' }),
+  ).toBeVisible();
+  expect(screen.getByRole('heading', { name: 'Google' })).toBeVisible();
+  expect(
+    screen.queryByRole('button', { name: /^Link Google$/ }),
+  ).not.toBeInTheDocument();
   expect(screen.queryByLabelText('New password')).not.toBeInTheDocument();
   expect(fake.driver.linkPassword).not.toHaveBeenCalled();
 });
