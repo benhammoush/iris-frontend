@@ -91,15 +91,16 @@ beforeEach(() => {
 afterEach(() => vi.resetAllMocks());
 /** Open the controlled account or watchlist view for the UI test.
  * @param control - Whether to render an individual save control instead of the watchlist route.
+ * @param compact - Whether the save control uses the compact signed-out entry.
  * @returns User-event controls once signed-out account guidance is visible.
  */
-async function open(control = false) {
+async function open(control = false, compact = false) {
   render(
     <MemoryRouter>
       <AccountProvider>
         <WatchlistProvider>
           {control ? (
-            <SaveControl kind="asset" address={address} />
+            <SaveControl kind="asset" address={address} compact={compact} />
           ) : (
             <Watchlist />
           )}
@@ -108,32 +109,43 @@ async function open(control = false) {
     </MemoryRouter>,
   );
   await screen.findByRole('link', {
-    name: control ? 'Sign in to save to watchlist' : 'Sign in',
+    name: control
+      ? compact
+        ? 'Log in to save'
+        : 'Sign in to save to watchlist'
+      : 'Sign in',
   });
   return userEvent.setup();
 }
-test('login never saves automatically; verification gates requests and all controls', async () => {
-  const user = await open(true);
-  expect(request).not.toHaveBeenCalled();
-  act(() => fake.emit({ ...alice, verified: false }));
-  expect(screen.getByRole('link', { name: 'Verify your email' })).toBeVisible();
-  expect(request).not.toHaveBeenCalled();
-  act(() => fake.emit(alice));
-  const save = await screen.findByRole('button', { name: 'Save to watchlist' });
-  await waitFor(() => expect(save).toBeEnabled());
-  expect(request.mock.calls.every((call) => call[2] === 'GET')).toBe(true);
-  request.mockResolvedValueOnce(result({ kind: 'asset', ...item }));
-  request.mockResolvedValue(result({ assets: [item], wallets: [] }));
-  await user.click(save);
-  expect(
-    await screen.findByRole('button', { name: 'Remove from watchlist' }),
-  ).toBeVisible();
-  expect(screen.getByRole('status')).toHaveTextContent('Saved to watchlist');
-  act(() => fake.emit(null));
-  expect(
-    screen.queryByRole('button', { name: 'Remove from watchlist' }),
-  ).not.toBeInTheDocument();
-});
+test.each([false, true])(
+  'login never saves automatically; verification gates requests and controls (compact=%s)',
+  async (compact) => {
+    const user = await open(true, compact);
+    expect(request).not.toHaveBeenCalled();
+    act(() => fake.emit({ ...alice, verified: false }));
+    expect(
+      screen.getByRole('link', { name: 'Verify your email' }),
+    ).toBeVisible();
+    expect(request).not.toHaveBeenCalled();
+    act(() => fake.emit(alice));
+    const save = await screen.findByRole('button', {
+      name: 'Save to watchlist',
+    });
+    await waitFor(() => expect(save).toBeEnabled());
+    expect(request.mock.calls.every((call) => call[2] === 'GET')).toBe(true);
+    request.mockResolvedValueOnce(result({ kind: 'asset', ...item }));
+    request.mockResolvedValue(result({ assets: [item], wallets: [] }));
+    await user.click(save);
+    expect(
+      await screen.findByRole('button', { name: 'Remove from watchlist' }),
+    ).toBeVisible();
+    expect(screen.getByRole('status')).toHaveTextContent('Saved to watchlist');
+    act(() => fake.emit(null));
+    expect(
+      screen.queryByRole('button', { name: 'Remove from watchlist' }),
+    ).not.toBeInTheDocument();
+  },
+);
 test('unknown references remain links, both sections render and removal restores keyboard focus', async () => {
   const user = await open();
   request.mockResolvedValue(

@@ -4,6 +4,7 @@
  */
 
 import { Link } from 'react-router-dom';
+import { useId } from 'react';
 import { accountsEnabled } from '../auth/config';
 import { useAccount } from '../contexts/AccountContext';
 import { useWatchlist } from '../contexts/WatchlistContext';
@@ -17,6 +18,8 @@ import './Watchlist.css';
 interface SaveControlProps {
   kind: WatchlistKind;
   address: string;
+  /** Use a compact signed-out entry while retaining the explicit-save guidance. */
+  compact?: boolean;
 }
 
 /** Gate the watchlist action on account readiness and feature availability.
@@ -24,7 +27,8 @@ interface SaveControlProps {
  * @returns The eligible save control, account guidance or no control for unsupported identities.
  */
 export default function SaveControl(props: SaveControlProps) {
-  const { kind, address } = props;
+  const { kind, address, compact = false } = props;
+  const guidanceId = useId();
   const { status, user } = useAccount();
   if (!accountsEnabled || !isSolanaAddress(address)) return null;
   if (status === 'loading')
@@ -38,6 +42,18 @@ export default function SaveControl(props: SaveControlProps) {
       <p className="iris-save-control">
         Accounts are unavailable. Public browsing is unaffected.
       </p>
+    );
+  if (!user && compact)
+    return (
+      <div className="iris-save-control iris-save-control--compact">
+        <Link to="/account" aria-describedby={guidanceId}>
+          <span aria-hidden="true">☆ </span>Log in to save
+        </Link>
+        <span id={guidanceId} className="iris-sr-only">
+          Return here and click Save after signing in; nothing is saved
+          automatically.
+        </span>
+      </div>
     );
   if (!user)
     return (

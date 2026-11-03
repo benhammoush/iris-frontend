@@ -97,6 +97,8 @@ interface AccountState {
   status: 'disabled' | 'loading' | 'ready' | 'unavailable';
   user: AccountUser | null;
   signOutFailed: boolean;
+  /** Persistence cleanup is pending even though private identity is already cleared. */
+  signingOut?: boolean;
   verificationNotice?: 'requested' | 'failed';
   deletion?: {
     status: 'deleting' | 'deleted';
@@ -158,7 +160,7 @@ export class AccountSession {
       };
     this.controller.abort();
     this.controller = new AbortController();
-    this.state = state;
+    this.state = { ...state, signingOut: Boolean(this.signingOut) };
     for (const listener of this.listeners) listener();
   }
 
@@ -431,6 +433,7 @@ export class AccountSession {
       await cleanup;
     } finally {
       this.signingOut = undefined;
+      this.publish(this.state);
     }
   }
 

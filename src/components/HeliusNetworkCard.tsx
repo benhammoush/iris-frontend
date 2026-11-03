@@ -137,9 +137,9 @@ export default function HeliusNetworkCard(props: HeliusNetworkCardProps) {
       className="iris-helius-card"
       aria-label="Helius Solana network and recent transactions"
     >
-      <div className="iris-helius-topline">
-        <img className="iris-helius-logo" src="/helius-dark.svg" alt="Helius" />
-        <span>Network</span>
+      <div className="iris-studio-heading">
+        <h2>Solana network</h2>
+        <span>Helius</span>
       </div>
       <ResourceFeedback
         label="Network data"
@@ -154,9 +154,20 @@ export default function HeliusNetworkCard(props: HeliusNetworkCardProps) {
           className="iris-helius-column"
           aria-label="Solana network status"
         >
-          <div className="iris-helius-column-heading">
-            <h3>Solana network</h3>
-          </div>
+          <p
+            className="iris-studio-snapshot"
+            data-state={!error && chain.state === 'fresh' ? 'fresh' : undefined}
+          >
+            {loading && !network
+              ? 'Loading snapshot…'
+              : error && network
+                ? 'Retained snapshot'
+                : chain.state === 'fresh'
+                  ? 'Fresh snapshot'
+                  : chain.state === 'stale'
+                    ? 'Stale snapshot'
+                    : 'Snapshot unavailable'}
+          </p>
           {Boolean(error) && !network ? (
             <p className="iris-helius-loading">Network snapshot unavailable.</p>
           ) : (
@@ -165,18 +176,8 @@ export default function HeliusNetworkCard(props: HeliusNetworkCardProps) {
               aria-busy={(loading && !network) || undefined}
             >
               <Field
-                label="Processed slot"
-                value={number(chain.processedSlot)}
-                loading={loading && !network}
-              />
-              <Field
                 label="Confirmed slot"
                 value={number(chain.confirmedSlot)}
-                loading={loading && !network}
-              />
-              <Field
-                label="Block height"
-                value={number(chain.blockHeight)}
                 loading={loading && !network}
               />
               <Field
@@ -214,7 +215,9 @@ export default function HeliusNetworkCard(props: HeliusNetworkCardProps) {
               <div className="iris-recent-transaction-head" role="row">
                 <span role="columnheader">Signature</span>
                 <span role="columnheader">Time</span>
-                <span role="columnheader">Block</span>
+                <span role="columnheader" className="iris-transaction-slot">
+                  Block
+                </span>
                 <span role="columnheader">Action</span>
               </div>
               {transactionsLoading && !transactions.length
@@ -257,7 +260,9 @@ export default function HeliusNetworkCard(props: HeliusNetworkCardProps) {
                         >
                           {relativeTime(transaction.blockTime)}
                         </time>
-                        <span role="cell">{number(transaction.slot)}</span>
+                        <span role="cell" className="iris-transaction-slot">
+                          {number(transaction.slot)}
+                        </span>
                         <strong role="cell">
                           {actionLabel(transaction.action)}
                         </strong>
@@ -268,6 +273,21 @@ export default function HeliusNetworkCard(props: HeliusNetworkCardProps) {
           )}
         </section>
       </div>
+      <details className="iris-studio-technical">
+        <summary>Technical details</summary>
+        <div className="iris-helius-summary">
+          <Field
+            label="Processed slot"
+            value={number(chain.processedSlot)}
+            loading={loading && !network}
+          />
+          <Field
+            label="Block height"
+            value={number(chain.blockHeight)}
+            loading={loading && !network}
+          />
+        </div>
+      </details>
     </section>
   );
 }

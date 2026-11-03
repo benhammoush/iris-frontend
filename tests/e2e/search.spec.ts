@@ -21,7 +21,7 @@ test('selects asset results with the keyboard and closes with Escape', async ({
 
   await page.getByRole('link', { name: 'Home' }).first().click();
   await expect(
-    page.getByRole('heading', { name: 'Market overview' }),
+    page.getByRole('heading', { name: 'Solana network', exact: true }),
   ).toBeVisible();
   await search.click();
   await search.fill('not-found');
@@ -43,7 +43,7 @@ test('Tab leaves desktop search without focusing a result or leaving it expanded
   await search.press('Tab');
 
   await expect(
-    page.getByRole('button', { name: 'Toggle color theme' }),
+    page.getByRole('button', { name: /SOL .*show details/ }),
   ).toBeFocused();
   await expect(search).toHaveAttribute('aria-expanded', 'false');
   await expect(search).not.toHaveAttribute('aria-activedescendant');

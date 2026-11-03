@@ -39,3 +39,24 @@ test('keeps row and animation classes separate for new and existing signatures',
     'is-new',
   );
 });
+
+test.each([
+  ['fresh', 'Fresh snapshot'],
+  ['stale', 'Stale snapshot'],
+  ['unavailable', 'Snapshot unavailable'],
+])('labels a %s snapshot without claiming chain health', (state, label) => {
+  render(
+    <HeliusNetworkCard
+      network={{ chain: { state, epoch: 812, confirmedSlot: null } }}
+      loading={false}
+      error={null}
+      transactions={[]}
+      transactionsLoading={false}
+      transactionsError={null}
+    />,
+  );
+  expect(screen.getByText(label)).toBeInTheDocument();
+  expect(screen.queryByText(/healthy|operational/i)).not.toBeInTheDocument();
+  expect(screen.getByText('812')).toBeInTheDocument();
+  expect(screen.queryByText('0')).not.toBeInTheDocument();
+});

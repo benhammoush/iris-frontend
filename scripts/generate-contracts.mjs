@@ -6,17 +6,18 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import openapiTS, { astToString } from 'openapi-typescript';
+import openapiTS from 'openapi-typescript';
 import { format, resolveConfig } from 'prettier';
 
 const source = resolve(
-  process.env.IRIS_WORKER_ROOT || '../iris-backend',
+  process.env.IRIS_WORKER_ROOT ||
+    (process.env.GITHUB_WORKSPACE
+      ? resolve(process.env.GITHUB_WORKSPACE, 'worker')
+      : '../iris-backend'),
   'openapi.yaml',
 );
 const destination = new URL('../src/api/generated.ts', import.meta.url);
-const generated = astToString(
-  await openapiTS(pathToFileURL(source), { alphabetize: true }),
-);
+const generated = await openapiTS(pathToFileURL(source), { alphabetize: true });
 const content = await format(
   '// Generated from the compatible Iris Worker openapi.yaml. Do not edit manually.\n' +
     generated,

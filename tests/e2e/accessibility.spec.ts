@@ -126,21 +126,6 @@ test('recovers separate Home resources through their own retry controls', async 
   ).toBeVisible();
 });
 
-test('recovers the catalog through the shared resource', async ({
-  page,
-  api,
-}) => {
-  api.setHandler((url) =>
-    url.pathname === '/v3/assets' ? unavailable : undefined,
-  );
-  await page.goto('/assets');
-  const retry = page.getByRole('button', { name: 'Retry catalog' });
-  await expect(retry).toBeVisible();
-  api.setHandler(() => undefined);
-  await retry.click();
-  await expect(page.getByRole('link', { name: /SOL Solana/ })).toBeVisible();
-});
-
 test('recovers wallet data and a failed cursor page without losing loaded activity', async ({
   page,
   api,

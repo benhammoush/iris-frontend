@@ -16,7 +16,12 @@
     "dev": {
       "VITE_API_BASE": "https://iris-backend-dev.benhxm.workers.dev",
       "VITE_OPENAPI_URL": "https://raw.githubusercontent.com/benhammoush/iris-backend/e30bc7de1e770f4fca92ba996ecbb437436812e2/openapi.yaml",
-      "VITE_ENABLE_FIXTURES": "false"
+      "VITE_ENABLE_FIXTURES": "false",
+      "VITE_ENABLE_ACCOUNTS": "true",
+      "VITE_FIREBASE_API_KEY": "AIzaSyAbO5wa--iNo9NXoyqBtNFeO1Of48pbQgA",
+      "VITE_FIREBASE_AUTH_DOMAIN": "iris-watchlists-dev-v2.firebaseapp.com",
+      "VITE_FIREBASE_PROJECT_ID": "iris-watchlists-dev-v2",
+      "VITE_FIREBASE_APP_ID": "1:568005945790:web:436ac652377731e44cf1ef"
     },
     "production": {
       "VITE_API_BASE": "https://iris-backend-production.benhxm.workers.dev",

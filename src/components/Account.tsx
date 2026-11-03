@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useAccount } from '../contexts/AccountContext';
 import { isRecord } from '../data/record';
 import Navbar from './Navbar';
@@ -58,26 +58,55 @@ function friendlyError(cause: unknown): string {
  */
 export default function Account() {
   const { status, user, deletion } = useAccount();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedMode = searchParams.get('mode');
+  const mode =
+    !user && (requestedMode === 'signup' || requestedMode === 'reset')
+      ? requestedMode
+      : 'signin';
+  const accessPage = status === 'ready' && !user && !deletion;
   useEffect(() => {
-    document.getElementById('iris-main')?.focus({ preventScroll: true });
+    const main = document.getElementById('iris-main');
+    if (!main?.contains(document.activeElement))
+      main?.focus({ preventScroll: true });
   }, []);
+  useEffect(() => {
+    if (!user || !searchParams.has('mode')) return;
+    setSearchParams(
+      (previous) => {
+        const next = new URLSearchParams(previous);
+        next.delete('mode');
+        return next;
+      },
+      { replace: true },
+    );
+  }, [user, searchParams, setSearchParams]);
   return (
-    <div className="iris-shell">
+    <div className={`iris-shell${accessPage ? ' iris-account-studio' : ''}`}>
       <Navbar />
       <main
         id="iris-main"
         tabIndex={-1}
-        className="iris-page iris-account-page"
+        className={`iris-page iris-account-page${accessPage ? ' iris-account-access' : ''}`}
       >
-        <section className="iris-page-heading">
-          <div>
-            <p className="iris-eyebrow">Your Iris account</p>
-            <h1>Account</h1>
-            <p>
-              Public browsing never requires an account or a wallet connection.
-            </p>
-          </div>
-        </section>
+        {accessPage ? (
+          <nav className="iris-account-breadcrumb" aria-label="Breadcrumb">
+            <Link to="/">Home</Link>
+            <span aria-hidden="true"> / </span>
+            <span aria-current="page">Account</span>
+          </nav>
+        ) : (
+          <section className="iris-page-heading">
+            <div>
+              <p className="iris-eyebrow">Your Iris account</p>
+              <h1>Account</h1>
+              <p>
+                Public browsing never requires an account or a wallet
+                connection.
+              </p>
+            </div>
+          </section>
+        )}
         {deletion ? (
           <DeletionStatus />
         ) : status === 'disabled' ? (
@@ -93,19 +122,29 @@ export default function Account() {
         ) : status === 'loading' ? (
           <p role="status">Loading account...</p>
         ) : (
-          <AccountPanel key={user?.uid ?? 'signed-out'} />
+          <AccountPanel
+            key={`${user?.uid ?? 'signed-out'}:${mode}`}
+            mode={mode}
+          />
         )}
       </main>
     </div>
   );
 }
 
+/** URL-selected account access form. */
+interface AccountPanelProps {
+  mode: 'signin' | 'signup' | 'reset';
+}
+
 /** Render account actions and their pending, successful and failed states.
+ * @param props - URL-selected access mode; mode changes remount sensitive form state.
  * @returns Forms and account controls with operation-scoped feedback.
  */
-function AccountPanel() {
+function AccountPanel(props: AccountPanelProps) {
+  const { mode } = props;
   const { user, session, signOutFailed, verificationNotice } = useAccount();
-  const [mode, setMode] = useState<'signin' | 'signup' | 'reset'>('signin');
+  const [, setSearchParams] = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -163,10 +202,12 @@ function AccountPanel() {
    * @param next - Sign-in, sign-up or password-reset form mode.
    */
   function changeMode(next: typeof mode) {
-    setMode(next);
-    setPassword('');
-    setMessage('');
-    setFailure('');
+    setSearchParams((previous) => {
+      const params = new URLSearchParams(previous);
+      if (next === 'signin') params.delete('mode');
+      else params.set('mode', next);
+      return params;
+    });
   }
   return (
     <section
@@ -232,21 +273,28 @@ function AccountPanel() {
             Nothing is saved automatically. Manage saved references on your{' '}
             <Link to="/watchlist">Watchlist</Link>.
           </p>
-          <h3>Sign-in methods</h3>
-          <p>
-            {user.providers
-              .map((provider) =>
-                provider === 'google.com'
-                  ? 'Google'
-                  : provider === 'password'
-                    ? 'Email and password'
-                    : provider,
-              )
-              .join(' · ')}
-          </p>
+          {user.providers.includes('google.com') &&
+          !user.providers.includes('password') ? (
+            <p>Signed in with Google.</p>
+          ) : (
+            <>
+              <h3>Sign-in methods</h3>
+              <p>
+                {user.providers
+                  .map((provider) =>
+                    provider === 'google.com'
+                      ? 'Google'
+                      : provider === 'password'
+                        ? 'Email and password'
+                        : provider,
+                  )
+                  .join(' · ')}
+              </p>
+            </>
+          )}
           {user.email &&
-            (user.providers.includes('password') &&
-            !user.providers.includes('google.com') ? (
+            user.providers.includes('password') &&
+            !user.providers.includes('google.com') && (
               <form
                 onSubmit={(event) => {
                   event.preventDefault();
@@ -271,38 +319,7 @@ function AccountPanel() {
                   Link Google to this account
                 </button>
               </form>
-            ) : user.providers.includes('google.com') &&
-              !user.providers.includes('password') ? (
-              <form
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  void act(async () => {
-                    await session.linkPassword(password);
-                    await session.refresh();
-                  }, 'Email and password linked to this account.');
-                }}
-              >
-                <p>
-                  Add a password for {user.email}. Google will ask you to
-                  confirm your identity.
-                </p>
-                <label>
-                  New password
-                  <input
-                    type="password"
-                    autoComplete="new-password"
-                    minLength={6}
-                    required
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    disabled={busy}
-                  />
-                </label>
-                <button type="submit" disabled={busy}>
-                  Add email and password
-                </button>
-              </form>
-            ) : null)}
+            )}
           <button
             type="button"
             className="iris-account-secondary"
@@ -327,19 +344,34 @@ function AccountPanel() {
               </button>
             </p>
           )}
-          <h2 id="iris-account-heading" ref={heading} tabIndex={-1}>
+          <p className="iris-account-access-eyebrow">
+            {mode === 'signin'
+              ? 'Welcome back'
+              : mode === 'signup'
+                ? 'Create your Iris account'
+                : 'Account recovery'}
+          </p>
+          <h1 id="iris-account-heading" ref={heading} tabIndex={-1}>
             {mode === 'signin'
               ? 'Sign in'
               : mode === 'signup'
                 ? 'Create an account'
                 : 'Reset password'}
-          </h2>
+          </h1>
+          <p className="iris-account-access-lead">
+            {mode === 'signin'
+              ? 'Return to your private watchlist.'
+              : mode === 'signup'
+                ? 'Keep the references you choose, in one place.'
+                : 'Request password-reset instructions for your email.'}
+          </p>
           <form onSubmit={submit}>
             <label>
               Email address
               <input
                 type="email"
                 autoComplete="email"
+                placeholder="you@example.com"
                 required
                 maxLength={254}
                 value={email}
@@ -363,7 +395,11 @@ function AccountPanel() {
                 />
               </label>
             )}
-            <button type="submit" disabled={busy}>
+            <button
+              className="iris-account-submit"
+              type="submit"
+              disabled={busy}
+            >
               {mode === 'signin'
                 ? 'Sign in with email'
                 : mode === 'signup'
@@ -372,19 +408,27 @@ function AccountPanel() {
             </button>
           </form>
           {mode !== 'reset' && (
-            <button
-              type="button"
-              className="iris-account-secondary"
-              disabled={busy}
-              onClick={() =>
-                void act(
-                  () => session.google(),
-                  'Signed in. Nothing has been saved automatically.',
-                )
-              }
-            >
-              Continue with Google
-            </button>
+            <>
+              <div className="iris-account-or" aria-hidden="true">
+                or
+              </div>
+              <button
+                type="button"
+                className="iris-account-secondary"
+                disabled={busy}
+                onClick={() =>
+                  void act(
+                    () => session.google(),
+                    'Signed in. Nothing has been saved automatically.',
+                  )
+                }
+              >
+                <span className="iris-account-google-mark" aria-hidden="true">
+                  G
+                </span>
+                Continue with Google
+              </button>
+            </>
           )}
           <div className="iris-account-actions">
             {mode !== 'signin' && (
@@ -415,10 +459,12 @@ function AccountPanel() {
               </>
             )}
           </div>
-          <p>
-            Sign-in stays active on this browser until you sign out. Do not stay
-            signed in on a shared device.
-          </p>
+          {mode === 'signup' && (
+            <p className="iris-account-security-note">
+              Verify your email before using private watchlists. Creating an
+              account never saves an item automatically.
+            </p>
+          )}
         </>
       )}
     </section>

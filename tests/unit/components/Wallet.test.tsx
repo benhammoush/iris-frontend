@@ -92,7 +92,9 @@ beforeEach(() => {
 test('renders a populated Worker wallet portfolio summary', async () => {
   const { container } = renderWallet();
 
-  expect(await screen.findByText('Curated Wallet')).toBeInTheDocument();
+  expect(
+    await screen.findByRole('heading', { name: 'Curated Wallet' }),
+  ).toBeInTheDocument();
   expect(screen.getByText('$1,234.56')).toBeInTheDocument();
   expect(screen.getByText(/valuations can be partial/i)).toBeInTheDocument();
   const metricsElement = container.querySelector<HTMLElement>(
@@ -100,16 +102,14 @@ test('renders a populated Worker wallet portfolio summary', async () => {
   );
   if (!metricsElement) throw new Error('Wallet metrics are missing');
   const metrics = within(metricsElement);
-  expect(metrics.getByText('Assets')).toBeInTheDocument();
-  expect(metrics.getByText('Transactions')).toBeInTheDocument();
+  expect(metrics.getByText('Holdings returned')).toBeInTheDocument();
+  expect(metrics.getByText('Transactions loaded')).toBeInTheDocument();
   expect(metrics.getByText('1')).toBeInTheDocument();
   expect(metrics.getByText('25')).toBeInTheDocument();
   expect(
     metrics.getByText('Assets returned by the Worker'),
   ).toBeInTheDocument();
-  expect(
-    metrics.getByText('Transactions returned by Helius'),
-  ).toBeInTheDocument();
+  expect(metrics.getByText('Not a lifetime total')).toBeInTheDocument();
   expect(screen.queryByText('Valuation coverage')).not.toBeInTheDocument();
   expect(screen.queryByText('Reported balances')).not.toBeInTheDocument();
   expect(
@@ -205,8 +205,36 @@ test('shows an explicit transaction error and retries the initial activity reque
   expect(
     await screen.findByText(/transaction history is unavailable/i),
   ).toBeInTheDocument();
+  const metrics = screen.getByRole('complementary', {
+    name: 'Wallet valuation',
+  });
+  expect(within(metrics).getByText('—')).toBeInTheDocument();
   await userEvent.click(screen.getByRole('button', { name: 'Retry activity' }));
   expect((await screen.findAllByTitle('solana-tx-1')).length).toBe(2);
+});
+
+test('keeps zero and long atomic amounts exact in focusable scroll groups', async () => {
+  vi.mocked(workerApi.walletTransactions).mockResolvedValueOnce({
+    data: {
+      events: ['0', '18446744073709551615'].map((atomicAmount, index) => ({
+        id: `exact-${index}`,
+        type: 'TRANSFER',
+        transfers: [{ atomicAmount, decimals: 9 }],
+      })),
+      nextCursor: null,
+    },
+    meta: { requestId: 'wallet-test' },
+  });
+  renderWallet();
+  const amounts = await screen.findAllByRole('group', {
+    name: 'Exact transfer amount',
+  });
+  expect(amounts).toHaveLength(2);
+  expect(amounts[0]).toHaveTextContent('0 atomic units (decimals: 9)');
+  expect(amounts[1]).toHaveTextContent(
+    '18446744073709551615 atomic units (decimals: 9)',
+  );
+  for (const amount of amounts) expect(amount).toHaveAttribute('tabindex', '0');
 });
 
 test('advances through empty cursor pages and stops at an explicit end', async () => {

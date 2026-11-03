@@ -3,6 +3,7 @@
  * @packageDocumentation
  */
 
+import { useState, type KeyboardEvent } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { workerApi } from '../api/worker';
 import { assetsFrom, defillamaFrom } from '../data/normalizers';
@@ -18,6 +19,7 @@ import { ValueSkeleton } from '../design-system';
 import { useHeliusDashboard } from '../contexts/HeliusDashboardContext';
 import { isRecord } from '../data/record';
 import ResourceFeedback from './ResourceFeedback';
+import './Home.css';
 
 /** Asset identity and metrics consumed by catalog previews. */
 type Asset = ReturnType<typeof assetsFrom>[number];
@@ -30,6 +32,7 @@ export default function Home() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const selectedMint = searchParams.get('mint') || SOL_MINT;
+  const [activeCatalog, setActiveCatalog] = useState(0);
   const {
     assets,
     loading: catalogLoading,
@@ -50,25 +53,63 @@ export default function Home() {
   const defillama = defillamaDashboardResult.data
     ? defillamaFrom(defillamaDashboardResult.data)
     : null;
+  const discovery = [
+    {
+      title: 'Top Volume',
+      tone: 'volume' as const,
+      assets: assetsFrom(catalogs.topTraded || catalogAssets),
+      loading: catalogsResult.loading || catalogLoading,
+      error: !assets.length && (catalogsResult.error || catalogError),
+    },
+    {
+      title: 'Trending',
+      tone: 'trending' as const,
+      assets: assetsFrom(catalogs.trending),
+      loading: catalogsResult.loading,
+      error: catalogsResult.error,
+    },
+    {
+      title: 'New tokens',
+      tone: 'pools' as const,
+      assets: assetsFrom(catalogs.recent),
+      loading: catalogsResult.loading,
+      error: catalogsResult.error,
+    },
+  ];
+
+  /** Select and focus a discovery tab using the standard horizontal-tab keys.
+   * @param event - Keyboard action from the current tab.
+   * @param index - Current tab's position in the discovery list.
+   */
+  function selectCatalog(
+    event: KeyboardEvent<HTMLButtonElement>,
+    index: number,
+  ) {
+    let next: number;
+    if (event.key === 'ArrowRight') next = (index + 1) % discovery.length;
+    else if (event.key === 'ArrowLeft')
+      next = (index + discovery.length - 1) % discovery.length;
+    else if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = discovery.length - 1;
+    else return;
+    event.preventDefault();
+    setActiveCatalog(next);
+    const tabs =
+      event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>(
+        '[role="tab"]',
+      );
+    tabs?.[next]?.focus();
+  }
 
   return (
-    <div className="iris-shell">
+    <div className="iris-shell iris-home">
       <Navbar />
       <DataStatus
         meta={selectedResult.meta || catalogsResult.meta || catalogMeta}
         error={selectedResult.error || catalogsResult.error || catalogError}
       />
-      <main id="iris-main" tabIndex={-1} className="iris-page">
-        <section className="iris-page-heading">
-          <div>
-            <p className="iris-eyebrow">Market monitor</p>
-            <h1>Market overview</h1>
-            <p>
-              Live Solana network data and market discovery from the Iris
-              Worker.
-            </p>
-          </div>
-        </section>
+      <main id="iris-main" tabIndex={-1} className="iris-page iris-studio">
+        <h1 className="iris-sr-only">Market overview</h1>
         <ResourceFeedback
           label="Market discovery"
           error={selectedResult.error || catalogsResult.error || catalogError}
@@ -88,16 +129,65 @@ export default function Home() {
             retryCatalog?.();
           }}
         />
-        <HeliusNetworkCard
-          network={heliusDashboard.network}
-          loading={heliusDashboard.loading}
-          error={heliusDashboard.error}
-          transactions={heliusDashboard.transactions}
-          transactionsLoading={heliusDashboard.loading}
-          transactionsError={heliusDashboard.error}
-          refreshing={heliusDashboard.refreshing}
-          onRetry={heliusDashboard.refetch}
-        />
+        <div className="iris-studio-top">
+          <section
+            className="iris-studio-discovery"
+            aria-label="Jupiter discovery catalogs"
+          >
+            <div className="iris-studio-heading">
+              <h2>Token discovery</h2>
+              <span>Jupiter</span>
+            </div>
+            <div
+              className="iris-discovery-tabs"
+              role="tablist"
+              aria-label="Token discovery"
+            >
+              {discovery.map((catalog, index) => (
+                <button
+                  key={catalog.tone}
+                  type="button"
+                  role="tab"
+                  id={`iris-discovery-tab-${catalog.tone}`}
+                  aria-controls={`iris-discovery-panel-${catalog.tone}`}
+                  aria-selected={activeCatalog === index}
+                  tabIndex={activeCatalog === index ? 0 : -1}
+                  onClick={() => setActiveCatalog(index)}
+                  onKeyDown={(event) => selectCatalog(event, index)}
+                >
+                  {catalog.title}
+                </button>
+              ))}
+            </div>
+            {discovery.map((catalog, index) => (
+              <div
+                key={catalog.tone}
+                role="tabpanel"
+                id={`iris-discovery-panel-${catalog.tone}`}
+                aria-labelledby={`iris-discovery-tab-${catalog.tone}`}
+                hidden={activeCatalog !== index}
+                tabIndex={0}
+              >
+                <CatalogList
+                  {...catalog}
+                  onSelect={(asset) =>
+                    void navigate(`/asset/${encodeURIComponent(asset.mint)}`)
+                  }
+                />
+              </div>
+            ))}
+          </section>
+          <HeliusNetworkCard
+            network={heliusDashboard.network}
+            loading={heliusDashboard.loading}
+            error={heliusDashboard.error}
+            transactions={heliusDashboard.transactions}
+            transactionsLoading={heliusDashboard.loading}
+            transactionsError={heliusDashboard.error}
+            refreshing={heliusDashboard.refreshing}
+            onRetry={heliusDashboard.refetch}
+          />
+        </div>
         <DefiLlamaCard
           dashboard={defillama}
           loading={defillamaDashboardResult.loading}
@@ -105,50 +195,6 @@ export default function Home() {
           refreshing={defillamaDashboardResult.refreshing}
           onRetry={defillamaDashboardResult.refetch}
         />
-        <section
-          className="iris-section iris-jupiter-dex"
-          aria-label="Jupiter discovery catalogs"
-        >
-          <div className="iris-jupiter-dex-label">
-            <JupiterLogo />
-            <div>
-              <p>Jupiter</p>
-            </div>
-            <span className="iris-jupiter-badge">Decentralised Exchange</span>
-          </div>
-          <div className="iris-catalog-lists">
-            <CatalogList
-              title="Top Volume"
-              tone="volume"
-              assets={assetsFrom(catalogs.topTraded || catalogAssets)}
-              loading={catalogsResult.loading || catalogLoading}
-              error={!assets.length && (catalogsResult.error || catalogError)}
-              onSelect={(asset) =>
-                void navigate(`/asset/${encodeURIComponent(asset.mint)}`)
-              }
-            />
-            <CatalogList
-              title="Trending"
-              tone="trending"
-              assets={assetsFrom(catalogs.trending)}
-              loading={catalogsResult.loading}
-              error={catalogsResult.error}
-              onSelect={(asset) =>
-                void navigate(`/asset/${encodeURIComponent(asset.mint)}`)
-              }
-            />
-            <CatalogList
-              title="New tokens"
-              tone="pools"
-              assets={assetsFrom(catalogs.recent)}
-              loading={catalogsResult.loading}
-              error={catalogsResult.error}
-              onSelect={(asset) =>
-                void navigate(`/asset/${encodeURIComponent(asset.mint)}`)
-              }
-            />
-          </div>
-        </section>
       </main>
     </div>
   );
@@ -272,6 +318,12 @@ function CatalogList(props: CatalogListProps) {
   const { title, tone, assets, loading, error, onSelect } = props;
   return (
     <CatalogPanel title={title} tone={tone}>
+      <div className="iris-discovery-columns" aria-hidden="true">
+        <span>Asset</span>
+        <span>Price</span>
+        <span>24h</span>
+        <span>Volume</span>
+      </div>
       {loading && !assets.length ? (
         <div className="iris-catalog-list-rows" aria-busy="true">
           {Array.from({ length: 5 }, (_, index) => (
@@ -280,15 +332,20 @@ function CatalogList(props: CatalogListProps) {
               disabled
               className="iris-catalog-list-placeholder"
             >
-              <ValueSkeleton className="iris-value-skeleton--icon" />
               <span className="iris-catalog-list-identity">
-                <ValueSkeleton width="48%" />
-                <ValueSkeleton width="70%" />
-                <ValueSkeleton width="58%" />
+                <ValueSkeleton className="iris-value-skeleton--icon" />
+                <span>
+                  <ValueSkeleton width="64px" />
+                </span>
               </span>
               <span className="iris-catalog-list-price">
                 <ValueSkeleton width="64px" />
+              </span>
+              <span className="iris-catalog-list-change">
                 <ValueSkeleton width="42px" />
+              </span>
+              <span className="iris-catalog-list-volume">
+                <ValueSkeleton width="54px" />
               </span>
             </button>
           ))}
