@@ -363,8 +363,78 @@ async function signInEmail(page: Page) {
   await page.getByLabel('Password', { exact: true }).fill('test-password123');
   await page.getByRole('button', { name: 'Sign in with email' }).click();
   await expect(
-    page.getByRole('heading', { name: 'Signed in', exact: true }),
+    page.getByRole('heading', { name: 'Account', exact: true }),
   ).toBeVisible();
+}
+
+for (const width of [320, 390, 768, 1440]) {
+  test(`single-column signed-in settings work in both themes at ${width}px`, async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize({ width, height: 900 });
+    const account = await installEmailAccountMock(page, true);
+    await signInEmail(page);
+    const settings = page.getByRole('region', { name: 'Signed-in account' });
+    await expect(
+      settings.getByRole('heading', { name: 'Account', exact: true }),
+    ).toBeFocused();
+    await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
+    await expect(
+      page.getByText('Your Iris account', { exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      settings.getByText(
+        /Nothing is saved automatically|No wallet connection required/,
+      ),
+    ).toHaveCount(0);
+    await expect(
+      settings.getByRole('link', { name: 'Open watchlist' }),
+    ).toHaveAttribute('href', '/watchlist');
+    await expect(settings.getByLabel('Current password')).toHaveCount(0);
+    for (const theme of ['light', 'dark']) {
+      if (theme === 'dark')
+        await page.getByRole('button', { name: 'Toggle color theme' }).click();
+      await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+      await expect(
+        page.getByRole('region', { name: 'Account details' }),
+      ).toHaveCSS(
+        'background-color',
+        theme === 'light' ? 'rgb(255, 255, 255)' : 'rgb(24, 20, 30)',
+      );
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+      const identity = await page
+        .locator('.iris-account-identity')
+        .boundingBox();
+      const methods = await page.locator('.iris-account-methods').boundingBox();
+      const watchlist = await page
+        .locator('.iris-account-watchlist')
+        .boundingBox();
+      if (!identity || !methods || !watchlist)
+        throw new Error('Missing signed-in account layout');
+      expect(methods.y).toBeGreaterThanOrEqual(identity.y + identity.height);
+      expect(watchlist.y).toBeGreaterThanOrEqual(methods.y + methods.height);
+      expect(Math.abs(identity.x - watchlist.x)).toBeLessThanOrEqual(1);
+      await page.screenshot({
+        path: testInfo.outputPath(`account-settings-${width}-${theme}.png`),
+        fullPage: true,
+      });
+    }
+    await settings
+      .getByRole('button', { name: 'Link Google', exact: true })
+      .click();
+    await expect(settings.getByLabel('Current password')).toBeVisible();
+    await settings.getByLabel('Current password').fill('discard-me');
+    await settings.getByRole('button', { name: 'Cancel linking' }).click();
+    await settings
+      .getByRole('button', { name: 'Link Google', exact: true })
+      .click();
+    await expect(settings.getByLabel('Current password')).toHaveValue('');
+    expect(account.unexpected).toEqual([]);
+  });
 }
 
 test('email signup, verification, restoration and reset use the Firebase SDK without live services', async ({
@@ -435,7 +505,7 @@ test('email signup, verification, restoration and reset use the Firebase SDK wit
   await page.getByLabel('Password', { exact: true }).fill('test-password123');
   await page.getByRole('button', { name: 'Sign in with email' }).click();
   await expect(
-    page.getByRole('heading', { name: 'Signed in', exact: true }),
+    page.getByRole('heading', { name: 'Account', exact: true }),
   ).toBeVisible();
   await page.getByRole('button', { name: 'Toggle color theme' }).click();
   await page.setViewportSize({ width: 390, height: 844 });

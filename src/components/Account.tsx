@@ -65,6 +65,7 @@ export default function Account() {
       ? requestedMode
       : 'signin';
   const accessPage = status === 'ready' && !user && !deletion;
+  const settingsPage = status === 'ready' && Boolean(user) && !deletion;
   useEffect(() => {
     const main = document.getElementById('iris-main');
     if (!main?.contains(document.activeElement))
@@ -82,14 +83,16 @@ export default function Account() {
     );
   }, [user, searchParams, setSearchParams]);
   return (
-    <div className={`iris-shell${accessPage ? ' iris-account-studio' : ''}`}>
+    <div
+      className={`iris-shell${accessPage || settingsPage ? ' iris-account-studio' : ''}`}
+    >
       <Navbar />
       <main
         id="iris-main"
         tabIndex={-1}
-        className={`iris-page iris-account-page${accessPage ? ' iris-account-access' : ''}`}
+        className={`iris-page iris-account-page${accessPage ? ' iris-account-access' : ''}${settingsPage ? ' iris-account-settings' : ''}`}
       >
-        {accessPage ? (
+        {accessPage || settingsPage ? (
           <nav className="iris-account-breadcrumb" aria-label="Breadcrumb">
             <Link to="/">Home</Link>
             <span aria-hidden="true"> / </span>
@@ -150,6 +153,7 @@ function AccountPanel(props: AccountPanelProps) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [failure, setFailure] = useState('');
+  const [linkExpanded, setLinkExpanded] = useState(false);
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     heading.current?.focus({ preventScroll: true });
@@ -211,7 +215,7 @@ function AccountPanel(props: AccountPanelProps) {
   }
   return (
     <section
-      className="iris-account-card"
+      className={`iris-account-card${user ? ' iris-account-settings-panel' : ''}`}
       aria-label={user ? 'Signed-in account' : 'Account access'}
       aria-busy={busy || undefined}
     >
@@ -223,9 +227,21 @@ function AccountPanel(props: AccountPanelProps) {
       </div>
       {user ? (
         <>
-          <h2 id="iris-account-heading" ref={heading} tabIndex={-1}>
-            Signed in
-          </h2>
+          <div className="iris-account-settings-heading">
+            <div>
+              <h1 id="iris-account-heading" ref={heading} tabIndex={-1}>
+                Account
+              </h1>
+              <p>A few settings. Everything you need.</p>
+            </div>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void act(() => session.signOut(), 'Signed out.')}
+            >
+              Sign out <span aria-hidden="true">↗</span>
+            </button>
+          </div>
           {verificationNotice === 'failed' && !user.verified && (
             <p role="alert">
               Your account was created, but the verification email could not be
@@ -238,96 +254,167 @@ function AccountPanel(props: AccountPanelProps) {
               moment.
             </p>
           )}
-          <p className="iris-account-email">{user.email ?? 'Iris account'}</p>
-          <p>
-            {user.verified
-              ? 'Email verified.'
-              : 'Verify your email before using private watchlists.'}
-          </p>
-          {!user.verified && (
-            <div className="iris-account-actions">
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() =>
-                  void act(
-                    () => session.verify(),
-                    'Verification requested. Check your inbox; if nothing arrives, wait and try again.',
-                  )
-                }
-              >
-                Resend verification email
-              </button>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() =>
-                  void act(() => session.refresh(), 'Account status refreshed.')
-                }
-              >
-                I have verified my email
-              </button>
+          <section
+            className="iris-account-identity"
+            aria-label="Account details"
+          >
+            <p className="iris-account-section-label">Account details</p>
+            <div className="iris-account-profile">
+              <span className="iris-account-profile-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <circle cx="12" cy="8" r="4" />
+                  <path d="M4 21v-2a8 8 0 0 1 16 0v2" />
+                </svg>
+              </span>
+              <div>
+                <p className="iris-account-email">
+                  {user.email ?? 'Iris account'}
+                </p>
+                <p
+                  className={`iris-account-verification${user.verified ? ' is-verified' : ''}`}
+                >
+                  <span aria-hidden="true">{user.verified ? '✓' : '○'}</span>{' '}
+                  {user.verified
+                    ? 'Email verified.'
+                    : 'Verify your email before using private watchlists.'}
+                </p>
+              </div>
             </div>
-          )}
-          <p>
-            Nothing is saved automatically. Manage saved references on your{' '}
-            <Link to="/watchlist">Watchlist</Link>.
-          </p>
-          {user.providers.includes('google.com') &&
-          !user.providers.includes('password') ? (
-            <p>Signed in with Google.</p>
-          ) : (
-            <>
-              <h3>Sign-in methods</h3>
-              <p>
-                {user.providers
-                  .map((provider) =>
-                    provider === 'google.com'
+            {!user.verified && (
+              <div className="iris-account-actions">
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() =>
+                    void act(
+                      () => session.verify(),
+                      'Verification requested. Check your inbox; if nothing arrives, wait and try again.',
+                    )
+                  }
+                >
+                  Resend verification email
+                </button>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() =>
+                    void act(
+                      () => session.refresh(),
+                      'Account status refreshed.',
+                    )
+                  }
+                >
+                  I have verified my email
+                </button>
+              </div>
+            )}
+          </section>
+          <section
+            className="iris-account-methods"
+            aria-labelledby="iris-account-methods-heading"
+          >
+            <h2 id="iris-account-methods-heading">Sign-in methods</h2>
+            <p className="iris-account-description">
+              Different ways in. The same Iris account.
+            </p>
+            {user.providers.map((provider) => (
+              <div className="iris-account-method" key={provider}>
+                <span className="iris-account-provider-icon" aria-hidden="true">
+                  {provider === 'google.com' ? 'G' : '@'}
+                </span>
+                <div className="iris-account-method-description">
+                  <h3>
+                    {provider === 'google.com'
                       ? 'Google'
                       : provider === 'password'
-                        ? 'Email and password'
-                        : provider,
-                  )
-                  .join(' · ')}
-              </p>
-            </>
-          )}
-          {user.email &&
-            user.providers.includes('password') &&
-            !user.providers.includes('google.com') && (
-              <form
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  void act(async () => {
-                    await session.linkGoogle(password);
-                    await session.refresh();
-                  }, 'Google linked to this account.');
-                }}
-              >
-                <label>
-                  Current password
-                  <input
-                    type="password"
-                    autoComplete="current-password"
-                    required
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    disabled={busy}
-                  />
-                </label>
-                <button type="submit" disabled={busy}>
-                  Link Google to this account
-                </button>
-              </form>
-            )}
-          <button
-            type="button"
-            className="iris-account-secondary"
-            disabled={busy}
-            onClick={() => void act(() => session.signOut(), 'Signed out.')}
+                        ? 'Email & password'
+                        : provider}
+                  </h3>
+                  <p>
+                    {provider === 'google.com'
+                      ? 'Signed in with Google.'
+                      : 'Your connected sign-in method'}
+                  </p>
+                </div>
+                <span className="iris-account-connected">Connected</span>
+              </div>
+            ))}
+            {user.email &&
+              user.providers.includes('password') &&
+              !user.providers.includes('google.com') && (
+                <>
+                  <div className="iris-account-method">
+                    <span
+                      className="iris-account-provider-icon"
+                      aria-hidden="true"
+                    >
+                      G
+                    </span>
+                    <div className="iris-account-method-description">
+                      <h3>Google</h3>
+                      <p>Add another way to sign in</p>
+                    </div>
+                    <button
+                      type="button"
+                      aria-expanded={linkExpanded}
+                      aria-controls="iris-account-link-google"
+                      disabled={busy}
+                      onClick={() => {
+                        setPassword('');
+                        setLinkExpanded(!linkExpanded);
+                      }}
+                    >
+                      {linkExpanded ? 'Cancel linking' : 'Link Google'}
+                    </button>
+                  </div>
+                  {linkExpanded && (
+                    <form
+                      id="iris-account-link-google"
+                      onSubmit={(event) => {
+                        event.preventDefault();
+                        void act(async () => {
+                          await session.linkGoogle(password);
+                          await session.refresh();
+                        }, 'Google linked to this account.');
+                      }}
+                    >
+                      <label>
+                        Current password
+                        <input
+                          type="password"
+                          autoComplete="current-password"
+                          required
+                          value={password}
+                          onChange={(event) => setPassword(event.target.value)}
+                          disabled={busy}
+                        />
+                      </label>
+                      <button type="submit" disabled={busy}>
+                        Link Google to this account
+                      </button>
+                    </form>
+                  )}
+                </>
+              )}
+          </section>
+          <section
+            className="iris-account-watchlist"
+            aria-labelledby="iris-account-watchlist-heading"
           >
-            Sign out
-          </button>
+            <div>
+              <p className="iris-account-section-label">Private watchlist</p>
+              <h2 id="iris-account-watchlist-heading">
+                Pick up where you left off.
+              </h2>
+              <p className="iris-account-description">
+                The assets and wallets you choose to save, together in your
+                watchlist.
+              </p>
+            </div>
+            <Link to="/watchlist">
+              Open watchlist <span aria-hidden="true">→</span>
+            </Link>
+          </section>
           <DeleteAccount busy={busy} run={act} />
         </>
       ) : (
@@ -504,17 +591,14 @@ function DeleteAccount(props: DeleteAccountProps) {
       className="iris-account-deletion"
       aria-label="Permanent account deletion"
     >
-      <h3>Delete account permanently</h3>
-      <p>
-        Delete your Iris account and all saved assets and wallets. There is no
-        undo. Public blockchain data is unaffected.
-      </p>
-      <p>
-        Live saved references are removed when accepted. Firebase cleanup can
-        take longer. Deletion-status metadata stays for 31 days after
-        completion. Provider backups may retain deleted data temporarily; this
-        is not immediate erasure from backups.
-      </p>
+      <div className="iris-account-deletion-summary">
+        <h2>Delete account</h2>
+        <p>
+          Permanently remove your account and saved references.
+          <br />
+          This cannot be undone.
+        </p>
+      </div>
       {!expanded ? (
         <button type="button" disabled={busy} onClick={() => setExpanded(true)}>
           Delete my account
@@ -531,6 +615,16 @@ function DeleteAccount(props: DeleteAccountProps) {
             }, 'Deletion accepted.');
           }}
         >
+          <p>
+            Delete your Iris account and all saved assets and wallets. There is
+            no undo. Public blockchain data is unaffected.
+          </p>
+          <p>
+            Live saved references are removed when accepted. Firebase cleanup
+            can take longer. Deletion-status metadata stays for 31 days after
+            completion. Provider backups may retain deleted data temporarily;
+            this is not immediate erasure from backups.
+          </p>
           <label>
             Type DELETE to confirm
             <input
