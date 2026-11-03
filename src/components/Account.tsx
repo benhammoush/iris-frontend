@@ -64,6 +64,7 @@ export default function Account() {
     !user && (requestedMode === 'signup' || requestedMode === 'reset')
       ? requestedMode
       : 'signin';
+  const accessPage = status === 'ready' && !user && !deletion;
   useEffect(() => {
     const main = document.getElementById('iris-main');
     if (!main?.contains(document.activeElement))
@@ -81,22 +82,31 @@ export default function Account() {
     );
   }, [user, searchParams, setSearchParams]);
   return (
-    <div className="iris-shell">
+    <div className={`iris-shell${accessPage ? ' iris-account-studio' : ''}`}>
       <Navbar />
       <main
         id="iris-main"
         tabIndex={-1}
-        className="iris-page iris-account-page"
+        className={`iris-page iris-account-page${accessPage ? ' iris-account-access' : ''}`}
       >
-        <section className="iris-page-heading">
-          <div>
-            <p className="iris-eyebrow">Your Iris account</p>
-            <h1>Account</h1>
-            <p>
-              Public browsing never requires an account or a wallet connection.
-            </p>
-          </div>
-        </section>
+        {accessPage ? (
+          <nav className="iris-account-breadcrumb" aria-label="Breadcrumb">
+            <Link to="/">Home</Link>
+            <span aria-hidden="true"> / </span>
+            <span aria-current="page">Account</span>
+          </nav>
+        ) : (
+          <section className="iris-page-heading">
+            <div>
+              <p className="iris-eyebrow">Your Iris account</p>
+              <h1>Account</h1>
+              <p>
+                Public browsing never requires an account or a wallet
+                connection.
+              </p>
+            </div>
+          </section>
+        )}
         {deletion ? (
           <DeletionStatus />
         ) : status === 'disabled' ? (
@@ -334,19 +344,34 @@ function AccountPanel(props: AccountPanelProps) {
               </button>
             </p>
           )}
-          <h2 id="iris-account-heading" ref={heading} tabIndex={-1}>
+          <p className="iris-account-access-eyebrow">
+            {mode === 'signin'
+              ? 'Welcome back'
+              : mode === 'signup'
+                ? 'Create your Iris account'
+                : 'Account recovery'}
+          </p>
+          <h1 id="iris-account-heading" ref={heading} tabIndex={-1}>
             {mode === 'signin'
               ? 'Sign in'
               : mode === 'signup'
                 ? 'Create an account'
                 : 'Reset password'}
-          </h2>
+          </h1>
+          <p className="iris-account-access-lead">
+            {mode === 'signin'
+              ? 'Return to your private watchlist.'
+              : mode === 'signup'
+                ? 'Keep the references you choose, in one place.'
+                : 'Request password-reset instructions for your email.'}
+          </p>
           <form onSubmit={submit}>
             <label>
               Email address
               <input
                 type="email"
                 autoComplete="email"
+                placeholder="you@example.com"
                 required
                 maxLength={254}
                 value={email}
@@ -370,7 +395,11 @@ function AccountPanel(props: AccountPanelProps) {
                 />
               </label>
             )}
-            <button type="submit" disabled={busy}>
+            <button
+              className="iris-account-submit"
+              type="submit"
+              disabled={busy}
+            >
               {mode === 'signin'
                 ? 'Sign in with email'
                 : mode === 'signup'
@@ -379,19 +408,27 @@ function AccountPanel(props: AccountPanelProps) {
             </button>
           </form>
           {mode !== 'reset' && (
-            <button
-              type="button"
-              className="iris-account-secondary"
-              disabled={busy}
-              onClick={() =>
-                void act(
-                  () => session.google(),
-                  'Signed in. Nothing has been saved automatically.',
-                )
-              }
-            >
-              Continue with Google
-            </button>
+            <>
+              <div className="iris-account-or" aria-hidden="true">
+                or
+              </div>
+              <button
+                type="button"
+                className="iris-account-secondary"
+                disabled={busy}
+                onClick={() =>
+                  void act(
+                    () => session.google(),
+                    'Signed in. Nothing has been saved automatically.',
+                  )
+                }
+              >
+                <span className="iris-account-google-mark" aria-hidden="true">
+                  G
+                </span>
+                Continue with Google
+              </button>
+            </>
           )}
           <div className="iris-account-actions">
             {mode !== 'signin' && (
@@ -422,10 +459,12 @@ function AccountPanel(props: AccountPanelProps) {
               </>
             )}
           </div>
-          <p>
-            Sign-in stays active on this browser until you sign out. Do not stay
-            signed in on a shared device.
-          </p>
+          {mode === 'signup' && (
+            <p className="iris-account-security-note">
+              Verify your email before using private watchlists. Creating an
+              account never saves an item automatically.
+            </p>
+          )}
         </>
       )}
     </section>

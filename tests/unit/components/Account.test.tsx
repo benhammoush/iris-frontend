@@ -69,6 +69,21 @@ test('unsupported access modes use the ordinary sign-in form', async () => {
   );
 });
 
+test('keeps account access concise and leaves signed-in settings unscoped', async () => {
+  await open();
+  expect(screen.getByRole('heading', { name: 'Sign in' }).tagName).toBe('H1');
+  expect(
+    screen.queryByText('Public browsing stays public.'),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.queryByText(/Sign-in stays active on this browser/),
+  ).not.toBeInTheDocument();
+  expect(document.querySelector('.iris-account-studio')).not.toBeNull();
+  act(() => fake.emit(alice));
+  await screen.findByRole('heading', { name: 'Signed in' });
+  expect(document.querySelector('.iris-account-studio')).toBeNull();
+});
+
 test('same-route navbar links switch forms and clear entered secrets', async () => {
   render(
     <MemoryRouter initialEntries={['/account']}>

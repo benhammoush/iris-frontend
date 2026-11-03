@@ -1,3 +1,5 @@
+@import './Studio.css';
+
 .iris-account-page {
   max-width: 760px;
 }
@@ -77,4 +79,168 @@
 .iris-account-deletion {
   margin-top: var(--iris-space-xl);
   border-top: 1px solid var(--iris-border);
+}
+
+/* Account access is a single centered form; signed-in settings keep their existing layout. */
+:root[data-theme] {
+  .iris-shell.iris-account-studio .iris-account-access {
+    --iris-text: var(--studio-ink);
+    --iris-muted: var(--studio-muted);
+    --iris-border: var(--studio-line);
+    --iris-input: var(--studio-bg);
+    width: 100%;
+    max-width: 408px;
+    padding: 28px 24px;
+    color: var(--studio-ink);
+    font-family: 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif;
+  }
+  .iris-account-studio .iris-account-breadcrumb {
+    margin-bottom: 18px;
+    color: var(--studio-muted);
+    font-size: 11px;
+  }
+  .iris-account-studio .iris-account-breadcrumb a {
+    color: inherit;
+  }
+  .iris-account-studio .iris-account-card {
+    padding: 27px 28px;
+    border: 0;
+    border-top: 3px solid var(--studio-purple);
+    border-radius: 0;
+    background: var(--studio-paper);
+    color: var(--studio-ink);
+    box-shadow: none;
+  }
+  .iris-account-studio .iris-account-card h1 {
+    margin: 0 0 9px;
+    color: var(--studio-ink);
+    font-size: 30px;
+    font-weight: 750;
+    letter-spacing: -1.8px;
+    line-height: 1.1;
+  }
+  .iris-account-studio .iris-account-access-eyebrow {
+    margin: 0 0 12px;
+    color: var(--studio-purple);
+    font-size: 10px;
+    font-weight: 650;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .iris-account-studio .iris-account-access-lead {
+    margin: 0 0 21px;
+    color: var(--studio-muted);
+    font-size: 12px;
+    line-height: 1.65;
+  }
+  .iris-account-studio .iris-account-card form {
+    margin: 0;
+    gap: 16px;
+  }
+  .iris-account-studio .iris-account-card label {
+    font-size: 12px;
+    gap: 7px;
+  }
+  .iris-account-studio .iris-account-card input {
+    min-height: 44px;
+    padding: 10px 11px;
+    border-color: var(--studio-line);
+    border-radius: 3px;
+    background: var(--studio-bg);
+    color: var(--studio-ink);
+    font:
+      400 13px 'Segoe UI',
+      system-ui,
+      sans-serif;
+  }
+  .iris-account-studio .iris-account-card input::placeholder {
+    color: var(--studio-muted);
+    opacity: 0.75;
+  }
+  .iris-account-studio .iris-account-card button {
+    border-color: var(--studio-line);
+    background: var(--studio-paper);
+    color: var(--studio-ink);
+    font:
+      600 12px 'Segoe UI',
+      system-ui,
+      sans-serif;
+  }
+  .iris-account-studio .iris-account-card .iris-account-submit {
+    width: 100%;
+    background: var(--studio-ink);
+    color: var(--studio-paper);
+    border-color: var(--studio-ink);
+  }
+  .iris-account-studio .iris-account-or {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 15px 0;
+    color: var(--studio-muted);
+    font-size: 10px;
+  }
+  .iris-account-studio .iris-account-or::before,
+  .iris-account-studio .iris-account-or::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--studio-line);
+  }
+  .iris-account-studio .iris-account-secondary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    margin: 0;
+  }
+  .iris-account-studio .iris-account-google-mark {
+    font:
+      750 15px Arial,
+      sans-serif;
+  }
+  .iris-account-studio .iris-account-actions {
+    justify-content: space-between;
+    gap: 8px 12px;
+    margin: 17px 0 0;
+  }
+  .iris-account-studio .iris-account-actions button {
+    min-height: 32px;
+    padding: 3px 0;
+    border: 0;
+    background: none;
+    color: var(--studio-purple);
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .iris-account-studio .iris-account-security-note {
+    margin: 20px 0 0;
+    padding-top: 14px;
+    border-top: 1px solid var(--studio-line);
+    color: var(--studio-muted);
+    font-size: 11px;
+    line-height: 1.65;
+  }
+  .iris-account-studio .iris-account-feedback p:not(:empty) {
+    margin: 0 0 16px;
+    font-size: 12px;
+    overflow-wrap: anywhere;
+  }
+  .iris-account-studio .iris-account-feedback [role='alert'] {
+    color: var(--studio-ink);
+    border-left-color: var(--studio-purple);
+  }
+  .iris-account-studio :is(button, input, a):focus-visible {
+    outline: 2px solid var(--studio-purple);
+    outline-offset: 3px;
+  }
+  @media (max-width: 480px) {
+    .iris-shell.iris-account-studio .iris-account-access {
+      padding: 18px 14px 24px;
+      max-width: 388px;
+    }
+    .iris-account-studio .iris-account-card {
+      padding: 22px 20px;
+    }
+  }
 }
