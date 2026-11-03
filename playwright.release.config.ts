@@ -10,7 +10,7 @@ import base from './playwright.config';
 export default defineConfig({
   ...base,
   // Account activation remains a separate setup gate; its full fixture suite still runs in ci:integration.
-  testIgnore: ['vertical/**', 'account.spec.ts'],
+  testIgnore: ['vertical/**', 'account.spec.ts', 'account-studio.spec.ts'],
   workers: 1,
   webServer: {
     command: 'npm run preview:e2e',
