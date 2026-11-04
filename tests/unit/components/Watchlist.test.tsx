@@ -167,7 +167,13 @@ test('unknown references remain links, both sections render and removal restores
     `/asset/${unknown}`,
   );
   expect(screen.getAllByText('$150.25').length).toBeGreaterThan(0);
-  expect(screen.getByText('$1K')).toBeVisible();
+  expect(screen.getByRole('columnheader', { name: 'Price' })).toBeVisible();
+  expect(
+    screen.getByRole('columnheader', { name: 'Priced subtotal' }),
+  ).toBeVisible();
+  expect(
+    screen.queryByRole('columnheader', { name: /volume|holdings/i }),
+  ).not.toBeInTheDocument();
   expect(screen.queryByText('Market cap')).not.toBeInTheDocument();
   expect(screen.getByRole('link', { name: address })).toHaveTextContent(
     `${address.slice(0, 6)}…${address.slice(-4)}`,

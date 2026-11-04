@@ -3,9 +3,15 @@
   .iris-home,
   .iris-asset-studio,
   .iris-wallet-studio,
-  .iris-account-studio
+  .iris-account-studio,
+  .iris-watchlist-studio
 ),
-:is(.iris-asset-studio, .iris-wallet-studio, .iris-account-studio)
+:is(
+    .iris-asset-studio,
+    .iris-wallet-studio,
+    .iris-account-studio,
+    .iris-watchlist-studio
+  )
   + .iris-footer {
   --studio-bg: #100e14;
   --studio-paper: #18141e;
@@ -25,10 +31,16 @@ html[data-theme='light']
     .iris-home,
     .iris-asset-studio,
     .iris-wallet-studio,
-    .iris-account-studio
+    .iris-account-studio,
+    .iris-watchlist-studio
   ),
 html[data-theme='light']
-  :is(.iris-asset-studio, .iris-wallet-studio, .iris-account-studio)
+  :is(
+    .iris-asset-studio,
+    .iris-wallet-studio,
+    .iris-account-studio,
+    .iris-watchlist-studio
+  )
   + .iris-footer {
   --studio-bg: #f7f6f9;
   --studio-paper: #fff;
@@ -44,7 +56,12 @@ html[data-theme='light']
 
 /* Compact footer geometry is shared by Studio screens. */
 :root[data-theme] {
-  :is(.iris-asset-studio, .iris-wallet-studio, .iris-account-studio)
+  :is(
+      .iris-asset-studio,
+      .iris-wallet-studio,
+      .iris-account-studio,
+      .iris-watchlist-studio
+    )
     + .iris-footer {
     padding: 12px 28px;
     padding-bottom: max(12px, env(safe-area-inset-bottom));
@@ -53,29 +70,54 @@ html[data-theme='light']
     font-size: 11px;
     color: var(--studio-muted);
   }
-  :is(.iris-asset-studio, .iris-wallet-studio, .iris-account-studio)
+  :is(
+      .iris-asset-studio,
+      .iris-wallet-studio,
+      .iris-account-studio,
+      .iris-watchlist-studio
+    )
     + .iris-footer
     :is(a, .iris-version) {
     color: var(--studio-muted);
     font-size: 11px;
   }
-  :is(.iris-asset-studio, .iris-wallet-studio, .iris-account-studio)
+  :is(
+      .iris-asset-studio,
+      .iris-wallet-studio,
+      .iris-account-studio,
+      .iris-watchlist-studio
+    )
     + .iris-footer
     a {
     min-height: 24px;
   }
-  :is(.iris-asset-studio, .iris-wallet-studio, .iris-account-studio)
+  :is(
+      .iris-asset-studio,
+      .iris-wallet-studio,
+      .iris-account-studio,
+      .iris-watchlist-studio
+    )
     + .iris-footer
     .iris-footer-meta {
     gap: 7px;
   }
-  :is(.iris-asset-studio, .iris-wallet-studio, .iris-account-studio)
+  :is(
+      .iris-asset-studio,
+      .iris-wallet-studio,
+      .iris-account-studio,
+      .iris-watchlist-studio
+    )
     + .iris-footer
     .iris-version::after {
     content: ' ·';
   }
   @media (max-width: 480px) {
-    :is(.iris-asset-studio, .iris-wallet-studio, .iris-account-studio)
+    :is(
+        .iris-asset-studio,
+        .iris-wallet-studio,
+        .iris-account-studio,
+        .iris-watchlist-studio
+      )
       + .iris-footer {
       padding-inline: 14px;
     }

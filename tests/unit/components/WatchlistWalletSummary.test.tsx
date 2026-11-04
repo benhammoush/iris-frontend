@@ -35,10 +35,10 @@ test('compact wallet cells retain unknown prices and partial/truncated disclosur
   expect(
     screen.queryByText('9007199254740993.123456789'),
   ).not.toBeInTheDocument();
-  expect(screen.getAllByRole('cell')).toHaveLength(2);
-  expect(screen.getByRole('cell', { name: /1\+/ })).toHaveTextContent(
-    'list truncated',
-  );
+  expect(screen.getAllByRole('cell')).toHaveLength(1);
+  expect(
+    screen.getByRole('cell', { name: /1 returned holdings/ }),
+  ).toHaveTextContent('list truncated');
   expect(screen.queryByText('$0')).not.toBeInTheDocument();
   expect(screen.getByText('Partial')).toHaveAttribute(
     'title',
@@ -82,3 +82,38 @@ test('a refresh failure keeps the subtotal visible with stale status and a worki
   );
   expect(retry).toHaveBeenCalledOnce();
 });
+
+test.each([
+  { result: undefined, message: 'Loading…', role: 'status' },
+  {
+    result: { error: 'Summary unavailable.' },
+    message: 'Summary unavailable.',
+    role: 'alert',
+  },
+])(
+  'a summary without data uses one cell for $message',
+  async ({ result, message, role }) => {
+    const retry = vi.fn();
+    render(
+      <table>
+        <tbody>
+          <tr>
+            <WatchlistWalletSummary
+              result={result}
+              busy={false}
+              onRetry={retry}
+            />
+          </tr>
+        </tbody>
+      </table>,
+    );
+    expect(screen.getAllByRole('cell')).toHaveLength(1);
+    expect(screen.getByRole(role)).toHaveTextContent(message);
+    if (result) {
+      await userEvent.click(
+        screen.getByRole('button', { name: 'Retry wallet summary' }),
+      );
+      expect(retry).toHaveBeenCalledOnce();
+    }
+  },
+);

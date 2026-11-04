@@ -13,8 +13,6 @@ import { sectionFor, type WatchlistKind } from '../watchlist/contract';
 import { itemKey } from '../watchlist/store';
 import Navbar from './Navbar';
 import WatchlistFeedback from './WatchlistFeedback';
-import CatalogPanel from './CatalogPanel';
-import { JupiterLogo } from './Home';
 import { useWalletSummaries } from '../hooks/useWalletSummaries';
 import WatchlistWalletSummary from './WatchlistWalletSummary';
 import './Watchlist.css';
@@ -28,7 +26,7 @@ export default function Watchlist() {
     document.getElementById('iris-main')?.focus({ preventScroll: true });
   }, []);
   return (
-    <div className="iris-shell">
+    <div className="iris-shell iris-watchlist-studio">
       <Navbar />
       <main
         id="iris-main"
@@ -37,12 +35,8 @@ export default function Watchlist() {
       >
         <div className="iris-page-heading">
           <div>
-            <p className="iris-eyebrow">Private references</p>
             <h1>Watchlist</h1>
-            <p>
-              Assets and public wallets you explicitly save. Visible only to
-              your account.
-            </p>
+            <p>Your saved assets and public wallets.</p>
           </div>
         </div>
         {!accountsEnabled || status === 'disabled' ? (
@@ -96,7 +90,6 @@ function ReadyWatchlist() {
   return (
     <>
       <div className="iris-watchlist-toolbar">
-        <p>Newest saves first · Up to 100 per section</p>
         <button
           type="button"
           disabled={list.loading || summaries.loading || Boolean(list.pending)}
@@ -110,51 +103,29 @@ function ReadyWatchlist() {
       </div>
       <WatchlistFeedback {...list} />
       {list.loading && !list.data && <p role="status">Loading watchlist…</p>}
-      {list.data &&
-        (['asset', 'wallet'] as const).map((kind) => {
-          const items = list.data?.[sectionFor(kind)] ?? [];
-          const title = kind === 'asset' ? 'Assets' : 'Wallets';
-          return (
-            <section
-              key={kind}
-              className={
-                kind === 'asset'
-                  ? 'iris-section iris-jupiter-dex iris-watchlist-provider'
-                  : 'iris-helius-card iris-watchlist-provider'
-              }
-              aria-label={
-                kind === 'asset'
-                  ? 'Jupiter asset summaries'
-                  : 'Helius wallet summaries'
-              }
-            >
-              {kind === 'asset' ? (
-                <div className="iris-jupiter-dex-label">
-                  <JupiterLogo />
-                  <div>
-                    <p>Jupiter</p>
-                  </div>
-                  <span className="iris-jupiter-badge">Market data</span>
-                </div>
-              ) : (
-                <div className="iris-helius-topline">
-                  <img
-                    className="iris-helius-logo"
-                    src="/helius-dark.svg"
-                    alt="Helius"
-                  />
-                  <span>Wallet summaries</span>
-                </div>
-              )}
-              <CatalogPanel
-                title={title}
-                tone={kind === 'asset' ? 'volume' : 'trending'}
-                count={`${items.length} / 100`}
-                headingRef={(element) => {
-                  headings.current[kind] = element;
-                }}
-                id={`watchlist-${kind}`}
+      <div className="iris-watchlist-sections">
+        {list.data &&
+          (['asset', 'wallet'] as const).map((kind) => {
+            const items = list.data?.[sectionFor(kind)] ?? [];
+            const title = kind === 'asset' ? 'Assets' : 'Wallets';
+            return (
+              <section
+                key={kind}
+                className="iris-watchlist-section"
+                aria-labelledby={`watchlist-${kind}`}
               >
+                <div className="iris-watchlist-section-heading">
+                  <h2
+                    id={`watchlist-${kind}`}
+                    ref={(element) => {
+                      headings.current[kind] = element;
+                    }}
+                    tabIndex={-1}
+                  >
+                    {title}
+                  </h2>
+                  <span>{items.length} / 100 saved</span>
+                </div>
                 {!items.length ? (
                   <p>
                     No saved {title.toLowerCase()} yet. Open an{' '}
@@ -170,10 +141,7 @@ function ReadyWatchlist() {
                       <thead>
                         <tr>
                           <th scope="col">
-                            {kind === 'asset' ? 'Name' : 'Address'}
-                          </th>
-                          <th scope="col">
-                            {kind === 'asset' ? '24h volume' : 'Holdings'}
+                            {kind === 'asset' ? 'Asset' : 'Address'}
                           </th>
                           <th scope="col">
                             {kind === 'asset' ? 'Price' : 'Priced subtotal'}
@@ -209,31 +177,26 @@ function ReadyWatchlist() {
                                       : item.address
                                   }
                                 >
-                                  {kind === 'asset' && name
-                                    ? name
-                                    : `${item.address.slice(0, 6)}…${item.address.slice(-4)}`}
+                                  {kind === 'asset' && name ? (
+                                    <>
+                                      {asset?.symbol || name}
+                                      {asset?.symbol &&
+                                        name !== asset.symbol && (
+                                          <small>{name}</small>
+                                        )}
+                                    </>
+                                  ) : (
+                                    `${item.address.slice(0, 6)}…${item.address.slice(-4)}`
+                                  )}
                                 </Link>
                               </td>
                               {kind === 'asset' ? (
-                                <>
-                                  <td
-                                    className="iris-watchlist-number"
-                                    title={currency(
-                                      asset?.activity?.volume24hUsd,
-                                    )}
-                                  >
-                                    {currency(
-                                      asset?.activity?.volume24hUsd,
-                                      true,
-                                    )}
-                                  </td>
-                                  <td className="iris-watchlist-number">
-                                    {asset?.priceUsd == null ||
-                                    !Number.isFinite(asset.priceUsd)
-                                      ? '—'
-                                      : `$${asset.priceUsd.toLocaleString('en-US', { maximumSignificantDigits: 8 })}`}
-                                  </td>
-                                </>
+                                <td className="iris-watchlist-number">
+                                  {asset?.priceUsd == null ||
+                                  !Number.isFinite(asset.priceUsd)
+                                    ? '—'
+                                    : `$${asset.priceUsd.toLocaleString('en-US', { maximumSignificantDigits: 8 })}`}
+                                </td>
                               ) : (
                                 <WatchlistWalletSummary
                                   result={summaries.results[item.address]}
@@ -278,20 +241,10 @@ function ReadyWatchlist() {
                     </table>
                   </div>
                 )}
-              </CatalogPanel>
-            </section>
-          );
-        })}
+              </section>
+            );
+          })}
+      </div>
     </>
   );
 }
-
-/** Format a known monetary value for display and preserve the unavailable-data fallback.
- * @param value - Available USD metric, or an unavailable value.
- * @param compact - Whether to abbreviate large display values.
- * @returns Formatted currency text or the unavailable placeholder.
- */
-const currency = (value: number | null | undefined, compact = false) =>
-  value == null || !Number.isFinite(value)
-    ? '—'
-    : `$${value.toLocaleString('en-US', { maximumFractionDigits: 2, ...(compact ? { notation: 'compact' } : {}) })}`;

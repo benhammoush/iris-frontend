@@ -527,6 +527,89 @@ test('email signup, verification, restoration and reset use the Firebase SDK wit
   expect(unexpected).toEqual([]);
 });
 
+for (const width of [320, 390, 768, 900, 901, 1440]) {
+  test(`split Studio watchlist supports empty and populated lists in both themes at ${width}px`, async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize({ width, height: 900 });
+    const { saved, savedAt, unexpected } = await installEmailAccountMock(
+      page,
+      true,
+    );
+    await signInEmail(page);
+    await page.goto('/watchlist');
+    const assets = page.getByRole('region', { name: 'Assets', exact: true });
+    const wallets = page.getByRole('region', { name: 'Wallets', exact: true });
+    await expect(assets).toContainText('No saved assets yet.');
+    await expect(wallets).toContainText('No saved wallets yet.');
+    saved.assets.push({ address: sol.mint, savedAt });
+    saved.wallets.push({ address: walletAddress, savedAt });
+    await page.getByRole('button', { name: 'Refresh watchlist' }).click();
+    await expect(
+      assets.getByRole('link', { name: `Solana · SOL ${sol.mint}` }),
+    ).toBeVisible();
+    await expect(wallets.getByText('$1,234.56')).toBeVisible();
+    await expect(assets.getByText('1 / 100 saved')).toBeVisible();
+    await expect(wallets.getByText('Partial', { exact: true })).toBeVisible();
+    await expect(
+      page.getByText('Only visible to you · Newest saves first'),
+    ).toHaveCount(0);
+    await expect(page.getByText('Private references')).toHaveCount(0);
+    await expect(
+      page.getByRole('columnheader', { name: 'Holdings', exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole('columnheader', { name: '24h volume', exact: true }),
+    ).toHaveCount(0);
+    for (const theme of ['light', 'dark']) {
+      if (theme === 'dark')
+        await page.getByRole('button', { name: 'Toggle color theme' }).click();
+      await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+      await expect(assets).toHaveCSS(
+        'background-color',
+        theme === 'light' ? 'rgb(255, 255, 255)' : 'rgb(24, 20, 30)',
+      );
+      const assetBox = await assets.boundingBox();
+      const walletBox = await wallets.boundingBox();
+      if (!assetBox || !walletBox)
+        throw new Error('Missing watchlist sections');
+      if (width > 900) {
+        expect(Math.abs(walletBox.y - assetBox.y)).toBeLessThanOrEqual(1);
+        expect(walletBox.x).toBeGreaterThanOrEqual(assetBox.x + assetBox.width);
+      } else {
+        expect(walletBox.y).toBeGreaterThanOrEqual(
+          assetBox.y + assetBox.height,
+        );
+      }
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+      const remove = assets.getByRole('button', {
+        name: `Remove ${sol.mint} from assets`,
+      });
+      await remove.focus();
+      await expect(remove).toBeFocused();
+      const target = await remove.boundingBox();
+      expect(target?.width).toBeGreaterThanOrEqual(44);
+      expect(target?.height).toBeGreaterThanOrEqual(44);
+      await page.screenshot({
+        path: testInfo.outputPath(`watchlist-${width}-${theme}.png`),
+        fullPage: true,
+      });
+    }
+    await assets
+      .getByRole('button', { name: `Remove ${sol.mint} from assets` })
+      .click();
+    await expect(
+      assets.getByRole('heading', { name: 'Assets', exact: true }),
+    ).toBeFocused();
+    await expect(assets).toContainText('No saved assets yet.');
+    expect(unexpected).toEqual([]);
+  });
+}
+
 test('private watchlists preserve save limits, recovery, sequential loading and sign-out isolation', async ({
   page,
   browserName,
