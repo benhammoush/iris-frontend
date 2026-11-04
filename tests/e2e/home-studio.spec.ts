@@ -176,6 +176,11 @@ for (const width of [
       if (theme === 'dark')
         await page.getByRole('button', { name: 'Toggle color theme' }).click();
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+      const metric = network.locator('.iris-helius-field > strong').first();
+      await expect(metric).toHaveCSS('font-family', /Segoe UI/);
+      await expect(metric).toHaveCSS('font-variant-numeric', 'tabular-nums');
+      await expect(metric).toHaveCSS('font-size', '17px');
+      await expect(metric).toHaveCSS('font-weight', '550');
       const solRow = discovery.getByRole('button', { name: /SOL Solana/ });
       await expect(solRow.locator('.iris-catalog-list-volume')).toBeVisible();
       await expect(solRow.locator('.iris-catalog-list-volume')).toHaveText(

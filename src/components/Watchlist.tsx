@@ -11,7 +11,9 @@ import { useCatalog } from '../contexts/CatalogContext';
 import { useWatchlist } from '../contexts/WatchlistContext';
 import { sectionFor, type WatchlistKind } from '../watchlist/contract';
 import { itemKey } from '../watchlist/store';
+import { unitPrice } from '../data/unitPrice';
 import Navbar from './Navbar';
+import AssetIcon from './AssetIcon';
 import WatchlistFeedback from './WatchlistFeedback';
 import { useWalletSummaries } from '../hooks/useWalletSummaries';
 import WatchlistWalletSummary from './WatchlistWalletSummary';
@@ -177,14 +179,31 @@ function ReadyWatchlist() {
                                       : item.address
                                   }
                                 >
-                                  {kind === 'asset' && name ? (
-                                    <>
-                                      {asset?.symbol || name}
-                                      {asset?.symbol &&
-                                        name !== asset.symbol && (
-                                          <small>{name}</small>
+                                  {kind === 'asset' ? (
+                                    <span className="iris-watchlist-identity">
+                                      <span
+                                        className="iris-watchlist-logo"
+                                        aria-hidden="true"
+                                      >
+                                        <AssetIcon
+                                          src={asset?.imageUrl}
+                                          symbol={asset?.symbol}
+                                        />
+                                      </span>
+                                      <span className="iris-watchlist-asset-name">
+                                        {name ? (
+                                          <>
+                                            {asset?.symbol || name}
+                                            {asset?.symbol &&
+                                              name !== asset.symbol && (
+                                                <small>{name}</small>
+                                              )}
+                                          </>
+                                        ) : (
+                                          `${item.address.slice(0, 6)}…${item.address.slice(-4)}`
                                         )}
-                                    </>
+                                      </span>
+                                    </span>
                                   ) : (
                                     `${item.address.slice(0, 6)}…${item.address.slice(-4)}`
                                   )}
@@ -192,10 +211,7 @@ function ReadyWatchlist() {
                               </td>
                               {kind === 'asset' ? (
                                 <td className="iris-watchlist-number">
-                                  {asset?.priceUsd == null ||
-                                  !Number.isFinite(asset.priceUsd)
-                                    ? '—'
-                                    : `$${asset.priceUsd.toLocaleString('en-US', { maximumSignificantDigits: 8 })}`}
+                                  {unitPrice(asset?.priceUsd)}
                                 </td>
                               ) : (
                                 <WatchlistWalletSummary

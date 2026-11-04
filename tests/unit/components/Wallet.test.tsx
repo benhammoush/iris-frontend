@@ -159,10 +159,13 @@ test('renders asset-style per-transfer activity rows and loads cursor pages', as
   );
   expect(screen.getAllByText('Sent').length).toBeGreaterThan(0);
   expect(
-    screen.getAllByText('42500000 atomic units (decimals: 9)').length,
+    screen.getAllByRole('button', {
+      name: 'Show exact transfer amount: 0.0425',
+    }).length,
   ).toBeGreaterThan(0);
   expect(
-    screen.getAllByText('2000000 atomic units (decimals: 6)').length,
+    screen.getAllByRole('button', { name: 'Show exact transfer amount: 2' })
+      .length,
   ).toBeGreaterThan(0);
   expect(screen.getByRole('button', { name: /Sender/ })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: /Recipient/ })).toBeInTheDocument();
@@ -213,7 +216,7 @@ test('shows an explicit transaction error and retries the initial activity reque
   expect((await screen.findAllByTitle('solana-tx-1')).length).toBe(2);
 });
 
-test('keeps zero and long atomic amounts exact in focusable scroll groups', async () => {
+test('keeps zero and long transfer quantities exact without scroll groups', async () => {
   vi.mocked(workerApi.walletTransactions).mockResolvedValueOnce({
     data: {
       events: ['0', '18446744073709551615'].map((atomicAmount, index) => ({
@@ -226,15 +229,15 @@ test('keeps zero and long atomic amounts exact in focusable scroll groups', asyn
     meta: { requestId: 'wallet-test' },
   });
   renderWallet();
-  const amounts = await screen.findAllByRole('group', {
-    name: 'Exact transfer amount',
+  const amounts = await screen.findAllByRole('button', {
+    name: /^Show exact transfer amount:/,
   });
   expect(amounts).toHaveLength(2);
-  expect(amounts[0]).toHaveTextContent('0 atomic units (decimals: 9)');
-  expect(amounts[1]).toHaveTextContent(
-    '18446744073709551615 atomic units (decimals: 9)',
-  );
-  for (const amount of amounts) expect(amount).toHaveAttribute('tabindex', '0');
+  expect(amounts[0]).toHaveTextContent('0');
+  expect(amounts[1]).toHaveTextContent('18446744073.709551615');
+  expect(
+    screen.queryByRole('group', { name: 'Exact transfer amount' }),
+  ).not.toBeInTheDocument();
 });
 
 test('advances through empty cursor pages and stops at an explicit end', async () => {

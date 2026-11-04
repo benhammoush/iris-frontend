@@ -79,7 +79,10 @@ test('loads a seeded wallet and follows its Worker cursor', async ({
   ).toBeVisible();
   await expect(page.getByText('Unpriced', { exact: true })).toBeVisible();
   await expect(
-    page.getByText('42500000000 atomic units (decimals: 9)'),
+    page.getByRole('button', {
+      name: 'Show exact transfer amount: 42.5',
+      exact: true,
+    }),
   ).toBeVisible();
 
   const cursorRequest = page.waitForRequest(
@@ -93,6 +96,9 @@ test('loads a seeded wallet and follows its Worker cursor', async ({
   await page.getByRole('button', { name: 'Load more' }).click();
   await cursorRequest;
   await expect(
-    page.getByText('1000000000 atomic units (decimals: 9)'),
+    page.getByRole('button', {
+      name: 'Show exact transfer amount: 1',
+      exact: true,
+    }),
   ).toBeVisible();
 });

@@ -10,10 +10,12 @@ import { workerApi } from '../api/worker';
 import { nextCursorFrom } from '../data/pagination';
 import { isRecord } from '../data/record';
 import { transactionsFrom, walletFrom } from '../data/normalizers';
+import { unitPrice } from '../data/unitPrice';
 import { useWorkerResource } from '../hooks/useWorkerResource';
 import DataStatus from './DataStatus';
 import Navbar from './Navbar';
 import AssetIcon from './AssetIcon';
+import WalletTransferAmount from './WalletTransferAmount';
 import { VirtualTable, type VirtualTableColumn } from '../design-system';
 import { solanaExplorerUrl } from '../data/solana';
 import { ValueSkeleton } from '../design-system';
@@ -166,7 +168,7 @@ const holdingsColumns: VirtualTableColumn<Holding>[] = [
      * @param asset - Normalized holding backing this row.
      * @returns Display pricing or the unavailable placeholder.
      */
-    cell: (asset) => currency(asset.price),
+    cell: (asset) => unitPrice(asset.price),
   },
   {
     id: 'balance',
@@ -313,23 +315,16 @@ const activityColumns: VirtualTableColumn<TransactionRow>[] = [
      * @returns Exact amount text, or an empty sorting value.
      */
     value: (transaction) => transaction.amount || '',
-    /** Render exact atomic quantities with their decimal context.
+    /** Render readable exact quantities with accessible source details.
      * @param transaction - Normalized activity row.
-     * @returns Keyboard-scrollable atomic-unit text and decimals, or the unavailable placeholder.
+     * @returns A compact quantity button, or the unavailable placeholder.
      */
-    cell: (transaction) =>
-      transaction.amount === null ? (
-        '—'
-      ) : (
-        <span
-          className="iris-wallet-exact-amount"
-          role="group"
-          aria-label="Exact transfer amount"
-          tabIndex={0}
-        >
-          {`${transaction.amount} atomic units (decimals: ${transaction.decimals ?? '?'})`}
-        </span>
-      ),
+    cell: (transaction) => (
+      <WalletTransferAmount
+        amount={transaction.amount}
+        decimals={transaction.decimals}
+      />
+    ),
     align: 'right',
   },
   {

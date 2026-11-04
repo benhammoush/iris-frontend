@@ -34,6 +34,7 @@ import {
 import { solanaExplorerUrl } from '../data/solana';
 import { ValueSkeleton } from '../design-system';
 import './Asset.css';
+import { unitPrice } from '../data/unitPrice';
 import ResourceFeedback from './ResourceFeedback';
 
 /** Format a known monetary value for display and preserve the unavailable-data fallback.
@@ -45,9 +46,9 @@ const currency = (value: number | null | undefined, digits = 5) =>
   value === null || value === undefined || !Number.isFinite(Number(value))
     ? '—'
     : `$${Number(value).toLocaleString('en-US', { maximumFractionDigits: digits })}`;
-/** Format a known asset price without presenting missing pricing as zero.
- * @param value - Available USD price, or an unavailable value.
- * @returns USD price text with the existing significant-digit limit, or a placeholder.
+/** Retain the chart axis's existing precision independently of hero unit pricing.
+ * @param value - Available USD chart price, or an unavailable value.
+ * @returns The existing five-significant-digit chart label or placeholder.
  */
 const price = (value: number | null | undefined) =>
   value === null || value === undefined || !Number.isFinite(Number(value))
@@ -644,7 +645,7 @@ export default function Asset() {
                       {assetLoading ? (
                         <ValueSkeleton width="118px" />
                       ) : (
-                        price(asset?.priceUsd)
+                        unitPrice(asset?.priceUsd)
                       )}
                     </strong>
                     {!assetLoading && asset?.change24hPct != null && (

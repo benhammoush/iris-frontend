@@ -32,9 +32,9 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 36px;
+    min-height: var(--studio-action-height);
     gap: 4px;
-    padding: 8px 12px;
+    padding: 0 12px;
     border: 1px solid var(--studio-line);
     border-radius: 4px;
     color: var(--studio-ink);
@@ -127,8 +127,8 @@
   }
   .iris-shell.iris-asset-studio .iris-asset-identity h1 {
     color: var(--studio-ink);
-    font-size: 36px;
-    letter-spacing: -1.8px;
+    font-size: var(--studio-page-title-size);
+    letter-spacing: -0.04em;
     line-height: 1.2;
     font-weight: 750;
   }
@@ -290,6 +290,7 @@
   }
   .iris-shell.iris-asset-studio .iris-jupiter-metric strong {
     color: var(--studio-ink);
+    font-variant-numeric: tabular-nums;
     font-size: 22px;
     font-weight: 600;
     letter-spacing: -0.6px;
@@ -455,7 +456,6 @@
       height: 32px;
       flex-shrink: 0;
     }
-    .iris-shell.iris-asset-studio .iris-asset-identity h1,
     .iris-shell.iris-asset-studio .iris-hero-price > strong {
       font-size: 24px;
       letter-spacing: -1px;
