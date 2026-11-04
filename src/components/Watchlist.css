@@ -1,24 +1,5 @@
-.iris-watchlist-page {
-  max-width: 1000px;
-}
-.iris-watchlist-provider {
-  margin: 24px 0;
-}
-.iris-watchlist-page .iris-watchlist-provider .iris-catalog-list {
-  margin: 10px;
-}
-.iris-watchlist-page .iris-catalog-list > p {
-  padding: 16px;
-  color: var(--iris-muted);
-}
-.iris-watchlist-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 24px;
-}
+@import './Studio.css';
+
 .iris-save-control {
   margin: 16px 0;
   font-size: 0.875rem;
@@ -27,13 +8,11 @@
 .iris-save-control > a {
   margin-left: 12px;
 }
-.iris-save-control a,
-.iris-watchlist-page a {
+.iris-save-control a {
   color: var(--iris-text);
   text-decoration: underline;
 }
-.iris-save-control button,
-.iris-watchlist-page button {
+.iris-save-control button {
   min-height: 44px;
   padding: 10px 14px;
   background: var(--iris-hover);
@@ -41,9 +20,108 @@
   border: 1px solid var(--iris-border-strong);
   border-radius: 4px;
 }
-.iris-save-control button:disabled,
+.iris-save-control button:disabled {
+  opacity: 0.6;
+}
+
+:root[data-theme] .iris-watchlist-studio .iris-watchlist-page {
+  --iris-text: var(--studio-ink);
+  --iris-muted: var(--studio-muted);
+  --iris-border: var(--studio-line);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-content: start;
+  gap: 20px 24px;
+  width: 100%;
+  max-width: 1440px;
+  padding: 28px;
+  color: var(--studio-ink);
+  font-family: 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif;
+}
+.iris-watchlist-page > :not(.iris-page-heading):not(.iris-watchlist-toolbar) {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+.iris-watchlist-page .iris-page-heading {
+  margin: 0;
+}
+.iris-watchlist-page .iris-page-heading h1 {
+  margin: 0 0 6px;
+  color: var(--studio-ink);
+  font-size: 28px;
+  font-weight: 750;
+  letter-spacing: -1px;
+}
+.iris-watchlist-page .iris-page-heading p {
+  margin: 0;
+  color: var(--studio-muted);
+  font-size: 13px;
+}
+.iris-watchlist-toolbar {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: center;
+}
+.iris-watchlist-page button {
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--studio-line);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--studio-ink);
+  font: inherit;
+  font-size: 12px;
+}
+.iris-watchlist-page button:hover:not(:disabled) {
+  background: var(--studio-tint);
+}
 .iris-watchlist-page button:disabled {
   opacity: 0.6;
+}
+.iris-watchlist-page :is(button, a, h2):focus-visible {
+  outline: 2px solid var(--studio-purple);
+  outline-offset: 3px;
+}
+.iris-watchlist-page a {
+  color: var(--studio-ink);
+}
+.iris-watchlist-sections {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 18px;
+}
+.iris-watchlist-section {
+  min-width: 0;
+  padding: 20px;
+  background: var(--studio-paper);
+}
+.iris-watchlist-section:first-child {
+  border-left: 3px solid var(--studio-purple);
+}
+.iris-watchlist-section-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.iris-watchlist-section-heading h2 {
+  margin: 0;
+  color: var(--studio-ink);
+  font-size: 21px;
+  font-weight: 750;
+  letter-spacing: -0.8px;
+}
+.iris-watchlist-section-heading span {
+  color: var(--studio-muted);
+  font-size: 11px;
+}
+.iris-watchlist-section > p {
+  margin: 0;
+  color: var(--studio-muted);
+  font-size: 13px;
+  line-height: 1.6;
 }
 .iris-watchlist-table-scroll {
   overflow-x: auto;
@@ -52,25 +130,31 @@
   width: 100%;
   table-layout: fixed;
   border-collapse: collapse;
-  font-size: 0.875rem;
+  color: var(--studio-ink);
+  font-size: 13px;
 }
 .iris-watchlist-table th {
-  color: var(--iris-muted);
-  font-size: 0.75rem;
+  color: var(--studio-muted);
+  font-size: 10px;
   font-weight: 400;
   text-align: left;
-}
-.iris-watchlist-table th:first-child {
-  width: 40%;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 .iris-watchlist-table th:last-child {
-  width: 104px;
+  width: 48px;
+}
+.iris-watchlist-table th:nth-child(2) {
+  width: 44%;
 }
 .iris-watchlist-table th,
 .iris-watchlist-table td {
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--iris-border);
+  padding: 8px 6px;
+  border-bottom: 1px solid var(--studio-line);
   vertical-align: middle;
+}
+.iris-watchlist-table :is(th, td):first-child {
+  padding-left: 0;
 }
 .iris-watchlist-table tr:last-child td {
   border-bottom: 0;
@@ -80,10 +164,23 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-weight: 600;
+  text-decoration: none;
+}
+.iris-watchlist-table td:first-child a:hover {
+  text-decoration: underline;
+}
+.iris-watchlist-table td:first-child small {
+  display: block;
+  margin-top: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--studio-muted);
+  font-size: 11px;
+  font-weight: 400;
 }
 .iris-watchlist-table .iris-watchlist-number,
-.iris-watchlist-table th:nth-child(2),
-.iris-watchlist-table th:nth-child(3) {
+.iris-watchlist-table th:nth-child(2) {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
@@ -91,64 +188,79 @@
 .iris-watchlist-address {
   font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
 }
-.iris-watchlist-action {
+.iris-watchlist-table .iris-watchlist-action {
+  padding: 4px 0 4px 4px;
   text-align: right;
 }
-.iris-watchlist-table button {
-  padding: 6px 10px;
-  font-size: 0.75rem;
+.iris-watchlist-action button {
+  width: 44px;
+  padding: 0;
+  border-color: transparent;
+  color: var(--studio-muted);
+}
+.iris-watchlist-action-label {
+  display: none;
 }
 .iris-watchlist-action-icon {
-  display: none;
+  font-size: 20px;
 }
 .iris-watchlist-row-hint {
   display: block;
-  color: var(--iris-muted);
+  color: var(--studio-muted);
   font:
-    0.6875rem/1.4 system-ui,
+    11px/1.4 'Segoe UI',
+    system-ui,
     sans-serif;
 }
 .iris-watchlist-row-state {
-  color: var(--iris-muted);
-  font-size: 0.75rem;
+  color: var(--studio-muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
 }
+.iris-watchlist-number button,
 .iris-watchlist-row-state button {
-  margin-left: 8px;
+  max-width: 100%;
+  margin-top: 4px;
 }
 .iris-watchlist-feedback {
-  font-size: 0.875rem;
+  font-size: 13px;
   line-height: 1.6;
 }
+.iris-watchlist-feedback:empty,
+.iris-watchlist-sections:empty {
+  display: none;
+}
+.iris-watchlist-feedback p {
+  margin: 0;
+}
 .iris-watchlist-feedback [role='alert'] {
-  border-left: 3px solid var(--iris-border-strong);
+  border-left: 3px solid var(--studio-purple);
   padding-left: 12px;
 }
+@media (max-width: 900px) {
+  .iris-watchlist-sections {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 @media (max-width: 600px) {
+  :root[data-theme] .iris-watchlist-studio .iris-watchlist-page {
+    padding: 20px 14px;
+    gap: 16px 12px;
+  }
+  .iris-watchlist-page .iris-page-heading h1 {
+    font-size: 24px;
+  }
+  .iris-watchlist-page .iris-page-heading p {
+    max-width: 190px;
+    line-height: 1.5;
+  }
+  .iris-watchlist-toolbar button {
+    max-width: 110px;
+  }
+  .iris-watchlist-section {
+    padding: 16px 12px;
+  }
   .iris-watchlist-table {
-    font-size: 0.75rem;
-  }
-  .iris-watchlist-table th,
-  .iris-watchlist-table td {
-    padding: 8px 6px;
-  }
-  .iris-watchlist-table th:first-child {
-    width: 34%;
-  }
-  .iris-watchlist-table th:last-child {
-    width: 52px;
-  }
-  .iris-watchlist-table .iris-watchlist-action {
-    padding: 4px;
-  }
-  .iris-watchlist-action button {
-    width: 44px;
-    padding: 0;
-  }
-  .iris-watchlist-action-label {
-    display: none;
-  }
-  .iris-watchlist-action-icon {
-    display: inline;
-    font-size: 1.25rem;
+    font-size: 12px;
   }
 }

@@ -32,13 +32,13 @@ export default function WatchlistWalletSummary(
   const { result, busy, onRetry } = props;
   if (!result)
     return (
-      <td colSpan={2} className="iris-watchlist-row-state">
+      <td className="iris-watchlist-row-state">
         <span role="status">Loading…</span>
       </td>
     );
   if (result.error && !result.data)
     return (
-      <td colSpan={2} className="iris-watchlist-row-state">
+      <td className="iris-watchlist-row-state">
         <span role="alert">{result.error}</span>{' '}
         <button type="button" disabled={busy} onClick={onRetry}>
           Retry wallet summary
@@ -49,65 +49,50 @@ export default function WatchlistWalletSummary(
   if (!summary) return null;
   const { wallet } = summary;
   return (
-    <>
-      <td
-        className="iris-watchlist-number"
-        title={
-          wallet.truncated
-            ? 'Returned holdings; the Worker truncated this list.'
-            : 'Returned holdings'
-        }
-      >
-        {wallet.assets.length}
-        {wallet.truncated ? '+' : ''}
-        <span className="iris-sr-only">
-          {' '}
-          returned holdings{wallet.truncated ? '; list truncated' : ''}
-        </span>
-      </td>
-      <td className="iris-watchlist-number">
-        <span>{money(wallet.totalValue)}</span>
-        {(!wallet.valuation.complete || wallet.truncated) && (
-          <small
-            className="iris-watchlist-row-hint"
-            title="Partial valuation; unpriced holdings are excluded. The holdings list may be truncated."
+    <td className="iris-watchlist-number">
+      <span>{money(wallet.totalValue)}</span>
+      {(!wallet.valuation.complete || wallet.truncated) && (
+        <small
+          className="iris-watchlist-row-hint"
+          title="Partial valuation; unpriced holdings are excluded. The holdings list may be truncated."
+        >
+          Partial
+        </small>
+      )}
+      {summary.stale && (
+        <small className="iris-watchlist-row-hint">Stale</small>
+      )}
+      {result.error && (
+        <>
+          <span className="iris-sr-only" role="alert">
+            {result.error} Showing the last successful summary.
+          </span>
+          <button
+            type="button"
+            aria-label="Retry wallet summary"
+            disabled={busy}
+            onClick={onRetry}
           >
-            Partial
-          </small>
-        )}
-        {summary.stale && (
-          <small className="iris-watchlist-row-hint">Stale</small>
-        )}
-        {result.error && (
+            Retry
+          </button>
+        </>
+      )}
+      <span className="iris-sr-only">
+        {wallet.assets.length} returned holdings
+        {wallet.truncated ? '; list truncated. ' : '. '}
+        Balances: Helius. Pricing: Jupiter when available.{' '}
+        {summary.asOf ? (
           <>
-            <span className="iris-sr-only" role="alert">
-              {result.error} Showing the last successful summary.
-            </span>
-            <button
-              type="button"
-              aria-label="Retry wallet summary"
-              disabled={busy}
-              onClick={onRetry}
-            >
-              Retry
-            </button>
+            As of{' '}
+            <time dateTime={summary.asOf}>
+              {new Date(summary.asOf).toLocaleString()}
+            </time>
+            .
           </>
+        ) : (
+          'Snapshot time unavailable.'
         )}
-        <span className="iris-sr-only">
-          Balances: Helius. Pricing: Jupiter when available.{' '}
-          {summary.asOf ? (
-            <>
-              As of{' '}
-              <time dateTime={summary.asOf}>
-                {new Date(summary.asOf).toLocaleString()}
-              </time>
-              .
-            </>
-          ) : (
-            'Snapshot time unavailable.'
-          )}
-        </span>
-      </td>
-    </>
+      </span>
+    </td>
   );
 }
