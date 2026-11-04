@@ -42,7 +42,7 @@ const browsers = readFileSync(
 );
 
 describe('versioned delivery consumer', () => {
-  it('enables accounts with matching public Firebase configuration only in dev', () => {
+  it('enables accounts with isolated public Firebase configuration in each hosted environment', () => {
     const { dev, production } = config.buildEnvironment;
     expect(dev.VITE_ENABLE_ACCOUNTS).toBe('true');
     expect(dev.VITE_FIREBASE_PROJECT_ID).toBe('iris-watchlists-dev-v2');
@@ -55,10 +55,24 @@ describe('versioned delivery consumer', () => {
     // Intentionally public Firebase browser identification key, not an admin secret.
     // Never substitute a service-account credential; API/auth restrictions still apply.
     expect(dev.VITE_FIREBASE_API_KEY).toMatch(/^AIza[\w-]{35}$/);
-    expect(production).not.toHaveProperty('VITE_ENABLE_ACCOUNTS');
-    expect(
-      Object.keys(production).filter((key) => key.startsWith('VITE_FIREBASE_')),
-    ).toEqual([]);
+    expect(production.VITE_ENABLE_ACCOUNTS).toBe('true');
+    expect(production.VITE_FIREBASE_PROJECT_ID).toBe(
+      'iris-watchlists-production',
+    );
+    expect(production.VITE_FIREBASE_AUTH_DOMAIN).toBe(
+      `${production.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
+    );
+    expect(production.VITE_FIREBASE_APP_ID).toBe(
+      '1:122979007541:web:513ac4e6eb9eb988b3c57c',
+    );
+    expect(production.VITE_FIREBASE_API_KEY).toMatch(/^AIza[\w-]{35}$/);
+    expect(production.VITE_FIREBASE_PROJECT_ID).not.toBe(
+      dev.VITE_FIREBASE_PROJECT_ID,
+    );
+    expect(production.VITE_FIREBASE_APP_ID).not.toBe(dev.VITE_FIREBASE_APP_ID);
+    expect(production.VITE_FIREBASE_API_KEY).not.toBe(
+      dev.VITE_FIREBASE_API_KEY,
+    );
     const publicInputs = new Set([
       'VITE_FIREBASE_API_KEY',
       'VITE_FIREBASE_AUTH_DOMAIN',
