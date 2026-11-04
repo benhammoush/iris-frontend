@@ -5,7 +5,7 @@
 import { expect, test } from './support/test';
 import { sol } from './support/workerMock';
 
-for (const width of [320, 390, 480, 481, 768, 1000, 1440]) {
+for (const width of [320, 390, 480, 481, 600, 601, 768, 1000, 1440]) {
   test(`Studio asset preserves its controls and layout at ${width}px`, async ({
     page,
     api,
@@ -93,6 +93,21 @@ for (const width of [320, 390, 480, 481, 768, 1000, 1440]) {
       if (theme === 'dark')
         await page.getByRole('button', { name: 'Toggle color theme' }).click();
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+      const title = page.getByRole('heading', { level: 1 });
+      await expect(title).toHaveCSS(
+        'font-size',
+        width <= 600 ? '24px' : '32px',
+      );
+      await expect(title).toHaveCSS('font-weight', '750');
+      expect(
+        await title.evaluate((element) =>
+          parseFloat(getComputedStyle(element).lineHeight),
+        ),
+      ).toBeCloseTo(width <= 600 ? 28.8 : 38.4, 3);
+      const metric = snapshot.locator('.iris-jupiter-metric strong').first();
+      await expect(metric).toHaveCSS('font-family', /Segoe UI/);
+      await expect(metric).toHaveCSS('font-variant-numeric', 'tabular-nums');
+      await expect(metric).toHaveCSS('font-weight', '600');
       await expect(page.locator('.iris-hero-price .iris-positive')).toHaveCSS(
         'color',
         theme === 'light' ? 'rgb(36, 116, 82)' : 'rgb(131, 203, 166)',

@@ -13,8 +13,8 @@
   text-decoration: underline;
 }
 .iris-save-control button {
-  min-height: 44px;
-  padding: 10px 14px;
+  min-height: var(--studio-action-height, 44px);
+  padding: 0 14px;
   background: var(--iris-hover);
   color: var(--iris-text);
   border: 1px solid var(--iris-border-strong);
@@ -48,9 +48,10 @@
 .iris-watchlist-page .iris-page-heading h1 {
   margin: 0 0 6px;
   color: var(--studio-ink);
-  font-size: 28px;
+  font-size: var(--studio-page-title-size);
   font-weight: 750;
-  letter-spacing: -1px;
+  letter-spacing: -0.04em;
+  line-height: 1.2;
 }
 .iris-watchlist-page .iris-page-heading p {
   margin: 0;
@@ -63,8 +64,8 @@
   align-self: center;
 }
 .iris-watchlist-page button {
-  min-height: 44px;
-  padding: 8px 12px;
+  min-height: var(--studio-action-height);
+  padding: 0 12px;
   border: 1px solid var(--studio-line);
   border-radius: 3px;
   background: transparent;
@@ -170,6 +171,30 @@
 .iris-watchlist-table td:first-child a:hover {
   text-decoration: underline;
 }
+.iris-watchlist-identity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.iris-watchlist-logo {
+  display: flex;
+  width: 28px;
+  height: 28px;
+  flex: none;
+}
+.iris-watchlist-logo :is(img, .iris-asset-icon-fallback) {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--studio-tint);
+  color: var(--studio-muted);
+}
+.iris-watchlist-asset-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .iris-watchlist-table td:first-child small {
   display: block;
   margin-top: 3px;
@@ -194,6 +219,7 @@
 }
 .iris-watchlist-action button {
   width: 44px;
+  min-height: 44px;
   padding: 0;
   border-color: transparent;
   color: var(--studio-muted);
@@ -247,9 +273,6 @@
     padding: 20px 14px;
     gap: 16px 12px;
   }
-  .iris-watchlist-page .iris-page-heading h1 {
-    font-size: 24px;
-  }
   .iris-watchlist-page .iris-page-heading p {
     max-width: 190px;
     line-height: 1.5;
@@ -262,5 +285,9 @@
   }
   .iris-watchlist-table {
     font-size: 12px;
+  }
+  .iris-watchlist-logo {
+    width: 24px;
+    height: 24px;
   }
 }

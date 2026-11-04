@@ -367,7 +367,7 @@ async function signInEmail(page: Page) {
   ).toBeVisible();
 }
 
-for (const width of [320, 390, 768, 1440]) {
+for (const width of [320, 390, 600, 601, 768, 1440]) {
   test(`single-column signed-in settings work in both themes at ${width}px`, async ({
     page,
   }, testInfo) => {
@@ -401,6 +401,23 @@ for (const width of [320, 390, 768, 1440]) {
         'background-color',
         theme === 'light' ? 'rgb(255, 255, 255)' : 'rgb(24, 20, 30)',
       );
+      const title = settings.getByRole('heading', { level: 1 });
+      await expect(
+        settings.getByRole('link', { name: 'Open watchlist' }),
+      ).toHaveCSS('height', width <= 600 ? '44px' : '36px');
+      await expect(
+        settings.getByRole('button', { name: 'Sign out', exact: true }),
+      ).toHaveCSS('height', width <= 600 ? '44px' : '36px');
+      await expect(title).toHaveCSS(
+        'font-size',
+        width <= 600 ? '24px' : '32px',
+      );
+      await expect(title).toHaveCSS('font-weight', '750');
+      expect(
+        await title.evaluate((element) =>
+          parseFloat(getComputedStyle(element).lineHeight),
+        ),
+      ).toBeCloseTo(width <= 600 ? 28.8 : 38.4, 3);
       expect(
         await page.evaluate(
           () => document.documentElement.scrollWidth <= innerWidth,
@@ -527,14 +544,27 @@ test('email signup, verification, restoration and reset use the Firebase SDK wit
   expect(unexpected).toEqual([]);
 });
 
-for (const width of [320, 390, 768, 900, 901, 1440]) {
+for (const width of [320, 390, 600, 601, 768, 900, 901, 1440]) {
   test(`split Studio watchlist supports empty and populated lists in both themes at ${width}px`, async ({
     page,
+    api,
   }, testInfo) => {
     await page.setViewportSize({ width, height: 900 });
     const { saved, savedAt, unexpected } = await installEmailAccountMock(
       page,
       true,
+    );
+    const iconUrl = `${testInfo.project.use.baseURL}/watchlist-sol-icon.svg`;
+    await page.route('**/watchlist-sol-icon.svg', (route) =>
+      route.fulfill({
+        contentType: 'image/svg+xml',
+        body: '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><circle cx="16" cy="16" r="16" fill="#7951b0"/><path d="M9 10h14v3H9zm0 5h14v3H9zm0 5h14v3H9z" fill="white"/></svg>',
+      }),
+    );
+    api.setHandler((url) =>
+      url.pathname === '/v3/assets'
+        ? { data: { assets: [{ ...sol, iconUrl, priceUsd: 0.0000031234567 }] } }
+        : undefined,
     );
     await signInEmail(page);
     await page.goto('/watchlist');
@@ -550,6 +580,12 @@ for (const width of [320, 390, 768, 900, 901, 1440]) {
     ).toBeVisible();
     await expect(wallets.getByText('$1,234.56')).toBeVisible();
     await expect(assets.getByText('1 / 100 saved')).toBeVisible();
+    await expect(
+      assets.getByText('$0.0000031235', { exact: true }),
+    ).toBeVisible();
+    const icon = assets.locator('.iris-watchlist-logo img');
+    await expect(icon).toHaveAttribute('src', iconUrl);
+    await expect(icon).toHaveJSProperty('naturalWidth', 32);
     await expect(wallets.getByText('Partial', { exact: true })).toBeVisible();
     await expect(
       page.getByText('Only visible to you · Newest saves first'),
@@ -569,6 +605,35 @@ for (const width of [320, 390, 768, 900, 901, 1440]) {
         'background-color',
         theme === 'light' ? 'rgb(255, 255, 255)' : 'rgb(24, 20, 30)',
       );
+      const assetLink = assets.getByRole('link', {
+        name: `Solana · SOL ${sol.mint}`,
+      });
+      await expect(assetLink).toHaveCSS(
+        'color',
+        theme === 'light' ? 'rgb(121, 81, 176)' : 'rgb(188, 150, 235)',
+      );
+      await expect(assetLink).toHaveCSS('text-decoration-line', 'underline');
+      await page.keyboard.press('Tab');
+      await assetLink.focus();
+      await expect(assetLink).toHaveCSS('outline-offset', '-2px');
+      await expect(assetLink).toHaveCSS(
+        'outline-color',
+        theme === 'light' ? 'rgb(121, 81, 176)' : 'rgb(188, 150, 235)',
+      );
+      const title = page.getByRole('heading', { level: 1 });
+      await expect(
+        page.getByRole('button', { name: 'Refresh watchlist' }),
+      ).toHaveCSS('height', width <= 600 ? '44px' : '36px');
+      await expect(title).toHaveCSS(
+        'font-size',
+        width <= 600 ? '24px' : '32px',
+      );
+      await expect(title).toHaveCSS('font-weight', '750');
+      expect(
+        await title.evaluate((element) =>
+          parseFloat(getComputedStyle(element).lineHeight),
+        ),
+      ).toBeCloseTo(width <= 600 ? 28.8 : 38.4, 3);
       const assetBox = await assets.boundingBox();
       const walletBox = await wallets.boundingBox();
       if (!assetBox || !walletBox)
@@ -594,11 +659,22 @@ for (const width of [320, 390, 768, 900, 901, 1440]) {
       const target = await remove.boundingBox();
       expect(target?.width).toBeGreaterThanOrEqual(44);
       expect(target?.height).toBeGreaterThanOrEqual(44);
+      const logoBox = await icon.boundingBox();
+      const nameBox = await assets
+        .locator('.iris-watchlist-asset-name')
+        .boundingBox();
+      if (!logoBox || !nameBox) throw new Error('Missing saved-asset identity');
+      expect(logoBox.width).toBe(width <= 600 ? 24 : 28);
+      expect(nameBox.x).toBeGreaterThanOrEqual(logoBox.x + logoBox.width);
       await page.screenshot({
         path: testInfo.outputPath(`watchlist-${width}-${theme}.png`),
         fullPage: true,
       });
     }
+    await page.route('**/watchlist-sol-icon.svg', (route) => route.abort());
+    await page.reload();
+    await expect(assets.locator('.iris-asset-icon-fallback')).toHaveText('SO');
+    await expect(assets.locator('.iris-watchlist-logo img')).toHaveCount(0);
     await assets
       .getByRole('button', { name: `Remove ${sol.mint} from assets` })
       .click();

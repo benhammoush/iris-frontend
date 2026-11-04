@@ -56,7 +56,7 @@ const wallet = {
   ],
 };
 
-for (const width of [320, 390, 480, 481, 768, 1000, 1440]) {
+for (const width of [320, 390, 480, 481, 600, 601, 768, 1000, 1440]) {
   test(`Studio wallet matches holdings workspace in both themes at ${width}px`, async ({
     page,
     api,
@@ -118,6 +118,17 @@ for (const width of [320, 390, 480, 481, 768, 1000, 1440]) {
       if (theme === 'dark')
         await page.getByRole('button', { name: 'Toggle color theme' }).click();
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+      const title = page.getByRole('heading', { level: 1 });
+      await expect(title).toHaveCSS(
+        'font-size',
+        width <= 600 ? '24px' : '32px',
+      );
+      await expect(title).toHaveCSS('font-weight', '750');
+      expect(
+        await title.evaluate((element) =>
+          parseFloat(getComputedStyle(element).lineHeight),
+        ),
+      ).toBeCloseTo(width <= 600 ? 28.8 : 38.4, 3);
       await expect(
         valuation.getByText('$27,948.6', { exact: true }),
       ).toBeVisible();
@@ -204,7 +215,8 @@ for (const width of [320, 390, 480, 481, 768, 1000, 1440]) {
     ).toHaveCount(1);
     await page.getByRole('button', { name: 'Load more', exact: true }).click();
     await expect(
-      transactions.getByText('1000000000 atomic units (decimals: 9)', {
+      transactions.getByRole('button', {
+        name: 'Show exact transfer amount: 1',
         exact: true,
       }),
     ).toHaveCount(1);
@@ -266,13 +278,12 @@ test('unlabelled wallets retain full address identity and an honest empty subtot
   ).toBeVisible();
 });
 
-for (const width of [390, 1440]) {
-  test(`long exact transfer amounts remain keyboard-scrollable at ${width}px`, async ({
+for (const width of [320, 390, 1440]) {
+  test(`long exact transfer amounts open accessible details without row scrollbars at ${width}px`, async ({
     page,
     api,
-  }) => {
+  }, testInfo) => {
     const amount = '18446744073709551615';
-    const text = `${amount} atomic units (decimals: 9)`;
     api.setHandler((url) =>
       url.pathname === `/v3/wallets/${walletAddress}/transactions`
         ? {
@@ -299,51 +310,47 @@ for (const width of [390, 1440]) {
     );
     await page.setViewportSize({ width, height: 900 });
     await page.goto(`/wallet/${walletAddress}`);
-    const exact = page.getByRole('group', { name: 'Exact transfer amount' });
+    const exact = page.getByRole('button', {
+      name: 'Show exact transfer amount: 18446744073.709551615',
+      exact: true,
+    });
     for (const theme of ['light', 'dark']) {
       if (theme === 'dark')
         await page.getByRole('button', { name: 'Toggle color theme' }).click();
-      await expect(exact).toHaveText(text);
+      await expect(exact).toHaveText('18446744073.709551615');
       await exact.scrollIntoViewIfNeeded();
       await expect(exact).toHaveCSS('white-space', 'nowrap');
+      await expect(exact).toHaveCSS('overflow-x', 'hidden');
+      await expect(exact).toHaveCSS('text-overflow', 'ellipsis');
+      await exact.focus();
+      await exact.press('Enter');
+      const details = page.getByRole('dialog', {
+        name: 'Exact transfer amount',
+      });
+      await expect(details).toBeVisible();
+      const bounds = await details.boundingBox();
+      if (!bounds) throw new Error('Missing amount details');
+      expect(Math.abs(bounds.x + bounds.width / 2 - width / 2)).toBeLessThan(2);
+      expect(Math.abs(bounds.y + bounds.height / 2 - 450)).toBeLessThan(2);
+      await expect(details.getByText(amount, { exact: true })).toBeVisible();
+      await expect(
+        details.getByText('18446744073.709551615', { exact: true }),
+      ).toBeVisible();
       expect(
-        await exact.evaluate(
-          (element) => element.scrollWidth > element.clientWidth,
+        await details.evaluate(
+          (element) => element.scrollWidth <= element.clientWidth,
         ),
       ).toBe(true);
-      await exact.evaluate((element) => {
-        element.scrollLeft = 0;
+      await page.screenshot({
+        path: testInfo.outputPath(`amount-details-${width}-${theme}.png`),
       });
-      await exact.focus();
-      await exact.press('ArrowRight');
-      await expect
-        .poll(() => exact.evaluate((element) => element.scrollLeft))
-        .toBeGreaterThan(0);
-      const visible = await exact.evaluate((element) => {
-        element.scrollLeft = element.scrollWidth;
-        const range = document.createRange();
-        range.selectNodeContents(element);
-        const text = range.getBoundingClientRect(),
-          bounds = element.getBoundingClientRect(),
-          row = element.closest('.iris-table-row')?.getBoundingClientRect();
-        return {
-          endVisible: text.right <= bounds.right + 1,
-          verticallyVisible: element.scrollHeight <= element.clientHeight,
-          insideRow: Boolean(
-            row && bounds.top >= row.top && bounds.bottom <= row.bottom,
-          ),
-          atEnd:
-            Math.abs(
-              element.scrollWidth - element.clientWidth - element.scrollLeft,
-            ) <= 1,
-        };
-      });
-      expect(visible).toEqual({
-        endVisible: true,
-        verticallyVisible: true,
-        insideRow: true,
-        atEnd: true,
-      });
+      await details.getByRole('button', { name: 'Close' }).press('Escape');
+      await expect(details).not.toBeVisible();
+      await expect(exact).toBeFocused();
+      await exact.click();
+      await details.getByRole('button', { name: 'Close' }).click();
+      await expect(details).not.toBeVisible();
+      await expect(exact).toBeFocused();
       expect(
         await page.evaluate(
           () => document.documentElement.scrollWidth <= innerWidth,

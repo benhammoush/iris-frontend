@@ -1,4 +1,4 @@
-/* Shared Studio surface palette; navigation and other pages retain their themes. */
+/* Shared Studio palette and page-title scale; navigation retains its theme. */
 .iris-shell:is(
   .iris-home,
   .iris-asset-studio,
@@ -23,6 +23,8 @@
   --studio-positive: #83cba6;
   --studio-negative: #eb97a7;
   --studio-chart-grid: #25202d;
+  --studio-page-title-size: 32px;
+  --studio-action-height: 36px;
   background: var(--studio-bg);
   color: var(--studio-ink);
 }
@@ -52,6 +54,69 @@ html[data-theme='light']
   --studio-positive: #247452;
   --studio-negative: #b34355;
   --studio-chart-grid: #ede9f1;
+}
+
+@media (max-width: 600px) {
+  .iris-shell:is(
+    .iris-asset-studio,
+    .iris-wallet-studio,
+    .iris-account-studio,
+    .iris-watchlist-studio
+  ) {
+    --studio-page-title-size: 24px;
+  }
+}
+
+@media (max-width: 600px), (any-pointer: coarse) {
+  .iris-shell:is(
+    .iris-home,
+    .iris-asset-studio,
+    .iris-wallet-studio,
+    .iris-account-studio,
+    .iris-watchlist-studio
+  ) {
+    --studio-action-height: 44px;
+  }
+}
+
+/* Equivalent table links and main-content focus cues share one treatment. */
+:root[data-theme] {
+  .iris-shell:is(
+      .iris-home,
+      .iris-asset-studio,
+      .iris-wallet-studio,
+      .iris-account-studio,
+      .iris-watchlist-studio
+    )
+    main {
+    :is(.iris-table-cell a, .iris-watchlist-table td:first-child a) {
+      color: var(--studio-purple);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      @media (forced-colors: active) {
+        color: LinkText;
+      }
+    }
+    :is(.iris-table-cell a, .iris-watchlist-table td:first-child a):hover {
+      text-decoration-thickness: 2px;
+    }
+    :is(button, a, input, select, textarea, summary, [tabindex]):focus-visible,
+    .iris-resource-feedback:focus {
+      outline: 2px solid var(--studio-purple);
+      outline-offset: 3px;
+      @media (forced-colors: active) {
+        outline-color: Highlight;
+      }
+    }
+    :is(
+      .iris-table-cell,
+      .iris-table-cell :is(button, a),
+      .iris-table-toolbar input,
+      .iris-watchlist-table td:first-child a
+    ):focus-visible {
+      outline-offset: -2px;
+    }
+  }
 }
 
 /* Compact footer geometry is shared by Studio screens. */

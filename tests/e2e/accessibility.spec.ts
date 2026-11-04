@@ -141,9 +141,10 @@ test('recovers wallet data and a failed cursor page without losing loaded activi
   await expect(
     page.getByRole('heading', { name: 'Treasury Wallet' }),
   ).toBeVisible();
-  const firstTransfer = page.getByText(
-    '42500000000 atomic units (decimals: 9)',
-  );
+  const firstTransfer = page.getByRole('button', {
+    name: 'Show exact transfer amount: 42.5',
+    exact: true,
+  });
   await expect(firstTransfer).toBeVisible();
   api.setHandler((url) =>
     url.pathname.endsWith('/transactions') && url.searchParams.has('cursor')
@@ -157,7 +158,10 @@ test('recovers wallet data and a failed cursor page without losing loaded activi
   api.setHandler(() => undefined);
   await retry.click();
   await expect(
-    page.getByText('1000000000 atomic units (decimals: 9)'),
+    page.getByRole('button', {
+      name: 'Show exact transfer amount: 1',
+      exact: true,
+    }),
   ).toBeVisible();
   await expect(firstTransfer).toBeVisible();
 });

@@ -3,7 +3,14 @@
  * @packageDocumentation
  */
 
-import { act, render, screen, waitFor, within } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
@@ -44,6 +51,7 @@ vi.mock('../../../src/contexts/CatalogContext', () => ({
         mint: address,
         symbol: 'SOL',
         name: 'Solana',
+        iconUrl: 'https://images.example.test/sol.png',
         priceUsd: 150.25,
         change24hPct: 2.5,
         activity: { volume24hUsd: 1000 },
@@ -200,6 +208,39 @@ test('unknown references remain links, both sections render and removal restores
     'href',
     `/wallet/${address}`,
   );
+});
+
+test('saved assets render catalog logos and keep readable fallbacks when images fail or metadata is missing', async () => {
+  await open();
+  request.mockResolvedValue(
+    result({
+      assets: [item, { address: unknown, savedAt: item.savedAt }],
+      wallets: [item],
+    }),
+  );
+  act(() => fake.emit(alice));
+  const link = await screen.findByRole('link', {
+    name: `Solana · SOL ${address}`,
+  });
+  const image = link.querySelector('img');
+  if (!image) throw new Error('Missing saved-asset image');
+  expect(image).toHaveAttribute('src', 'https://images.example.test/sol.png');
+  expect(image).toHaveAttribute('loading', 'lazy');
+  fireEvent.error(image);
+  expect(link.querySelector('img')).not.toBeInTheDocument();
+  expect(link.querySelector('.iris-asset-icon-fallback')).toHaveTextContent(
+    'SO',
+  );
+  expect(
+    screen
+      .getByRole('link', { name: unknown })
+      .querySelector('.iris-asset-icon-fallback'),
+  ).toHaveTextContent('?');
+  expect(
+    within(screen.getByRole('region', { name: 'Wallets' }))
+      .getByRole('link', { name: address })
+      .querySelector('.iris-watchlist-logo'),
+  ).not.toBeInTheDocument();
 });
 
 test('wallet summaries load automatically and retry only the failed wallet', async () => {

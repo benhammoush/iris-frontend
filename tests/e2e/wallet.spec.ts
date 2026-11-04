@@ -32,7 +32,10 @@ test('renders a wallet, retains unpriced holdings, and appends cursor pages', as
   await expect(holdingRow).toHaveCSS('display', 'flex');
   await expect(holdingRow).toHaveCSS('position', 'absolute');
   await expect(
-    page.getByText('42500000000 atomic units (decimals: 9)'),
+    page.getByRole('button', {
+      name: 'Show exact transfer amount: 42.5',
+      exact: true,
+    }),
   ).toBeVisible();
   await expect(
     page.getByText(/displayed holdings are incomplete/i),
@@ -40,7 +43,10 @@ test('renders a wallet, retains unpriced holdings, and appends cursor pages', as
 
   await page.getByRole('button', { name: 'Load more' }).click();
   await expect(
-    page.getByText('1000000000 atomic units (decimals: 9)'),
+    page.getByRole('button', {
+      name: 'Show exact transfer amount: 1',
+      exact: true,
+    }),
   ).toBeVisible();
   await expect
     .poll(() =>
@@ -77,9 +83,10 @@ test('retains activity after a cursor failure and retries the same page', async 
   });
 
   await page.goto(`/wallet/${walletAddress}`);
-  const firstTransfer = page.getByText(
-    '42500000000 atomic units (decimals: 9)',
-  );
+  const firstTransfer = page.getByRole('button', {
+    name: 'Show exact transfer amount: 42.5',
+    exact: true,
+  });
   await expect(firstTransfer).toBeVisible();
   await page.getByRole('button', { name: 'Load more' }).click();
   await expect(
@@ -89,7 +96,10 @@ test('retains activity after a cursor failure and retries the same page', async 
 
   await page.getByRole('button', { name: 'Retry', exact: true }).click();
   await expect(
-    page.getByText('1000000000 atomic units (decimals: 9)'),
+    page.getByRole('button', {
+      name: 'Show exact transfer amount: 1',
+      exact: true,
+    }),
   ).toBeVisible();
   await expect(firstTransfer).toBeVisible();
   await expect(page.getByText('Could not load more transactions.')).toHaveCount(
@@ -130,6 +140,9 @@ test('retries an unavailable initial wallet activity request', async ({
   ).toBeVisible();
   await page.getByRole('button', { name: 'Retry activity' }).click();
   await expect(
-    page.getByText('42500000000 atomic units (decimals: 9)'),
+    page.getByRole('button', {
+      name: 'Show exact transfer amount: 42.5',
+      exact: true,
+    }),
   ).toBeVisible();
 });

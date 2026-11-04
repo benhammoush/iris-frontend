@@ -60,10 +60,10 @@
   }
   .iris-wallet-studio .iris-wallet-hero-heading h1 {
     margin: 0 0 6px;
-    font-size: 36px;
-    line-height: 1.15;
+    font-size: var(--studio-page-title-size);
+    line-height: 1.2;
     font-weight: 750;
-    letter-spacing: -1.8px;
+    letter-spacing: -0.04em;
     color: var(--studio-ink);
     overflow-wrap: anywhere;
   }
@@ -115,8 +115,8 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 36px;
-    padding: 8px 12px;
+    min-height: var(--studio-action-height);
+    padding: 0 12px;
     gap: 4px;
     border: 1px solid var(--studio-line);
     border-radius: 4px;
@@ -302,20 +302,74 @@
     > [role='columnheader'] {
     flex-shrink: 0;
   }
-  .iris-wallet-studio .iris-wallet-exact-amount {
+  .iris-wallet-studio .iris-wallet-amount-button {
     display: block;
     width: 100%;
     min-width: 0;
     max-width: 100%;
-    overflow-x: auto;
+    overflow: hidden;
     white-space: nowrap;
-    text-align: left;
-    scrollbar-width: thin;
-    overscroll-behavior-x: contain;
+    text-overflow: ellipsis;
+    text-align: right;
+    padding: 10px 0;
+    border: 0;
+    background: transparent;
+    color: var(--studio-purple);
+    font: inherit;
+    font-variant-numeric: tabular-nums;
+    text-decoration: underline dotted;
+    text-underline-offset: 4px;
+    cursor: pointer;
   }
-  .iris-wallet-studio .iris-wallet-exact-amount:focus-visible {
+  .iris-wallet-studio .iris-wallet-amount-button:focus-visible {
     outline: 2px solid var(--studio-purple);
     outline-offset: -2px;
+  }
+  .iris-wallet-studio .iris-wallet-amount-details {
+    position: fixed;
+    inset: 0;
+    margin: auto;
+    width: min(420px, calc(100vw - 32px));
+    height: fit-content;
+    max-height: calc(100dvh - 32px);
+    box-sizing: border-box;
+    padding: 20px;
+    border: 1px solid var(--studio-line);
+    border-radius: 4px;
+    background: var(--studio-paper);
+    color: var(--studio-ink);
+    white-space: normal;
+    text-align: left;
+    font:
+      14px/1.6 'Segoe UI',
+      system-ui,
+      sans-serif;
+  }
+  .iris-wallet-amount-details::backdrop {
+    background: rgb(0 0 0 / 40%);
+  }
+  .iris-wallet-amount-details h2 {
+    margin: 0 0 16px;
+    font-size: 18px;
+  }
+  .iris-wallet-amount-details dt {
+    color: var(--studio-muted);
+    font-size: 12px;
+  }
+  .iris-wallet-amount-details dd {
+    margin: 0 0 12px;
+    overflow-wrap: anywhere;
+    font-variant-numeric: tabular-nums;
+  }
+  .iris-wallet-amount-details button {
+    min-height: var(--studio-action-height);
+    padding: 0 16px;
+    border: 1px solid var(--studio-line);
+    border-radius: 3px;
+    background: var(--studio-tint);
+    color: var(--studio-ink);
+    font: inherit;
+    cursor: pointer;
   }
   .iris-wallet-studio .iris-table-row:nth-child(even) {
     background: var(--studio-paper);
@@ -349,8 +403,8 @@
     border: 0;
   }
   .iris-wallet-studio .iris-load-more button {
-    min-height: 36px;
-    padding: 7px 12px;
+    min-height: var(--studio-action-height);
+    padding: 0 12px;
     border: 1px solid var(--studio-line);
     border-radius: 3px;
     background: transparent;
@@ -379,10 +433,6 @@
     .iris-wallet-studio .iris-studio-wallet-hero {
       flex-wrap: wrap;
       gap: 14px;
-    }
-    .iris-wallet-studio .iris-wallet-hero-heading h1 {
-      font-size: 28px;
-      letter-spacing: -1.2px;
     }
     .iris-wallet-studio .iris-wallet-save {
       width: 100%;

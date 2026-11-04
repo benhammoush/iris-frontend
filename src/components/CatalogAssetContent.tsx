@@ -4,6 +4,7 @@
  */
 
 import type { AssetView } from '../data/normalizers';
+import { unitPrice } from '../data/unitPrice';
 import AssetIcon from './AssetIcon';
 
 /** Format a known monetary value for display and preserve the unavailable-data fallback.
@@ -39,7 +40,7 @@ export default function CatalogAssetContent(props: CatalogAssetProps) {
       </span>
       <span className="iris-catalog-list-price">
         <span className="iris-sr-only">Price </span>
-        {currency(asset.priceUsd, 5)}
+        {unitPrice(asset.priceUsd)}
       </span>
       <span className="iris-catalog-list-change">
         <span className="iris-sr-only">24h change </span>

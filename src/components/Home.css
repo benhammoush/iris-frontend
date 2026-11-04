@@ -126,7 +126,6 @@
   max-height: 420px;
   overflow-y: auto;
   padding: 0;
-  scrollbar-color: var(--studio-purple) transparent;
 }
 .iris-shell.iris-home .iris-studio-discovery .iris-catalog-list-rows > button {
   width: 100%;
@@ -247,6 +246,8 @@
 }
 .iris-shell.iris-home .iris-helius-field > strong {
   color: var(--studio-ink);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
   font-size: 17px;
   font-weight: 550;
 }
@@ -263,7 +264,6 @@
   max-height: 270px;
   overflow-y: auto;
   padding: 0;
-  scrollbar-color: var(--studio-purple) transparent;
 }
 .iris-shell.iris-home
   :is(.iris-recent-transaction-head, .iris-recent-transaction-row) {
