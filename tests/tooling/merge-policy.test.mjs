@@ -732,11 +732,14 @@ test('retired merge observer has no workflow entry point', () => {
   assert.ok(packageScripts.check.includes('npm run verify:fast'));
   assert.ok(packageScripts['verify:fast'].includes('npm run typecheck'));
   assert.ok(!packageScripts['verify:fast'].includes('npm run check'));
-  assert.equal(packageScripts.dev, packageScripts.start);
+  assert.equal(
+    packageScripts.dev,
+    'vite --host localhost --port 5173 --strictPort',
+  );
   assert.equal(packageScripts.typecheck, 'tsc --noEmit');
   assert.equal(
     packageScripts['check:version'],
-    packageScripts['check:versions'],
+    'node scripts/check-version.mjs',
   );
   assert.equal(
     packageScripts.verify,

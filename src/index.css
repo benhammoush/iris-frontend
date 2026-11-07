@@ -826,12 +826,6 @@ html[data-theme='light'] .iris-metric-tps {
 .iris-timeframe-popover button {
   padding: 4px 3px;
 }
-.iris-defillama-logo {
-  width: 108.5px;
-  height: 37.1px;
-  object-fit: contain;
-  object-position: left;
-}
 .iris-chart-empty {
   display: grid;
   min-height: 290px;
@@ -1039,15 +1033,6 @@ html[data-theme='light'] .iris-metric-tps {
     rgba(232, 121, 249, 0.12),
     rgba(9, 10, 13, 0.55)
   );
-}
-.iris-birdeye-card-header img {
-  width: 130px;
-  height: 28px;
-  object-fit: contain;
-  object-position: left;
-}
-.iris-birdeye-card-header .iris-birdeye-logo--light {
-  display: none;
 }
 .iris-birdeye-card-header span {
   margin-left: auto;
@@ -1315,47 +1300,6 @@ html[data-theme='light'] .iris-metric-tps {
   padding: 9px 14px;
   border-bottom: 1px solid var(--iris-border);
   background: var(--iris-secondary);
-}
-.iris-birdeye-brand {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  min-width: 0;
-}
-.iris-birdeye-mark {
-  display: grid;
-  width: 27px;
-  height: 27px;
-  place-items: center;
-  border: 1px solid rgba(87, 229, 255, 0.4);
-  border-radius: 6px;
-  background: rgba(87, 229, 255, 0.1);
-  color: #4dd4ef;
-}
-.iris-birdeye-mark svg {
-  width: 20px;
-  height: 20px;
-}
-.iris-birdeye-brand strong,
-.iris-birdeye-brand span {
-  display: block;
-}
-.iris-birdeye-brand strong {
-  color: var(--iris-text);
-  font:
-    700 12px 'Segoe UI Variable',
-    'Segoe UI',
-    system-ui,
-    sans-serif;
-}
-.iris-birdeye-brand span {
-  margin-top: 1px;
-  color: var(--iris-muted);
-  font:
-    10px ui-monospace,
-    'Cascadia Code',
-    Consolas,
-    monospace;
 }
 .iris-asset-chart .iris-timeframe {
   gap: 2px;
@@ -2818,12 +2762,6 @@ html[data-theme='light'] .iris-birdeye-card-header {
 html[data-theme='light'] .iris-birdeye-card-header span {
   border-color: rgba(162, 28, 175, 0.3);
   color: #86198f;
-}
-html[data-theme='light'] .iris-birdeye-card-header .iris-birdeye-logo--dark {
-  display: none;
-}
-html[data-theme='light'] .iris-birdeye-card-header .iris-birdeye-logo--light {
-  display: block;
 }
 html[data-theme='light'] .iris-birdeye-card .iris-chart-toolbar {
   border-bottom-color: rgba(23, 33, 47, 0.1);
